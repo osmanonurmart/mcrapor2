@@ -1,23 +1,51 @@
 // Veri katmanı.
-// Şimdilik tarayıcının localStorage'ı üstünde çalışıyor; Firebase'e geçerken
-// yalnızca bu dosyadaki oku/yaz fonksiyonlarının içi değişecek, çağıran kodu değil.
+//
+// Bütün veri bellekte bir sözlükte durur; ekranlar buradan senkron okur.
+// Yazma anında belleğe işlenir, arkadan Firestore'a gönderilir. Böylece
+// çağıran kodun hiçbiri asenkron olmak zorunda kalmaz.
+//
+// Bulut kapalıyken (Firebase yüklü değil ya da giriş yapılmamışsa) aynı sözlük
+// localStorage ile yedeklenir; uygulama tek dosya olarak da çalışmaya devam eder.
 import { pazartesi, haftaKey, dateStr, haftaGunleri, haftaEkle } from './util.js';
+import { dbAl, MAGAZALAR, ORTAK } from './bulut.js';
 
 const ON_EK = 'mc2:';
 const olaylar = new EventTarget();
+const bellek = new Map();          // anahtar -> değer
+let bulutAcik = false;             // giriş yapıldıysa true
+let yazmaKuyrugu = new Map();      // anahtar -> zamanlayıcı
+let topluMod = false;              // tohumlama sırasında tek tek yazma kapanır
 
-function oku(anahtar, varsayilan){
+// Cihaza özel, buluta gitmeyen anahtarlar (kişisel görünüm tercihleri).
+const YEREL_ANAHTARLAR = [/^oturum$/, /^ozetSekme:/, /^yerlesim:/];
+const yerelMi = a => YEREL_ANAHTARLAR.some(d => d.test(a));
+
+function yerelOku(anahtar, varsayilan){
   try{
     const ham = localStorage.getItem(ON_EK + anahtar);
     return ham === null ? varsayilan : JSON.parse(ham);
   }catch(e){ return varsayilan; }
 }
-function yaz(anahtar, deger){
+function yerelYaz(anahtar, deger){
   try{ localStorage.setItem(ON_EK + anahtar, JSON.stringify(deger)); }
-  catch(e){ console.warn('Kaydedilemedi:', anahtar, e); }
+  catch(e){ console.warn('Yerel kayıt başarısız:', anahtar, e); }
+}
+
+function oku(anahtar, varsayilan){
+  if(yerelMi(anahtar) || !bulutAcik) return yerelOku(anahtar, varsayilan);
+  return bellek.has(anahtar) ? bellek.get(anahtar) : varsayilan;
+}
+function yaz(anahtar, deger){
+  if(yerelMi(anahtar) || !bulutAcik){
+    yerelYaz(anahtar, deger);
+  } else {
+    bellek.set(anahtar, deger);
+    buluta_gonder(anahtar, deger);
+  }
   olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar}}));
 }
 export function dinle(fn){ olaylar.addEventListener('degisti', fn); }
+export const bulutAcikMi = () => bulutAcik;
 
 // ---------------- Profiller ----------------
 export const ROLLER = { MAGAZA:'magaza', BOLGE:'bolge', KURUCU:'kurucu' };
@@ -358,6 +386,191 @@ function talepleriTohumla(magazaListesi, buPzt){
     });
   });
   taleplerYaz(liste);
+}
+
+// ==================== Firestore eşlemesi ====================
+// Düz anahtarları Firestore yollarına çevirir.
+//   ortak/…            → mc2_ortak/{belge}
+//   mağaza verisi      → mc2_magazalar/{magaza}/{koleksiyon}/{belge}
+const ORTAK_LISTE = {
+  profiller:   'profiller',
+  kategoriler: 'kategoriler',
+  duyurular:   'duyurular',
+  talepler:    'talepler'
+};
+const ORTAK_AYAR = {
+  etiketler:          'etiketler',
+  topluEsik:          'topluEsik',
+  'gorunum:bolge':    'gorunumBolge',
+  'gorunum:satirlar': 'gorunumSatirlar'
+};
+const MAGAZA_AYAR = {personel:'personel', kartlar:'kartlar', rutin:'rutin'};
+const MAGAZA_KOLEKSIYON = {gun:'gunler', hedef:'hedefler', urun:'urunHafta', rutinDurum:'rutinDurum'};
+
+function anahtarYolu(anahtar){
+  if(ORTAK_LISTE[anahtar]) return {tur:'ortakListe', belge: ORTAK_LISTE[anahtar]};
+  if(ORTAK_AYAR[anahtar])  return {tur:'ortakAyar', alan: ORTAK_AYAR[anahtar]};
+  const p = anahtar.split(':');
+  if(p.length === 2 && MAGAZA_AYAR[p[0]]) return {tur:'magazaAyar', magaza:p[1], belge:MAGAZA_AYAR[p[0]]};
+  if(p.length === 3 && MAGAZA_KOLEKSIYON[p[0]])
+    return {tur:'magazaBelge', magaza:p[1], koleksiyon:MAGAZA_KOLEKSIYON[p[0]], belge:p[2]};
+  return null;
+}
+
+// Yazmalar anahtar bazında geciktirilir; hızlı yazmalarda tek istek gider.
+function buluta_gonder(anahtar, deger){
+  if(topluMod) return;
+  const yol = anahtarYolu(anahtar);
+  if(!yol) return;
+  clearTimeout(yazmaKuyrugu.get(anahtar));
+  yazmaKuyrugu.set(anahtar, setTimeout(async () => {
+    yazmaKuyrugu.delete(anahtar);
+    const db = dbAl();
+    if(!db) return;
+    try{
+      if(yol.tur === 'ortakListe'){
+        await db.collection(ORTAK).doc(yol.belge).set({liste: deger});
+      } else if(yol.tur === 'ortakAyar'){
+        await db.collection(ORTAK).doc('ayarlar').set({[yol.alan]: deger}, {merge:true});
+      } else if(yol.tur === 'magazaAyar'){
+        await db.collection(MAGAZALAR).doc(yol.magaza).collection('ayarlar').doc(yol.belge).set({liste: deger});
+      } else if(yol.tur === 'magazaBelge'){
+        const ref = db.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge);
+        // Gün kayıtlarına tarih ve mağaza yazılır: bölge müdürü tek sorguyla
+        // bütün mağazaların son haftalarını çekebilsin diye.
+        const govde = (deger && typeof deger === 'object' && !Array.isArray(deger))
+          ? {...deger, magaza: yol.magaza, anahtar: yol.belge}
+          : {deger, magaza: yol.magaza, anahtar: yol.belge};
+        await ref.set(govde);
+      }
+    }catch(e){ console.warn('Buluta yazılamadı:', anahtar, e.message); }
+  }, 400));
+}
+
+function belgeyiCoz(tur, veri){
+  if(tur === 'magazaAyar' || tur === 'ortakListe') return veri.liste;
+  const {magaza, anahtar, ...kalan} = veri;
+  return ('deger' in kalan && Object.keys(kalan).length === 1) ? kalan.deger : kalan;
+}
+
+// Girişten sonra çağrılır: erişilebilen mağazaların verisini belleğe yükler.
+// baglam: {rol, magazaKey}. Bölge ve kurucu bütün mağazaları, mağaza müdürü
+// yalnızca kendi mağazasını çeker.
+export async function veriYukle(baglam, haftaSayisi = 16){
+  const db = dbAl();
+  if(!db) return false;
+  bellek.clear();
+
+  // Ortak belgeler
+  const ortakSnap = await db.collection(ORTAK).get();
+  ortakSnap.forEach(d => {
+    if(d.id === 'ayarlar'){
+      const v = d.data() || {};
+      Object.keys(ORTAK_AYAR).forEach(anahtar => {
+        const alan = ORTAK_AYAR[anahtar];
+        if(v[alan] !== undefined) bellek.set(anahtar, v[alan]);
+      });
+    } else {
+      const anahtar = Object.keys(ORTAK_LISTE).find(a => ORTAK_LISTE[a] === d.id);
+      if(anahtar) bellek.set(anahtar, (d.data() || {}).liste || []);
+    }
+  });
+
+  // Hangi mağazalar yüklenecek: profiller ortak belgeden geldi.
+  const profiller = bellek.get('profiller') || [];
+  const magazaAnahtarlari = (baglam.rol === ROLLER.MAGAZA)
+    ? (baglam.magazaKey ? [baglam.magazaKey] : [])
+    : profiller.filter(p => p.rol === ROLLER.MAGAZA).map(p => p.key);
+
+  // Gün kayıtlarında geriye dönük sınır
+  const sinir = new Date();
+  sinir.setDate(sinir.getDate() - haftaSayisi * 7);
+  const sinirStr = dateStr(pazartesi(sinir));
+
+  await Promise.all(magazaAnahtarlari.map(async m => {
+    const kok = db.collection(MAGAZALAR).doc(m);
+    const [ayar, gunler, hedefler, urunler, rutinler] = await Promise.all([
+      kok.collection('ayarlar').get(),
+      kok.collection('gunler').orderBy(firebase.firestore.FieldPath.documentId()).startAt(sinirStr).get(),
+      kok.collection('hedefler').get(),
+      kok.collection('urunHafta').get(),
+      kok.collection('rutinDurum').get()
+    ]);
+    ayar.forEach(d => {
+      const anahtar = Object.keys(MAGAZA_AYAR).find(a => MAGAZA_AYAR[a] === d.id);
+      if(anahtar) bellek.set(anahtar + ':' + m, (d.data() || {}).liste || []);
+    });
+    gunler.forEach(d   => bellek.set('gun:' + m + ':' + d.id,        belgeyiCoz('magazaBelge', d.data() || {})));
+    hedefler.forEach(d => bellek.set('hedef:' + m + ':' + d.id,      belgeyiCoz('magazaBelge', d.data() || {})));
+    urunler.forEach(d  => bellek.set('urun:' + m + ':' + d.id,       belgeyiCoz('magazaBelge', d.data() || {})));
+    rutinler.forEach(d => bellek.set('rutinDurum:' + m + ':' + d.id, belgeyiCoz('magazaBelge', d.data() || {})));
+  }));
+
+  bulutAcik = true;
+  olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar:'*'}}));
+  return true;
+}
+
+export function bulutuKapat(){
+  bulutAcik = false;
+  bellek.clear();
+  yazmaKuyrugu.forEach(t => clearTimeout(t));
+  yazmaKuyrugu.clear();
+}
+
+// Tohum veriyi buluta yazar (kurucu, ilk kurulumda bir kez çalıştırır).
+export async function buluttaKurulumVarMi(){
+  const db = dbAl();
+  if(!db) return false;
+  const d = await db.collection(ORTAK).doc('profiller').get();
+  return d.exists && ((d.data() || {}).liste || []).length > 0;
+}
+export async function bulutaTohumla(){
+  const db = dbAl();
+  if(!db) throw new Error('Firebase bağlantısı yok.');
+  const yedek = new Map(bellek);
+  const eskiAcik = bulutAcik;
+
+  topluMod = true;             // tohumlarken tek tek yazma yapılmaz
+  bulutAcik = true;
+  bellek.clear();
+  try{
+    tohumla(true);             // örnek veri belleğe üretilir
+    const girdiler = [...bellek.entries()].filter(([a]) => anahtarYolu(a));
+    for(let i=0;i<girdiler.length;i+=400){
+      const yigin = db.batch();
+      girdiler.slice(i, i+400).forEach(([anahtar, deger]) => {
+        const yol = anahtarYolu(anahtar);
+        if(yol.tur === 'ortakListe') yigin.set(db.collection(ORTAK).doc(yol.belge), {liste: deger});
+        else if(yol.tur === 'ortakAyar') yigin.set(db.collection(ORTAK).doc('ayarlar'), {[yol.alan]: deger}, {merge:true});
+        else if(yol.tur === 'magazaAyar')
+          yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection('ayarlar').doc(yol.belge), {liste: deger});
+        else if(yol.tur === 'magazaBelge'){
+          const govde = (deger && typeof deger === 'object' && !Array.isArray(deger))
+            ? {...deger, magaza: yol.magaza, anahtar: yol.belge}
+            : {deger, magaza: yol.magaza, anahtar: yol.belge};
+          yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
+        }
+      });
+      await yigin.commit();
+    }
+    // Mağaza kartları ayrı belgelerde de dursun (kurallar bunlara bakıyor).
+    const profiller = bellek.get('profiller') || [];
+    for(let i=0;i<profiller.length;i+=400){
+      const yigin = db.batch();
+      profiller.slice(i, i+400).forEach(p => yigin.set(db.collection(MAGAZALAR).doc(p.key),
+        {ad:p.ad, rol:p.rol, simge:p.simge, renk:p.renk}, {merge:true}));
+      await yigin.commit();
+    }
+    topluMod = false;
+    return girdiler.length;
+  }catch(e){
+    topluMod = false;
+    bellek.clear();
+    yedek.forEach((v,k) => bellek.set(k,v));
+    bulutAcik = eskiAcik;
+    throw e;
+  }
 }
 
 export function hepsiniSil(){

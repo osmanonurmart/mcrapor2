@@ -6,14 +6,153 @@ import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
 import { pencere, kapat } from './pencere.js';
+import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, KULLANICILAR } from './bulut.js';
 import { yerlesimSifirla, TASINABILIR } from './yerlesim.js';
 
 const kokEl = document.getElementById('kok');
-let aktif = null;        // aktif profil
-let sayfa = 'ana';       // ana | talep | bolge | kurucu | araclar
-let kurucuMagaza = null; // kurucu bir mağazayı incelerken
+let aktif = null;            // aktif profil
+let sayfa = 'ana';           // ana | talep | bolge | kurucu | araclar
+let kurucuMagaza = null;     // kurucu bir mağazayı incelerken
+let bulutKullanicisi = null; // {uid, eposta, rol, magazaKey}
 
 // ---------------- Giriş ----------------
+// Bulut açıkken e-posta/şifre; Firebase yoksa (tek dosya, çevrimdışı deneme)
+// eski profil seçim ekranı devrede kalır.
+const YONETICI_EPOSTALARI = ['osmanonurmrt@gmail.com'];
+
+function bulutGirisEkrani(mesaj, iyiMi){
+  const kok = U.el(`<div class="giris-ekran">
+    <div class="giris-kutu">
+      <div class="giris-logo"></div>
+      <h1>Mağaza Performans Takip</h1>
+      <label class="giris-etiket">E-posta</label>
+      <input type="email" id="girisEposta" class="giris-girdi" autocomplete="username">
+      <label class="giris-etiket">Şifre</label>
+      <input type="password" id="girisSifre" class="giris-girdi" autocomplete="current-password">
+      <div class="giris-hata ${iyiMi ? 'iyi' : ''}">${U.esc(mesaj || '')}</div>
+      <button class="mini birincil giris-btn">Giriş yap</button>
+      <button class="giris-bag" id="sifreUnuttum">Şifremi unuttum</button>
+    </div>
+  </div>`);
+  const simge = document.querySelector('link[rel="icon"]');
+  if(simge) kok.querySelector('.giris-logo').style.backgroundImage = `url("${simge.href}")`;
+
+  const mail = kok.querySelector('#girisEposta');
+  const sifre = kok.querySelector('#girisSifre');
+  const hata = kok.querySelector('.giris-hata');
+  const btn = kok.querySelector('.giris-btn');
+
+  const dene = async () => {
+    hata.className = 'giris-hata';
+    if(!mail.value.trim() || !sifre.value){ hata.textContent = 'E-posta ve şifre gerekli.'; return; }
+    btn.disabled = true; btn.textContent = 'Giriş yapılıyor...';
+    try{ await authAl().signInWithEmailAndPassword(mail.value.trim(), sifre.value); }
+    catch(e){ hata.textContent = girisHatasi(e); }
+    btn.disabled = false; btn.textContent = 'Giriş yap';
+  };
+  btn.addEventListener('click', dene);
+  [mail, sifre].forEach(i => i.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); dene(); }
+  }));
+  kok.querySelector('#sifreUnuttum').addEventListener('click', async () => {
+    if(!mail.value.trim()){ hata.textContent = 'Önce e-posta adresinizi yazın.'; return; }
+    try{
+      await authAl().sendPasswordResetEmail(mail.value.trim());
+      hata.className = 'giris-hata iyi';
+      hata.textContent = 'Sıfırlama bağlantısı gönderildi.';
+    }catch(e){ hata.className = 'giris-hata'; hata.textContent = girisHatasi(e); }
+  });
+  setTimeout(() => mail.focus(), 60);
+  return kok;
+}
+
+// Kullanıcı ↔ mağaza eşlemesi; yönetici e-postası ilk girişte kendini oluşturur.
+async function kullaniciBaglami(user){
+  const db = dbAl();
+  const eposta = (user.email || '').toLowerCase();
+  const sabitYonetici = YONETICI_EPOSTALARI.includes(eposta);
+  let doc = await db.collection(KULLANICILAR).doc(user.uid).get();
+  if(!doc.exists && sabitYonetici){
+    await db.collection(KULLANICILAR).doc(user.uid).set({eposta, rol:V.ROLLER.KURUCU, magazaKey:null});
+    doc = await db.collection(KULLANICILAR).doc(user.uid).get();
+  }
+  const veri = doc.exists ? (doc.data() || {}) : {};
+  return {
+    uid: user.uid, eposta,
+    rol: sabitYonetici ? V.ROLLER.KURUCU : (veri.rol || null),
+    magazaKey: veri.magazaKey || null,
+    kayitliMi: doc.exists
+  };
+}
+
+// Girişten sonra: veriyi yükle, aktif profili belirle, uygulamayı çiz.
+async function bulutOturumuAc(user){
+  ciz(U.el('<div class="acilis">Veriler yükleniyor…</div>'));
+  const baglam = await kullaniciBaglami(user);
+  if(!baglam.rol){
+    await authAl().signOut();
+    ciz(bulutGirisEkrani('Bu hesap bir mağazaya bağlanmamış. Yöneticinize başvurun.'));
+    return;
+  }
+  await V.veriYukle(baglam);
+
+  const profiller = V.profilleriGetir();
+  if(!profiller.length){
+    // Henüz kurulum yapılmamış: yalnızca kurucu tohumlayabilir.
+    if(baglam.rol === V.ROLLER.KURUCU){ ciz(kurulumEkrani(user)); return; }
+    await authAl().signOut();
+    ciz(bulutGirisEkrani('Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor.'));
+    return;
+  }
+  aktif = baglam.rol === V.ROLLER.MAGAZA
+    ? V.profilGetir(baglam.magazaKey)
+    : (profiller.find(p => p.rol === baglam.rol) || {key:baglam.rol, ad:baglam.eposta, rol:baglam.rol, simge:'👤', renk:'#3f6b8a'});
+  if(!aktif){
+    await authAl().signOut();
+    ciz(bulutGirisEkrani('Hesabınıza bağlı mağaza bulunamadı.'));
+    return;
+  }
+  bulutKullanicisi = baglam;
+  sayfa = varsayilanSayfa(aktif);
+  kurucuMagaza = null;
+  uygulamaCiz();
+}
+
+// Kurucu ilk girişte örnek veriyi buluta yazabilsin.
+function kurulumEkrani(user){
+  const kok = U.el(`<div class="giris-ekran">
+    <div class="giris-kutu genis">
+      <h1>İlk kurulum</h1>
+      <p class="giris-aciklama">Bulutta henüz veri yok. Aşağıdaki düğme 20 mağaza,
+        bölge müdürü ve kurucu profillerini, kategorileri ve yaklaşık 10 haftalık
+        örnek veriyi Firestore'a yazar. Sonra mağaza kullanıcılarını
+        Kurucu → Kullanıcılar bölümünden açarsınız.</p>
+      <div class="giris-hata"></div>
+      <button class="mini birincil kur-btn">Örnek veriyi buluta yaz</button>
+      <button class="giris-bag" id="kurCik">Çıkış yap</button>
+    </div>
+  </div>`);
+  const hata = kok.querySelector('.giris-hata');
+  const btn = kok.querySelector('.kur-btn');
+  btn.addEventListener('click', async () => {
+    btn.disabled = true; btn.textContent = 'Yazılıyor...';
+    try{
+      const adet = await V.bulutaTohumla();
+      hata.className = 'giris-hata iyi';
+      hata.textContent = adet + ' kayıt yazıldı. Uygulama açılıyor...';
+      const kimlik = authAl().currentUser || user;
+      setTimeout(() => { bulutOturumuAc(kimlik); }, 600);
+    }catch(e){
+      hata.className = 'giris-hata';
+      hata.textContent = girisHatasi(e);
+      btn.disabled = false; btn.textContent = 'Örnek veriyi buluta yaz';
+    }
+  });
+  kok.querySelector('#kurCik').addEventListener('click', () => authAl().signOut());
+  return kok;
+}
+
+// --- Firebase yokken: eski yerel profil ekranı ---
 function girisEkrani(secilenKey){
   const profiller = V.profilleriGetir();
   const secilen = secilenKey ? V.profilGetir(secilenKey) : null;
@@ -31,7 +170,7 @@ function girisEkrani(secilenKey){
       <button class="mini geri-btn">← Geri</button>
       <div class="giris-hata"></div>
     </div>
-    <p class="giris-not">Seçilen profil bu cihazda hatırlanır. Örnek şifre: 1234</p>
+    <p class="giris-not">Yerel deneme modu — Firebase bağlantısı yok. Örnek şifre: 1234</p>
   </div>`);
 
   const izgara = kok.querySelector('.profil-izgara');
@@ -136,14 +275,17 @@ function profilMenusu(e){
   const menu = U.el(`<div class="acilir-menu profil-menu">
     ${aktif.rol === V.ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ''}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ''}
-    <button data-act="sifirla">♻ Örnek veriyi yenile</button>
+    ${bulutKullanicisi ? '' : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
     <button data-act="cikis">🚪 Profil değiştir</button>
   </div>`);
   menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     menu.remove();
     if(b.dataset.act === 'personel') personelPenceresi(aktifMagaza(), uygulamaCiz);
     if(b.dataset.act === 'yerlesim'){ yerlesimSifirla(aktifMagaza()); uygulamaCiz(); }
-    if(b.dataset.act === 'cikis'){ V.oturumSil(); aktif = null; kurucuMagaza = null; ciz(girisEkrani(null)); }
+    if(b.dataset.act === 'cikis'){
+      if(bulutVarMi() && authAl() && authAl().currentUser){ V.bulutuKapat(); authAl().signOut(); }
+      else { V.oturumSil(); aktif = null; kurucuMagaza = null; ciz(girisEkrani(null)); }
+    }
     if(b.dataset.act === 'sifirla'){
       if(!confirm('Bütün yerel veri silinip örnek veri yeniden üretilecek. Devam?')) return;
       V.hepsiniSil(); V.tohumla(true); V.oturumSil(); aktif = null; ciz(girisEkrani(null));
@@ -226,15 +368,35 @@ function uygulamaCiz(){
 }
 
 // ---------------- Açılış ----------------
-V.tohumla(false);
 haftaSec(U.pazartesi(U.bugun()));
-const oturum = V.oturumGetir();
-if(oturum && V.profilGetir(oturum.key)){
-  aktif = V.profilGetir(oturum.key);
-  sayfa = varsayilanSayfa(aktif);
-  uygulamaCiz();
+
+if(baglan()){
+  // Bulut modu: oturum durumunu Firebase yönetir.
+  authAl().onAuthStateChanged(async user => {
+    if(!user){
+      aktif = null; kurucuMagaza = null; bulutKullanicisi = null;
+      V.bulutuKapat();
+      ciz(bulutGirisEkrani(''));
+      return;
+    }
+    try{ await bulutOturumuAc(user); }
+    catch(e){
+      console.error(e);
+      ciz(bulutGirisEkrani('Veriler yüklenemedi: ' + (e && e.message ? e.message : e) +
+        '\nGüvenlik kuralları bu hesaba izin vermiyor olabilir.'));
+    }
+  });
 } else {
-  ciz(girisEkrani(null));
+  // Firebase yok: yerel deneme modu.
+  V.tohumla(false);
+  const oturum = V.oturumGetir();
+  if(oturum && V.profilGetir(oturum.key)){
+    aktif = V.profilGetir(oturum.key);
+    sayfa = varsayilanSayfa(aktif);
+    uygulamaCiz();
+  } else {
+    ciz(girisEkrani(null));
+  }
 }
 
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){

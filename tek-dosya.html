@@ -59,6 +59,29 @@ table{ border-collapse:collapse; }
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:34px 18px;
 }
 .giris-ekran h1{ font-weight:400; font-size:1.6rem; }
+/* Bulut girişi */
+.giris-kutu{
+  background:#1b1b1e; border:1px solid #2e2e33; border-radius:16px;
+  padding:26px 26px 20px; width:min(360px,100%); display:flex; flex-direction:column; gap:2px;
+}
+.giris-kutu.genis{ width:min(520px,100%); }
+.giris-kutu h1{ font-size:1.15rem; text-align:center; margin-bottom:14px; }
+.giris-logo{ width:52px; height:52px; margin:0 auto 10px; border-radius:12px; background:#26262b center/contain no-repeat; }
+.giris-etiket{ font-size:.72rem; color:#8b8b93; margin:10px 0 4px; }
+.giris-girdi{
+  width:100%; padding:9px 11px; border-radius:9px; border:1px solid #3a3a40;
+  background:#242428; color:#fff; font-size:.9rem;
+}
+.giris-girdi:focus{ outline:none; border-color:var(--vurgu); }
+.giris-kutu .mini.birincil{ width:100%; margin-top:14px; padding:10px; }
+.giris-bag{
+  background:none; border:none; color:#8b8b93; font-size:.76rem; cursor:pointer;
+  margin-top:10px; text-decoration:underline; font-family:inherit;
+}
+.giris-bag:hover{ color:#fff; }
+.giris-aciklama{ color:#9a9aa2; font-size:.82rem; line-height:1.55; margin:0 0 6px; }
+.giris-hata{ color:#e08484; font-size:.78rem; min-height:18px; margin-top:8px; white-space:pre-line; }
+.giris-hata.iyi{ color:#7fb77f; }
 .profil-izgara{ display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:16px; width:min(900px,100%); }
 .profil-kart{ background:none; border:none; padding:0; cursor:pointer; text-align:center; }
 .p-simge{
@@ -371,7 +394,11 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
 .k-simge{ width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex:0 0 auto; }
 .k-ad{ flex:1; min-width:0; padding:4px 8px; border:1px solid var(--cizgi); border-radius:6px; font-size:.8rem; }
 .k-rol{ font-size:.68rem; color:var(--soluk); width:54px; }
-.k-sifre{ width:78px; padding:4px 8px; border:1px solid var(--cizgi); border-radius:6px; font-size:.8rem; }
+.k-sifre-yerel{ width:78px; padding:4px 8px; border:1px solid var(--cizgi); border-radius:6px; font-size:.8rem; }
+.k-mail{ flex:1; min-width:0; font-size:.72rem; color:var(--soluk); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.k-yeni-mail{ flex:1; min-width:70px; padding:4px 7px; border:1px solid var(--cizgi); border-radius:6px; font-size:.74rem; }
+.k-yeni-sifre{ width:84px; padding:4px 7px; border:1px solid var(--cizgi); border-radius:6px; font-size:.74rem; }
+.kullanici-satir{ flex-wrap:wrap; }
 .satir-ayar{ display:flex; gap:6px; flex-wrap:wrap; }
 .esik-satir{ display:flex; align-items:center; gap:8px; font-size:.82rem; }
 .esik-satir input{ width:100px; padding:5px 9px; border:1px solid var(--cizgi); border-radius:7px; text-align:right; }
@@ -525,6 +552,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
 }
 
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div id="kok"><div class="acilis">Yükleniyor…</div></div>
@@ -674,10 +704,67 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     return t.content.firstElementChild;
   }
 
+  // js/bulut.js
+  var firebaseConfig = {
+    apiKey: "AIzaSyCHkuLl0l90xXjEoeUnbCgxJsi4iIbjmK0",
+    authDomain: "mcrapor-e97aa.firebaseapp.com",
+    projectId: "mcrapor-e97aa",
+    storageBucket: "mcrapor-e97aa.firebasestorage.app",
+    messagingSenderId: "788228140989",
+    appId: "1:788228140989:web:106c9057fb8f27fe86ecd4"
+  };
+  var KULLANICILAR = "mc2_kullanicilar";
+  var MAGAZALAR = "mc2_magazalar";
+  var ORTAK = "mc2_ortak";
+  var bulutVarMi = () => typeof firebase !== "undefined" && !!firebase.firestore;
+  var auth = null;
+  var db = null;
+  function baglan() {
+    if (!bulutVarMi()) return false;
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    return true;
+  }
+  var authAl = () => auth;
+  var dbAl = () => db;
+  function girisHatasi(err) {
+    const kodlar = {
+      "auth/invalid-email": "E-posta adresi geçersiz.",
+      "auth/user-not-found": "Bu e-posta ile kayıtlı kullanıcı yok.",
+      "auth/wrong-password": "Şifre yanlış.",
+      "auth/invalid-credential": "E-posta veya şifre hatalı.",
+      "auth/too-many-requests": "Çok fazla deneme yapıldı, biraz bekleyin.",
+      "auth/network-request-failed": "İnternet bağlantısı kurulamadı.",
+      "auth/email-already-in-use": "Bu e-posta zaten kullanılıyor.",
+      "auth/weak-password": "Şifre en az 6 karakter olmalı.",
+      "auth/operation-not-allowed": "Firebase'de e-posta/şifre girişi kapalı görünüyor.\nConsole → Authentication → Sign-in method → Email/Password → Enable."
+    };
+    return kodlar[err && err.code] || "İşlem tamamlanamadı: " + (err && err.message ? err.message : err);
+  }
+  var ikincil = null;
+  async function kullaniciOlustur(eposta, sifre) {
+    if (!ikincil) ikincil = firebase.initializeApp(firebaseConfig, "kullaniciOlusturucu");
+    const ia = ikincil.auth();
+    const cred = await ia.createUserWithEmailAndPassword(eposta, sifre);
+    const uid = cred.user.uid;
+    try {
+      await ia.signOut();
+    } catch (e) {
+    }
+    return uid;
+  }
+
   // js/veri.js
   var ON_EK = "mc2:";
   var olaylar = new EventTarget();
-  function oku(anahtar, varsayilan) {
+  var bellek = /* @__PURE__ */ new Map();
+  var bulutAcik = false;
+  var yazmaKuyrugu = /* @__PURE__ */ new Map();
+  var topluMod = false;
+  var YEREL_ANAHTARLAR = [/^oturum$/, /^ozetSekme:/, /^yerlesim:/];
+  var yerelMi = (a) => YEREL_ANAHTARLAR.some((d) => d.test(a));
+  function yerelOku(anahtar, varsayilan) {
     try {
       const ham = localStorage.getItem(ON_EK + anahtar);
       return ham === null ? varsayilan : JSON.parse(ham);
@@ -685,14 +772,27 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       return varsayilan;
     }
   }
-  function yaz(anahtar, deger) {
+  function yerelYaz(anahtar, deger) {
     try {
       localStorage.setItem(ON_EK + anahtar, JSON.stringify(deger));
     } catch (e) {
-      console.warn("Kaydedilemedi:", anahtar, e);
+      console.warn("Yerel kayıt başarısız:", anahtar, e);
+    }
+  }
+  function oku(anahtar, varsayilan) {
+    if (yerelMi(anahtar) || !bulutAcik) return yerelOku(anahtar, varsayilan);
+    return bellek.has(anahtar) ? bellek.get(anahtar) : varsayilan;
+  }
+  function yaz(anahtar, deger) {
+    if (yerelMi(anahtar) || !bulutAcik) {
+      yerelYaz(anahtar, deger);
+    } else {
+      bellek.set(anahtar, deger);
+      buluta_gonder(anahtar, deger);
     }
     olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar } }));
   }
+  var bulutAcikMi = () => bulutAcik;
   var ROLLER = { MAGAZA: "magaza", BOLGE: "bolge", KURUCU: "kurucu" };
   var profilleriGetir = () => oku("profiller", []);
   var profilGetir = (key) => profilleriGetir().find((p) => p.key === key) || null;
@@ -1044,6 +1144,156 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       });
     });
     taleplerYaz(liste);
+  }
+  var ORTAK_LISTE = {
+    profiller: "profiller",
+    kategoriler: "kategoriler",
+    duyurular: "duyurular",
+    talepler: "talepler"
+  };
+  var ORTAK_AYAR = {
+    etiketler: "etiketler",
+    topluEsik: "topluEsik",
+    "gorunum:bolge": "gorunumBolge",
+    "gorunum:satirlar": "gorunumSatirlar"
+  };
+  var MAGAZA_AYAR = { personel: "personel", kartlar: "kartlar", rutin: "rutin" };
+  var MAGAZA_KOLEKSIYON = { gun: "gunler", hedef: "hedefler", urun: "urunHafta", rutinDurum: "rutinDurum" };
+  function anahtarYolu(anahtar) {
+    if (ORTAK_LISTE[anahtar]) return { tur: "ortakListe", belge: ORTAK_LISTE[anahtar] };
+    if (ORTAK_AYAR[anahtar]) return { tur: "ortakAyar", alan: ORTAK_AYAR[anahtar] };
+    const p = anahtar.split(":");
+    if (p.length === 2 && MAGAZA_AYAR[p[0]]) return { tur: "magazaAyar", magaza: p[1], belge: MAGAZA_AYAR[p[0]] };
+    if (p.length === 3 && MAGAZA_KOLEKSIYON[p[0]])
+      return { tur: "magazaBelge", magaza: p[1], koleksiyon: MAGAZA_KOLEKSIYON[p[0]], belge: p[2] };
+    return null;
+  }
+  function buluta_gonder(anahtar, deger) {
+    if (topluMod) return;
+    const yol = anahtarYolu(anahtar);
+    if (!yol) return;
+    clearTimeout(yazmaKuyrugu.get(anahtar));
+    yazmaKuyrugu.set(anahtar, setTimeout(async () => {
+      yazmaKuyrugu.delete(anahtar);
+      const db2 = dbAl();
+      if (!db2) return;
+      try {
+        if (yol.tur === "ortakListe") {
+          await db2.collection(ORTAK).doc(yol.belge).set({ liste: deger });
+        } else if (yol.tur === "ortakAyar") {
+          await db2.collection(ORTAK).doc("ayarlar").set({ [yol.alan]: deger }, { merge: true });
+        } else if (yol.tur === "magazaAyar") {
+          await db2.collection(MAGAZALAR).doc(yol.magaza).collection("ayarlar").doc(yol.belge).set({ liste: deger });
+        } else if (yol.tur === "magazaBelge") {
+          const ref = db2.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge);
+          const govde = deger && typeof deger === "object" && !Array.isArray(deger) ? { ...deger, magaza: yol.magaza, anahtar: yol.belge } : { deger, magaza: yol.magaza, anahtar: yol.belge };
+          await ref.set(govde);
+        }
+      } catch (e) {
+        console.warn("Buluta yazılamadı:", anahtar, e.message);
+      }
+    }, 400));
+  }
+  function belgeyiCoz(tur, veri) {
+    if (tur === "magazaAyar" || tur === "ortakListe") return veri.liste;
+    const { magaza, anahtar, ...kalan } = veri;
+    return "deger" in kalan && Object.keys(kalan).length === 1 ? kalan.deger : kalan;
+  }
+  async function veriYukle(baglam, haftaSayisi = 16) {
+    const db2 = dbAl();
+    if (!db2) return false;
+    bellek.clear();
+    const ortakSnap = await db2.collection(ORTAK).get();
+    ortakSnap.forEach((d) => {
+      if (d.id === "ayarlar") {
+        const v = d.data() || {};
+        Object.keys(ORTAK_AYAR).forEach((anahtar) => {
+          const alan = ORTAK_AYAR[anahtar];
+          if (v[alan] !== void 0) bellek.set(anahtar, v[alan]);
+        });
+      } else {
+        const anahtar = Object.keys(ORTAK_LISTE).find((a) => ORTAK_LISTE[a] === d.id);
+        if (anahtar) bellek.set(anahtar, (d.data() || {}).liste || []);
+      }
+    });
+    const profiller = bellek.get("profiller") || [];
+    const magazaAnahtarlari = baglam.rol === ROLLER.MAGAZA ? baglam.magazaKey ? [baglam.magazaKey] : [] : profiller.filter((p) => p.rol === ROLLER.MAGAZA).map((p) => p.key);
+    const sinir = /* @__PURE__ */ new Date();
+    sinir.setDate(sinir.getDate() - haftaSayisi * 7);
+    const sinirStr = dateStr(pazartesi(sinir));
+    await Promise.all(magazaAnahtarlari.map(async (m) => {
+      const kok = db2.collection(MAGAZALAR).doc(m);
+      const [ayar, gunler, hedefler, urunler, rutinler] = await Promise.all([
+        kok.collection("ayarlar").get(),
+        kok.collection("gunler").orderBy(firebase.firestore.FieldPath.documentId()).startAt(sinirStr).get(),
+        kok.collection("hedefler").get(),
+        kok.collection("urunHafta").get(),
+        kok.collection("rutinDurum").get()
+      ]);
+      ayar.forEach((d) => {
+        const anahtar = Object.keys(MAGAZA_AYAR).find((a) => MAGAZA_AYAR[a] === d.id);
+        if (anahtar) bellek.set(anahtar + ":" + m, (d.data() || {}).liste || []);
+      });
+      gunler.forEach((d) => bellek.set("gun:" + m + ":" + d.id, belgeyiCoz("magazaBelge", d.data() || {})));
+      hedefler.forEach((d) => bellek.set("hedef:" + m + ":" + d.id, belgeyiCoz("magazaBelge", d.data() || {})));
+      urunler.forEach((d) => bellek.set("urun:" + m + ":" + d.id, belgeyiCoz("magazaBelge", d.data() || {})));
+      rutinler.forEach((d) => bellek.set("rutinDurum:" + m + ":" + d.id, belgeyiCoz("magazaBelge", d.data() || {})));
+    }));
+    bulutAcik = true;
+    olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar: "*" } }));
+    return true;
+  }
+  function bulutuKapat() {
+    bulutAcik = false;
+    bellek.clear();
+    yazmaKuyrugu.forEach((t) => clearTimeout(t));
+    yazmaKuyrugu.clear();
+  }
+  async function bulutaTohumla() {
+    const db2 = dbAl();
+    if (!db2) throw new Error("Firebase bağlantısı yok.");
+    const yedek = new Map(bellek);
+    const eskiAcik = bulutAcik;
+    topluMod = true;
+    bulutAcik = true;
+    bellek.clear();
+    try {
+      tohumla(true);
+      const girdiler = [...bellek.entries()].filter(([a]) => anahtarYolu(a));
+      for (let i = 0; i < girdiler.length; i += 400) {
+        const yigin = db2.batch();
+        girdiler.slice(i, i + 400).forEach(([anahtar, deger]) => {
+          const yol = anahtarYolu(anahtar);
+          if (yol.tur === "ortakListe") yigin.set(db2.collection(ORTAK).doc(yol.belge), { liste: deger });
+          else if (yol.tur === "ortakAyar") yigin.set(db2.collection(ORTAK).doc("ayarlar"), { [yol.alan]: deger }, { merge: true });
+          else if (yol.tur === "magazaAyar")
+            yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection("ayarlar").doc(yol.belge), { liste: deger });
+          else if (yol.tur === "magazaBelge") {
+            const govde = deger && typeof deger === "object" && !Array.isArray(deger) ? { ...deger, magaza: yol.magaza, anahtar: yol.belge } : { deger, magaza: yol.magaza, anahtar: yol.belge };
+            yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
+          }
+        });
+        await yigin.commit();
+      }
+      const profiller = bellek.get("profiller") || [];
+      for (let i = 0; i < profiller.length; i += 400) {
+        const yigin = db2.batch();
+        profiller.slice(i, i + 400).forEach((p) => yigin.set(
+          db2.collection(MAGAZALAR).doc(p.key),
+          { ad: p.ad, rol: p.rol, simge: p.simge, renk: p.renk },
+          { merge: true }
+        ));
+        await yigin.commit();
+      }
+      topluMod = false;
+      return girdiler.length;
+    } catch (e) {
+      topluMod = false;
+      bellek.clear();
+      yedek.forEach((v, k) => bellek.set(k, v));
+      bulutAcik = eskiAcik;
+      throw e;
+    }
   }
   function hepsiniSil() {
     const silinecek = [];
@@ -2789,7 +3039,8 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
         <div class="satir-ekle"><input class="yeni-kategori" type="text" placeholder="Yeni kategori"><button class="mini birincil kategori-ekle">+ Ekle</button></div>
       </div>
-      <div class="panel-kutu"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div></div>
+      <div class="panel-kutu"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+        <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Görünür KPI satırları</h3><div class="satir-ayar"></div>
         <p class="aciklama">Mağaza tablolarında hangi satırların görüneceğini belirler.</p></div>
       <div class="panel-kutu"><h3>Toplu satış eşiği</h3>
@@ -2880,6 +3131,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       katCiz();
     });
     const kulKutu = kok.querySelector(".kullanici-yonet");
+    const kulNot = kok.querySelector(".kullanici-not");
+    const bulutta = bulutAcikMi();
+    kulNot.textContent = bulutta ? 'Her mağazanın tek kullanıcısı olur. Hesap açıldıktan sonra şifreyi kullanıcı "şifremi unuttum" ile kendisi değiştirebilir.' : "Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.";
     const kulCiz = () => {
       kulKutu.innerHTML = "";
       profilleriGetir().forEach((p) => {
@@ -2887,15 +3141,54 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         <span class="k-simge" style="background:${p.renk}">${p.simge || "🏪"}</span>
         <input class="k-ad" type="text" value="${esc(p.ad)}">
         <span class="k-rol">${p.rol}</span>
-        <input class="k-sifre" type="text" value="${esc(p.sifre || "")}" title="Şifre">
+        ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="${esc(p.kullaniciMaili)}">${esc(p.kullaniciMaili)}</span>
+                 <button class="mini k-sifre">Şifre sıfırla</button>` : `<input class="k-yeni-mail" type="email" placeholder="e-posta">
+                 <input class="k-yeni-sifre" type="text" placeholder="şifre (6+)">
+                 <button class="mini birincil k-ac">Hesap aç</button>` : `<input class="k-sifre-yerel" type="text" value="${esc(p.sifre || "")}" title="Şifre">`}
       </div>`);
         satir.querySelector(".k-ad").addEventListener("change", function() {
           profilGuncelle(p.key, { ad: this.value.trim() || p.ad });
           kulCiz();
           yenile && yenile();
         });
-        satir.querySelector(".k-sifre").addEventListener("change", function() {
+        const yerelSifre = satir.querySelector(".k-sifre-yerel");
+        if (yerelSifre) yerelSifre.addEventListener("change", function() {
           profilGuncelle(p.key, { sifre: this.value });
+        });
+        const acBtn = satir.querySelector(".k-ac");
+        if (acBtn) acBtn.addEventListener("click", async () => {
+          const mail = satir.querySelector(".k-yeni-mail").value.trim().toLowerCase();
+          const sifre = satir.querySelector(".k-yeni-sifre").value;
+          if (!mail || sifre.length < 6) {
+            kulNot.textContent = "E-posta ve en az 6 karakterlik şifre gerekli.";
+            return;
+          }
+          acBtn.disabled = true;
+          acBtn.textContent = "Açılıyor...";
+          try {
+            const uid = await kullaniciOlustur(mail, sifre);
+            await dbAl().collection(KULLANICILAR).doc(uid).set({
+              eposta: mail,
+              rol: p.rol,
+              magazaKey: p.rol === ROLLER.MAGAZA ? p.key : null
+            });
+            profilGuncelle(p.key, { kullaniciMaili: mail });
+            kulNot.textContent = p.ad + " için hesap açıldı: " + mail;
+            kulCiz();
+          } catch (e) {
+            kulNot.textContent = girisHatasi(e);
+            acBtn.disabled = false;
+            acBtn.textContent = "Hesap aç";
+          }
+        });
+        const sifreBtn = satir.querySelector(".k-sifre");
+        if (sifreBtn) sifreBtn.addEventListener("click", async () => {
+          try {
+            await authAl().sendPasswordResetEmail(p.kullaniciMaili);
+            kulNot.textContent = "Sıfırlama bağlantısı " + p.kullaniciMaili + " adresine gönderildi.";
+          } catch (e) {
+            kulNot.textContent = girisHatasi(e);
+          }
         });
         kulKutu.appendChild(satir);
       });
@@ -2959,6 +3252,152 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   var aktif = null;
   var sayfa = "ana";
   var kurucuMagaza = null;
+  var bulutKullanicisi = null;
+  var YONETICI_EPOSTALARI = ["osmanonurmrt@gmail.com"];
+  function bulutGirisEkrani(mesaj, iyiMi) {
+    const kok = el(`<div class="giris-ekran">
+    <div class="giris-kutu">
+      <div class="giris-logo"></div>
+      <h1>Mağaza Performans Takip</h1>
+      <label class="giris-etiket">E-posta</label>
+      <input type="email" id="girisEposta" class="giris-girdi" autocomplete="username">
+      <label class="giris-etiket">Şifre</label>
+      <input type="password" id="girisSifre" class="giris-girdi" autocomplete="current-password">
+      <div class="giris-hata ${iyiMi ? "iyi" : ""}">${esc(mesaj || "")}</div>
+      <button class="mini birincil giris-btn">Giriş yap</button>
+      <button class="giris-bag" id="sifreUnuttum">Şifremi unuttum</button>
+    </div>
+  </div>`);
+    const simge = document.querySelector('link[rel="icon"]');
+    if (simge) kok.querySelector(".giris-logo").style.backgroundImage = `url("${simge.href}")`;
+    const mail = kok.querySelector("#girisEposta");
+    const sifre = kok.querySelector("#girisSifre");
+    const hata = kok.querySelector(".giris-hata");
+    const btn = kok.querySelector(".giris-btn");
+    const dene = async () => {
+      hata.className = "giris-hata";
+      if (!mail.value.trim() || !sifre.value) {
+        hata.textContent = "E-posta ve şifre gerekli.";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Giriş yapılıyor...";
+      try {
+        await authAl().signInWithEmailAndPassword(mail.value.trim(), sifre.value);
+      } catch (e) {
+        hata.textContent = girisHatasi(e);
+      }
+      btn.disabled = false;
+      btn.textContent = "Giriş yap";
+    };
+    btn.addEventListener("click", dene);
+    [mail, sifre].forEach((i) => i.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        dene();
+      }
+    }));
+    kok.querySelector("#sifreUnuttum").addEventListener("click", async () => {
+      if (!mail.value.trim()) {
+        hata.textContent = "Önce e-posta adresinizi yazın.";
+        return;
+      }
+      try {
+        await authAl().sendPasswordResetEmail(mail.value.trim());
+        hata.className = "giris-hata iyi";
+        hata.textContent = "Sıfırlama bağlantısı gönderildi.";
+      } catch (e) {
+        hata.className = "giris-hata";
+        hata.textContent = girisHatasi(e);
+      }
+    });
+    setTimeout(() => mail.focus(), 60);
+    return kok;
+  }
+  async function kullaniciBaglami(user) {
+    const db2 = dbAl();
+    const eposta = (user.email || "").toLowerCase();
+    const sabitYonetici = YONETICI_EPOSTALARI.includes(eposta);
+    let doc = await db2.collection(KULLANICILAR).doc(user.uid).get();
+    if (!doc.exists && sabitYonetici) {
+      await db2.collection(KULLANICILAR).doc(user.uid).set({ eposta, rol: ROLLER.KURUCU, magazaKey: null });
+      doc = await db2.collection(KULLANICILAR).doc(user.uid).get();
+    }
+    const veri = doc.exists ? doc.data() || {} : {};
+    return {
+      uid: user.uid,
+      eposta,
+      rol: sabitYonetici ? ROLLER.KURUCU : veri.rol || null,
+      magazaKey: veri.magazaKey || null,
+      kayitliMi: doc.exists
+    };
+  }
+  async function bulutOturumuAc(user) {
+    ciz(el('<div class="acilis">Veriler yükleniyor…</div>'));
+    const baglam = await kullaniciBaglami(user);
+    if (!baglam.rol) {
+      await authAl().signOut();
+      ciz(bulutGirisEkrani("Bu hesap bir mağazaya bağlanmamış. Yöneticinize başvurun."));
+      return;
+    }
+    await veriYukle(baglam);
+    const profiller = profilleriGetir();
+    if (!profiller.length) {
+      if (baglam.rol === ROLLER.KURUCU) {
+        ciz(kurulumEkrani(user));
+        return;
+      }
+      await authAl().signOut();
+      ciz(bulutGirisEkrani("Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor."));
+      return;
+    }
+    aktif = baglam.rol === ROLLER.MAGAZA ? profilGetir(baglam.magazaKey) : profiller.find((p) => p.rol === baglam.rol) || { key: baglam.rol, ad: baglam.eposta, rol: baglam.rol, simge: "👤", renk: "#3f6b8a" };
+    if (!aktif) {
+      await authAl().signOut();
+      ciz(bulutGirisEkrani("Hesabınıza bağlı mağaza bulunamadı."));
+      return;
+    }
+    bulutKullanicisi = baglam;
+    sayfa = varsayilanSayfa(aktif);
+    kurucuMagaza = null;
+    uygulamaCiz();
+  }
+  function kurulumEkrani(user) {
+    const kok = el(`<div class="giris-ekran">
+    <div class="giris-kutu genis">
+      <h1>İlk kurulum</h1>
+      <p class="giris-aciklama">Bulutta henüz veri yok. Aşağıdaki düğme 20 mağaza,
+        bölge müdürü ve kurucu profillerini, kategorileri ve yaklaşık 10 haftalık
+        örnek veriyi Firestore'a yazar. Sonra mağaza kullanıcılarını
+        Kurucu → Kullanıcılar bölümünden açarsınız.</p>
+      <div class="giris-hata"></div>
+      <button class="mini birincil kur-btn">Örnek veriyi buluta yaz</button>
+      <button class="giris-bag" id="kurCik">Çıkış yap</button>
+    </div>
+  </div>`);
+    const hata = kok.querySelector(".giris-hata");
+    const btn = kok.querySelector(".kur-btn");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Yazılıyor...";
+      try {
+        const adet = await bulutaTohumla();
+        hata.className = "giris-hata iyi";
+        hata.textContent = adet + " kayıt yazıldı. Uygulama açılıyor...";
+        const kimlik = authAl().currentUser || user;
+        setTimeout(() => {
+          bulutOturumuAc(kimlik);
+        }, 600);
+      } catch (e) {
+        hata.className = "giris-hata";
+        hata.textContent = girisHatasi(e);
+        btn.disabled = false;
+        btn.textContent = "Örnek veriyi buluta yaz";
+      }
+    });
+    kok.querySelector("#kurCik").addEventListener("click", () => authAl().signOut());
+    return kok;
+  }
   function girisEkrani(secilenKey) {
     const profiller = profilleriGetir();
     const secilen = secilenKey ? profilGetir(secilenKey) : null;
@@ -2975,7 +3414,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       <button class="mini geri-btn">← Geri</button>
       <div class="giris-hata"></div>
     </div>
-    <p class="giris-not">Seçilen profil bu cihazda hatırlanır. Örnek şifre: 1234</p>
+    <p class="giris-not">Yerel deneme modu — Firebase bağlantısı yok. Örnek şifre: 1234</p>
   </div>`);
     const izgara = kok.querySelector(".profil-izgara");
     profiller.forEach((p) => {
@@ -3074,7 +3513,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const menu = el(`<div class="acilir-menu profil-menu">
     ${aktif.rol === ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ""}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ""}
-    <button data-act="sifirla">♻ Örnek veriyi yenile</button>
+    ${bulutKullanicisi ? "" : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
     <button data-act="cikis">🚪 Profil değiştir</button>
   </div>`);
     menu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
@@ -3085,10 +3524,15 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         uygulamaCiz();
       }
       if (b.dataset.act === "cikis") {
-        oturumSil();
-        aktif = null;
-        kurucuMagaza = null;
-        ciz(girisEkrani(null));
+        if (bulutVarMi() && authAl() && authAl().currentUser) {
+          bulutuKapat();
+          authAl().signOut();
+        } else {
+          oturumSil();
+          aktif = null;
+          kurucuMagaza = null;
+          ciz(girisEkrani(null));
+        }
       }
       if (b.dataset.act === "sifirla") {
         if (!confirm("Bütün yerel veri silinip örnek veri yeniden üretilecek. Devam?")) return;
@@ -3173,15 +3617,34 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     sar.appendChild(govde);
     ciz(sar);
   }
-  tohumla(false);
   haftaSec(pazartesi(bugun()));
-  var oturum = oturumGetir();
-  if (oturum && profilGetir(oturum.key)) {
-    aktif = profilGetir(oturum.key);
-    sayfa = varsayilanSayfa(aktif);
-    uygulamaCiz();
+  if (baglan()) {
+    authAl().onAuthStateChanged(async (user) => {
+      if (!user) {
+        aktif = null;
+        kurucuMagaza = null;
+        bulutKullanicisi = null;
+        bulutuKapat();
+        ciz(bulutGirisEkrani(""));
+        return;
+      }
+      try {
+        await bulutOturumuAc(user);
+      } catch (e) {
+        console.error(e);
+        ciz(bulutGirisEkrani("Veriler yüklenemedi: " + (e && e.message ? e.message : e) + "\nGüvenlik kuralları bu hesaba izin vermiyor olabilir."));
+      }
+    });
   } else {
-    ciz(girisEkrani(null));
+    tohumla(false);
+    const oturum = oturumGetir();
+    if (oturum && profilGetir(oturum.key)) {
+      aktif = profilGetir(oturum.key);
+      sayfa = varsayilanSayfa(aktif);
+      uygulamaCiz();
+    } else {
+      ciz(girisEkrani(null));
+    }
   }
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("./sw.js").catch(() => {

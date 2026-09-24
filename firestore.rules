@@ -1,0 +1,71 @@
+rules_version = '2';
+
+// Mağaza Performans Takip — Firestore güvenlik kuralları
+//
+// Bu projede iki uygulama var:
+//   v1 (rapor.html)  → entries, weekgoals, settings, tools, ghbhr*, stores
+//                      anonim girişle çalışıyor, bozulmaması için açık bırakıldı
+//   v2 (v2/)         → mc2_ ile başlayan koleksiyonlar
+//                      e-posta/şifre girişi ve rol zorunlu
+//
+// Yöneticiyi belirleyen tek yer aşağıdaki e-posta listesidir.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function girisli(){ return request.auth != null; }
+    function eposta(){ return request.auth.token.email; }
+    function kullaniciVar(){
+      return girisli() && exists(/databases/$(database)/documents/mc2_kullanicilar/$(request.auth.uid));
+    }
+    function kullanici(){
+      return get(/databases/$(database)/documents/mc2_kullanicilar/$(request.auth.uid)).data;
+    }
+    function kurucuMu(){
+      return girisli() && (
+        eposta() in ['osmanonurmrt@gmail.com']
+        || (kullaniciVar() && kullanici().rol == 'kurucu')
+      );
+    }
+    function bolgeMu(){ return kullaniciVar() && kullanici().rol == 'bolge'; }
+    function genisYetki(){ return kurucuMu() || bolgeMu(); }
+    function kendiMagazam(magaza){ return kullaniciVar() && kullanici().magazaKey == magaza; }
+
+    // ---------- v2 ----------
+    // Kullanıcı ↔ mağaza eşlemesi
+    match /mc2_kullanicilar/{uid} {
+      allow read: if girisli() && (request.auth.uid == uid || genisYetki());
+      // Kurucu kendi kaydını ilk girişte oluşturur; gerisini yalnızca kurucu yazar.
+      allow write: if kurucuMu();
+    }
+
+    // Ortak veriler: profiller, kategoriler, duyurular, talepler, ayarlar
+    match /mc2_ortak/{belge} {
+      allow read: if girisli();
+      // Talepleri mağaza müdürü de yazabilmeli; duyuru ve ayarlar bölge/kurucu işi.
+      allow write: if genisYetki() || (belge == 'talepler' && kullaniciVar());
+    }
+
+    // Mağaza verileri
+    match /mc2_magazalar/{magaza} {
+      allow read: if girisli();
+      allow write: if genisYetki();
+
+      match /{belge=**} {
+        allow read: if genisYetki() || kendiMagazam(magaza);
+        // Bölge müdürü hedef yazabilsin diye yazma yetkisi geniş tutuldu.
+        allow write: if genisYetki() || kendiMagazam(magaza);
+      }
+    }
+
+    // ---------- v1 (rapor.html) ----------
+    // Anonim girişle çalışmaya devam ediyor; v2'ye taşınana kadar dokunulmuyor.
+    match /entries/{belge}      { allow read, write: if girisli(); }
+    match /weekgoals/{belge}    { allow read, write: if girisli(); }
+    match /tools/{belge}        { allow read, write: if girisli(); }
+    match /ghbhrWeekly/{belge}  { allow read, write: if girisli(); }
+    match /ghbhrReports/{belge} { allow read, write: if girisli(); }
+    match /settings/{belge}     { allow read, write: if girisli(); }
+    match /stores/{magaza}/{belge=**} { allow read, write: if girisli(); }
+  }
+}

@@ -2,6 +2,7 @@
 import * as U from './util.js';
 import * as V from './veri.js';
 import { KPI_TANIM } from './hafta.js';
+import { kullaniciOlustur, dbAl, authAl, girisHatasi, KULLANICILAR } from './bulut.js';
 
 export function kurucuPaneli(yenile){
   const kok = U.el(`<div class="kurucu-panel">
@@ -11,7 +12,8 @@ export function kurucuPaneli(yenile){
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
         <div class="satir-ekle"><input class="yeni-kategori" type="text" placeholder="Yeni kategori"><button class="mini birincil kategori-ekle">+ Ekle</button></div>
       </div>
-      <div class="panel-kutu"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div></div>
+      <div class="panel-kutu"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+        <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Görünür KPI satırları</h3><div class="satir-ayar"></div>
         <p class="aciklama">Mağaza tablolarında hangi satırların görüneceğini belirler.</p></div>
       <div class="panel-kutu"><h3>Toplu satış eşiği</h3>
@@ -96,6 +98,12 @@ export function kurucuPaneli(yenile){
 
   // --- Kullanıcılar ---
   const kulKutu = kok.querySelector('.kullanici-yonet');
+  const kulNot = kok.querySelector('.kullanici-not');
+  const bulutta = V.bulutAcikMi();
+  kulNot.textContent = bulutta
+    ? 'Her mağazanın tek kullanıcısı olur. Hesap açıldıktan sonra şifreyi kullanıcı "şifremi unuttum" ile kendisi değiştirebilir.'
+    : 'Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.';
+
   const kulCiz = () => {
     kulKutu.innerHTML = '';
     V.profilleriGetir().forEach(p => {
@@ -103,13 +111,47 @@ export function kurucuPaneli(yenile){
         <span class="k-simge" style="background:${p.renk}">${p.simge || '🏪'}</span>
         <input class="k-ad" type="text" value="${U.esc(p.ad)}">
         <span class="k-rol">${p.rol}</span>
-        <input class="k-sifre" type="text" value="${U.esc(p.sifre || '')}" title="Şifre">
+        ${bulutta
+          ? (p.kullaniciMaili
+              ? `<span class="k-mail" title="${U.esc(p.kullaniciMaili)}">${U.esc(p.kullaniciMaili)}</span>
+                 <button class="mini k-sifre">Şifre sıfırla</button>`
+              : `<input class="k-yeni-mail" type="email" placeholder="e-posta">
+                 <input class="k-yeni-sifre" type="text" placeholder="şifre (6+)">
+                 <button class="mini birincil k-ac">Hesap aç</button>`)
+          : `<input class="k-sifre-yerel" type="text" value="${U.esc(p.sifre || '')}" title="Şifre">`}
       </div>`);
       satir.querySelector('.k-ad').addEventListener('change', function(){
         V.profilGuncelle(p.key, {ad: this.value.trim() || p.ad}); kulCiz(); yenile && yenile();
       });
-      satir.querySelector('.k-sifre').addEventListener('change', function(){
-        V.profilGuncelle(p.key, {sifre: this.value});
+      const yerelSifre = satir.querySelector('.k-sifre-yerel');
+      if(yerelSifre) yerelSifre.addEventListener('change', function(){ V.profilGuncelle(p.key, {sifre: this.value}); });
+
+      const acBtn = satir.querySelector('.k-ac');
+      if(acBtn) acBtn.addEventListener('click', async () => {
+        const mail = satir.querySelector('.k-yeni-mail').value.trim().toLowerCase();
+        const sifre = satir.querySelector('.k-yeni-sifre').value;
+        if(!mail || sifre.length < 6){ kulNot.textContent = 'E-posta ve en az 6 karakterlik şifre gerekli.'; return; }
+        acBtn.disabled = true; acBtn.textContent = 'Açılıyor...';
+        try{
+          const uid = await kullaniciOlustur(mail, sifre);
+          await dbAl().collection(KULLANICILAR).doc(uid).set({
+            eposta: mail, rol: p.rol, magazaKey: p.rol === V.ROLLER.MAGAZA ? p.key : null
+          });
+          V.profilGuncelle(p.key, {kullaniciMaili: mail});
+          kulNot.textContent = p.ad + ' için hesap açıldı: ' + mail;
+          kulCiz();
+        }catch(e){
+          kulNot.textContent = girisHatasi(e);
+          acBtn.disabled = false; acBtn.textContent = 'Hesap aç';
+        }
+      });
+
+      const sifreBtn = satir.querySelector('.k-sifre');
+      if(sifreBtn) sifreBtn.addEventListener('click', async () => {
+        try{
+          await authAl().sendPasswordResetEmail(p.kullaniciMaili);
+          kulNot.textContent = 'Sıfırlama bağlantısı ' + p.kullaniciMaili + ' adresine gönderildi.';
+        }catch(e){ kulNot.textContent = girisHatasi(e); }
       });
       kulKutu.appendChild(satir);
     });
