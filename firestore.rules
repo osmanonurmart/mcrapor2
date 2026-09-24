@@ -28,27 +28,30 @@ service cloud.firestore {
       );
     }
     function bolgeMu(){ return kullaniciVar() && kullanici().rol == 'bolge'; }
+    // v2 yalnızca kayıtlı kullanıcılara açık. girisli() anonim girişi de kapsadığı
+    // için (v1 onu kullanıyor) v2 okumalarında bu kullanılır.
+    function v2Uye(){ return kurucuMu() || kullaniciVar(); }
     function genisYetki(){ return kurucuMu() || bolgeMu(); }
     function kendiMagazam(magaza){ return kullaniciVar() && kullanici().magazaKey == magaza; }
 
     // ---------- v2 ----------
     // Kullanıcı ↔ mağaza eşlemesi
     match /mc2_kullanicilar/{uid} {
-      allow read: if girisli() && (request.auth.uid == uid || genisYetki());
+      allow read: if v2Uye() && (request.auth.uid == uid || genisYetki());
       // Kurucu kendi kaydını ilk girişte oluşturur; gerisini yalnızca kurucu yazar.
       allow write: if kurucuMu();
     }
 
     // Ortak veriler: profiller, kategoriler, duyurular, talepler, ayarlar
     match /mc2_ortak/{belge} {
-      allow read: if girisli();
+      allow read: if v2Uye();
       // Talepleri mağaza müdürü de yazabilmeli; duyuru ve ayarlar bölge/kurucu işi.
       allow write: if genisYetki() || (belge == 'talepler' && kullaniciVar());
     }
 
     // Mağaza verileri
     match /mc2_magazalar/{magaza} {
-      allow read: if girisli();
+      allow read: if v2Uye();
       allow write: if genisYetki();
 
       match /{belge=**} {
