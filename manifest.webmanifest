@@ -1,0 +1,14 @@
+{
+  "name": "Mağaza Performans Takip",
+  "short_name": "Mağaza Rapor",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f4f1",
+  "theme_color": "#1d1d1f",
+  "lang": "tr",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

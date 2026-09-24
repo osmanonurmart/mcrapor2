@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veri Kopyala — Yer İmi Kurulumu</title>
+<style>
+  :root{ --arka:#f4f2ef; --kagit:#fff; --cizgi:#e3ded5; --yazi:#26262a; --soluk:#8a8a92;
+         --vurgu:#C8A066; --koyu:#1d1d1f; --acik-vurgu:#faf5eb; --iyi:#2f7d46; --kotu:#b23b3b; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--arka); color:var(--yazi); font-size:15px; line-height:1.6;
+        font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+        min-height:100vh; display:flex; flex-direction:column; }
+  .sar{ flex:1 0 auto; max-width:780px; margin:0 auto; padding:26px 18px 40px; width:100%; }
+  h1{ font-size:1.35rem; margin:0 0 6px; }
+  .alt{ color:var(--soluk); margin:0 0 26px; }
+  .kutu{ background:var(--kagit); border:1px solid var(--cizgi); border-radius:12px; padding:20px; margin-bottom:16px; }
+  h2{ font-size:1rem; margin:0 0 4px; }
+  .rozet{ display:inline-block; background:var(--koyu); color:#fff; border-radius:20px;
+          padding:1px 10px; font-size:.75rem; font-weight:700; margin-right:8px; vertical-align:2px; }
+  .surukle-alan{ text-align:center; padding:26px 16px; border:2px dashed var(--vurgu);
+                 border-radius:12px; background:var(--acik-vurgu); margin:16px 0 10px; }
+  a.yerimi{ display:inline-block; background:var(--vurgu); color:#fff; text-decoration:none;
+            padding:12px 26px; border-radius:10px; font-weight:700; font-size:1.05rem;
+            cursor:grab; box-shadow:0 3px 10px rgba(200,160,102,.4); }
+  a.yerimi:active{ cursor:grabbing; }
+  .ipucu{ color:var(--soluk); font-size:.84rem; margin-top:10px; }
+  ol{ padding-left:22px; margin:10px 0; }
+  li{ margin-bottom:7px; }
+  .uyari{ background:#fdf6e6; border-left:3px solid var(--vurgu); border-radius:8px;
+          padding:11px 14px; font-size:.88rem; margin:12px 0; }
+  .hata{ background:#f8eaea; border-left:3px solid var(--kotu); border-radius:8px;
+         padding:11px 14px; font-size:.88rem; margin:12px 0; }
+  button{ background:var(--vurgu); color:#fff; border:none; border-radius:8px; padding:9px 18px;
+          font-size:.9rem; font-weight:600; cursor:pointer; font-family:inherit; }
+  button.sade{ background:var(--kagit); color:var(--yazi); border:1px solid var(--cizgi); }
+  button:hover{ filter:brightness(1.06); }
+  .kod{ width:100%; height:110px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.72rem;
+        padding:10px; border:1px solid var(--cizgi); border-radius:8px; background:#faf9f6;
+        resize:vertical; white-space:pre; overflow:auto; }
+  .durum{ color:var(--iyi); font-size:.85rem; min-height:20px; margin-top:8px; }
+  .ornek-bildirim{ background:#1d1d1f; color:#fff; border-radius:12px; padding:13px 16px;
+                   font-size:.85rem; line-height:1.5; max-width:340px; margin:12px 0; }
+  .ornek-bildirim div{ opacity:.85; margin-top:5px; }
+  kbd{ background:#eee; border:1px solid #ccc; border-bottom-width:2px; border-radius:4px;
+       padding:1px 6px; font-size:.82rem; font-family:inherit; }
+  footer{ flex:0 0 auto; text-align:center; color:var(--soluk); font-size:.68rem;
+          padding:14px 16px; border-top:1px solid var(--cizgi); background:var(--kagit); }
+</style>
+</head>
+<body>
+<div class="sar">
+  <h1>Veri Kopyala — yer imi kurulumu</h1>
+  <p class="alt">Ciro takip sitesindeki veriyi tek tıkla panoya kopyalar.</p>
+
+  <div class="kutu">
+    <h2><span class="rozet">1</span>Sürükle bırak — en kolayı</h2>
+    <p>Aşağıdaki turuncu düğmeyi <b>tutup yer imleri çubuğuna sürükleyin</b>. Yapıştırmayın, sürükleyin.</p>
+    <div class="surukle-alan">
+      <a class="yerimi" id="yerimi" href="#" onclick="return false;">📋 Veri Kopyala</a>
+      <div class="ipucu">Yer imleri çubuğu görünmüyorsa: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd></div>
+    </div>
+  </div>
+
+  <div class="kutu">
+    <h2><span class="rozet">2</span>Sürükleme olmazsa — elle ekleme</h2>
+    <div class="hata">
+      <b>Dikkat:</b> Chrome ve Edge, yer imi adresine yapıştırdığınızda başındaki
+      <code>javascript:</code> kısmını sessizce siler. Yer imi bu yüzden çalışmaz.
+      Yapıştırdıktan sonra imleci en başa götürüp <b>javascript:</b> yazısını elle
+      yazmanız gerekir.
+    </div>
+    <ol>
+      <li>Aşağıdaki <b>Kodu kopyala</b> düğmesine basın.</li>
+      <li>Yer imleri çubuğunda boş bir yere sağ tık → <b>Sayfa ekle</b>.</li>
+      <li>Ad: <code>Veri Kopyala</code></li>
+      <li>Adres alanına yapıştırın.</li>
+      <li><b>Başına <code>javascript:</code> yazın</b> — silinmiş olacak.</li>
+      <li>Kaydedin.</li>
+    </ol>
+    <textarea class="kod" id="kodAlan" readonly></textarea>
+    <p><button id="kopyala">Kodu kopyala</button>
+       <button class="sade" id="secAll">Tümünü seç</button></p>
+    <div class="durum" id="durum"></div>
+  </div>
+
+  <div class="kutu">
+    <h2><span class="rozet">3</span>Yer imi hiç olmuyorsa — konsol yolu</h2>
+    <p>Yer imi eklemeden de çalışır, sadece her seferinde kodu yapıştırmanız gerekir.</p>
+    <ol>
+      <li>Ciro takip sayfasını açın.</li>
+      <li><kbd>F12</kbd> → <b>Console</b> sekmesi.</li>
+      <li>Chrome ilk seferde yapıştırmayı engeller: konsola <code>allow pasting</code> yazıp
+          <kbd>Enter</kbd>'a basın. Bir kez yeter.</li>
+      <li>Yukarıdaki kodu yapıştırıp <kbd>Enter</kbd>.</li>
+    </ol>
+    <div class="uyari">
+      Konsola yapıştırırken baştaki <code>javascript:</code> kısmı <b>sorun çıkarmaz</b>,
+      olduğu gibi yapıştırabilirsiniz.
+    </div>
+  </div>
+
+  <div class="kutu">
+    <h2><span class="rozet">4</span>Çalıştığını nasıl anlarsınız</h2>
+    <p>Sağ üst köşede kısa bir bildirim çıkar ve kendiliğinden kaybolur:</p>
+    <div class="ornek-bildirim">
+      <b>✓ Panoya kopyalandı</b>
+      <div>Tarih: 2026-09-24<br>Bugün: 3.600 ₺<br>Dün (kesinleşti): 29.459 ₺<br>2 büyük fatura / 6 (2.700 ₺ üstü)</div>
+    </div>
+    <p>Veri doğrudan panoya gider, artık ekranı kaplayan kutu açılmaz.
+       Uygulamada <b>Yapıştır / Veri Ekle</b> → <b>Panodan al</b> demeniz yeterli.</p>
+    <div class="uyari">
+      <b>Büyük fatura sayısı</b> için kaynak sayfada <b>Gruplama → Fatura No</b> seçili olmalı.
+      Seçili değilse bildirim bunu söyler. Eşik 2.700 ₺; uygulamada Kurucu panelinden
+      değiştirilebiliyor, yer imindeki karşılığı için haber verin.
+    </div>
+    <div class="uyari">
+      Kutu açılmıyorsa sayfa büyük ihtimalle veriyi başka bir alan adından gelen çerçeve
+      (iframe) içinde gösteriyordur. Bu durumda <kbd>F12</kbd> → <b>Network</b> → sayfayı
+      yenileyin → <b>Fetch/XHR</b> süzgeci → içinde sayıların olduğu isteğe tıklayın →
+      <b>Response</b> sekmesindeki metni gönderin.
+    </div>
+  </div>
+</div>
+
+<footer>© 2026 Lodos Digital - Tüm hakları saklıdır.</footer>
+
+<script type="text/plain" id="yerimiKodu">javascript:(()=>{(()=>{let l=t=>(t||"").replace(/\s+/g," ").trim(),o=t=>{if(!t||!t.getClientRects().length)return!1;let e=getComputedStyle(t);return e.visibility!=="hidden"&&e.display!=="none"},c=t=>l(t.labels&&t.labels[0]&&t.labels[0].innerText||t.getAttribute("aria-label")||t.getAttribute("title")||t.placeholder||t.name||t.id||(t.closest("tr,li,label,div")||{}).innerText||"").slice(0,120),b=[document];document.querySelectorAll("iframe").forEach(t=>{try{t.contentDocument&&b.push(t.contentDocument)}catch{}});let i={url:location.href,baslik:document.title,zaman:new Date().toISOString(),ozet:{},tablolar:[],secimler:[],alanlar:[],listeler:[],anahtarlar:[]};b.forEach(t=>{t.querySelectorAll("table").forEach(e=>i.tablolar.push({no:i.tablolar.length+1,gorunur:o(e),satirlar:[...e.rows].map(a=>[...a.cells].map(r=>l(r.innerText)))})),t.querySelectorAll("input[type=checkbox],input[type=radio]").forEach(e=>i.secimler.push({etiket:c(e),tur:e.type,acik:e.checked,gorunur:o(e)})),t.querySelectorAll("input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=button]):not([type=submit]),textarea").forEach(e=>i.alanlar.push({etiket:c(e),deger:e.value,gorunur:o(e)})),t.querySelectorAll("select").forEach(e=>i.listeler.push({etiket:c(e),secili:[...e.selectedOptions].map(a=>l(a.text)),secenekler:[...e.options].map(a=>l(a.text)),gorunur:o(e)})),t.querySelectorAll("[aria-checked],[aria-pressed],[aria-expanded],[aria-selected]").forEach(e=>{let a=["aria-checked","aria-pressed","aria-expanded","aria-selected"].find(r=>e.hasAttribute(r));a&&i.anahtarlar.push({etiket:l(e.getAttribute("aria-label")||e.innerText).slice(0,120),durum:a.replace("aria-","")+"="+e.getAttribute(a),gorunur:o(e)})})}),i.ozet={acik_secim:i.secimler.filter(t=>t.acik).length,kapali_secim:i.secimler.filter(t=>!t.acik).length,tablo:i.tablolar.length,alan:i.alanlar.length,liste:i.listeler.length,anahtar:i.anahtarlar.length};let u=t=>{let e=String(t??"").replace(/[^\d.,\-]/g,"");if(!e)return null;e.includes(",")?e=e.replace(/\./g,"").replace(",","."):/^\d{1,3}(\.\d{3})+$/.test(e)&&(e=e.replace(/\./g,""));let a=parseFloat(e);return isNaN(a)?null:a},y=t=>i.tablolar.find(e=>e.satirlar.length&&t(e.satirlar[0].map(l))),x=i.alanlar.find(t=>/^tarih$/i.test(l(t.etiket))),k=x?l(x.deger):"",A=y(t=>/^bug[uü]n$/i.test(t[1]||"")),p=null,d=null;if(A){let t=A.satirlar.find(e=>/^ciro$/i.test(l(e[0])));t&&(p=u(t[1]),d=u(t[2]))}let s=i.listeler.find(t=>/gruplama/i.test(l(t.etiket))),_=s&&/fatura/i.test(l((s.secili||[])[0]||"")),m=y(t=>/^grup$/i.test(t[0]||"")),f=null,h=null;if(_&&m){let e=m.satirlar[0].map(l).findIndex(a=>/^toplam$/i.test(a));if(e>-1){let a=m.satirlar.slice(1).map(r=>u(r[e])).filter(r=>r!==null);h=a.length,f=a.filter(r=>r>=2700).length}}let T=JSON.stringify(i,null,2),g=(t,e)=>{document.querySelectorAll(".__mcKopyaBildirim").forEach(r=>r.remove());let a=document.createElement("div");a.className="__mcKopyaBildirim",a.style.cssText="position:fixed;top:18px;right:18px;z-index:2147483647;max-width:340px;background:"+(t?"#1d1d1f":"#7d2b2b")+";color:#fff;border-radius:12px;padding:13px 16px;font:13px/1.5 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35)",a.innerHTML='<b style="font-size:14px">'+(t?"✓ Panoya kopyalandı":"⚠ Kopyalanamadı")+'</b><div style="margin-top:5px;opacity:.85">'+e+"</div>",document.body.appendChild(a),setTimeout(()=>a.remove(),6e3),a.addEventListener("click",()=>a.remove())},n=[];k&&n.push("Tarih: "+k);let S=t=>t.toLocaleString("tr-TR",{minimumFractionDigits:2,maximumFractionDigits:2})+" ₺";p!==null&&n.push("Bugün: "+S(p)),d!==null&&n.push("Dün (kesinleşti): "+S(d)),f!==null?n.push(f+" büyük fatura"+(h?" / "+h:"")+" ("+2700 .toLocaleString("tr-TR")+" ₺ üstü)"):s&&n.push("Gruplama: "+l((s.secili||[])[0]||"-")+' — büyük fatura için "Fatura No" seçin');let v=n.join("<br>"),E=()=>{let t=document.createElement("textarea");t.value=T,t.style.cssText="position:fixed;inset:20px;z-index:2147483646;font:12px monospace;padding:10px",document.body.appendChild(t),t.select();let e=!1;try{e=document.execCommand("copy")}catch{e=!1}e?(t.remove(),g(!0,v)):g(!1,"Kutudaki metni Ctrl+A, Ctrl+C ile kopyalayın.<br>Kutuyu kapatmak için bu bildirime tıklayın.")};navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(T).then(()=>g(!0,v),E):E()})();})();</script>
+<script>
+(function(){
+  var kod = document.getElementById('yerimiKodu').textContent.trim();
+  document.getElementById('yerimi').href = kod;          // sürüklenince javascript: korunur
+  document.getElementById('kodAlan').value = kod;
+  var durum = document.getElementById('durum');
+  function bildir(metin){ durum.textContent = metin; setTimeout(function(){ durum.textContent = ''; }, 3000); }
+  document.getElementById('kopyala').addEventListener('click', function(){
+    var alan = document.getElementById('kodAlan');
+    alan.select();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(kod).then(
+        function(){ bildir('Kopyalandı ✓  Yapıştırdıktan sonra başına javascript: yazmayı unutmayın.'); },
+        function(){ document.execCommand('copy'); bildir('Kopyalandı ✓'); }
+      );
+    } else {
+      document.execCommand('copy');
+      bildir('Kopyalandı ✓');
+    }
+  });
+  document.getElementById('secAll').addEventListener('click', function(){
+    document.getElementById('kodAlan').select();
+  });
+})();
+</script>
+</body>
+</html>
