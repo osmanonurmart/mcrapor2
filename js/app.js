@@ -71,7 +71,15 @@ async function kullaniciBaglami(user){
   const db = dbAl();
   const eposta = (user.email || '').toLowerCase();
   const sabitYonetici = YONETICI_EPOSTALARI.includes(eposta);
-  let doc = await db.collection(KULLANICILAR).doc(user.uid).get();
+  let doc;
+  try{
+    doc = await db.collection(KULLANICILAR).doc(user.uid).get();
+  }catch(e){
+    // Kural hatası: kayıt olmadığı için değil, kural kendi kaydını okumaya
+    // izin vermediği için gelir. Karıştırmamak adına ayrı mesaj.
+    throw new Error('Kullanıcı kaydınız okunamadı (' + (e.code || e.message) + '). ' +
+      'Firestore kurallarının güncel sürümü yüklü olmayabilir.');
+  }
   if(!doc.exists && sabitYonetici){
     await db.collection(KULLANICILAR).doc(user.uid).set({eposta, rol:V.ROLLER.KURUCU, magazaKey:null});
     doc = await db.collection(KULLANICILAR).doc(user.uid).get();
@@ -85,13 +93,28 @@ async function kullaniciBaglami(user){
   };
 }
 
+// signOut() onAuthStateChanged'i tetikler ve giriş ekranını yeniden çizer;
+// mesaj kaybolmasın diye burada bekletilir.
+let bekleyenMesaj = '';
+async function cikisYap(mesaj){
+  bekleyenMesaj = mesaj || '';
+  V.bulutuKapat();
+  await authAl().signOut();
+  ciz(bulutGirisEkrani(bekleyenMesaj));
+}
+
+function eposta_ipucu(baglam){
+  return 'Bu hesap (' + baglam.eposta + ') hiçbir mağazaya bağlı değil.\n' +
+    'Hesap Firebase konsolundan elle açıldıysa böyle olur: mağaza bağlantısı yalnızca ' +
+    'uygulamadaki Kurucu → Ayarlar → Kullanıcılar bölümündeki "Hesap aç" düğmesiyle kurulur.';
+}
+
 // Girişten sonra: veriyi yükle, aktif profili belirle, uygulamayı çiz.
 async function bulutOturumuAc(user){
   ciz(U.el('<div class="acilis">Veriler yükleniyor…</div>'));
   const baglam = await kullaniciBaglami(user);
   if(!baglam.rol){
-    await authAl().signOut();
-    ciz(bulutGirisEkrani('Bu hesap bir mağazaya bağlanmamış. Yöneticinize başvurun.'));
+    await cikisYap(eposta_ipucu(baglam));
     return;
   }
   await V.veriYukle(baglam);
@@ -100,16 +123,14 @@ async function bulutOturumuAc(user){
   if(!profiller.length){
     // Henüz kurulum yapılmamış: yalnızca kurucu tohumlayabilir.
     if(baglam.rol === V.ROLLER.KURUCU){ ciz(kurulumEkrani(user)); return; }
-    await authAl().signOut();
-    ciz(bulutGirisEkrani('Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor.'));
+    await cikisYap('Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor.');
     return;
   }
   aktif = baglam.rol === V.ROLLER.MAGAZA
     ? V.profilGetir(baglam.magazaKey)
     : (profiller.find(p => p.rol === baglam.rol) || {key:baglam.rol, ad:baglam.eposta, rol:baglam.rol, simge:'👤', renk:'#3f6b8a'});
   if(!aktif){
-    await authAl().signOut();
-    ciz(bulutGirisEkrani('Hesabınıza bağlı mağaza bulunamadı.'));
+    await cikisYap('Hesabınıza bağlı mağaza (' + baglam.magazaKey + ') profil listesinde yok.');
     return;
   }
   bulutKullanicisi = baglam;
@@ -276,7 +297,7 @@ function profilMenusu(e){
     ${aktif.rol === V.ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ''}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ''}
     ${bulutKullanicisi ? '' : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
-    <button data-act="cikis">🚪 Profil değiştir</button>
+    <button data-act="cikis">🚪 ${bulutKullanicisi ? 'Çıkış yap' : 'Profil değiştir'}</button>
   </div>`);
   menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     menu.remove();
@@ -376,7 +397,8 @@ if(baglan()){
     if(!user){
       aktif = null; kurucuMagaza = null; bulutKullanicisi = null;
       V.bulutuKapat();
-      ciz(bulutGirisEkrani(''));
+      ciz(bulutGirisEkrani(bekleyenMesaj));
+      bekleyenMesaj = '';
       return;
     }
     try{ await bulutOturumuAc(user); }

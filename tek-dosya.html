@@ -738,6 +738,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       "auth/network-request-failed": "İnternet bağlantısı kurulamadı.",
       "auth/email-already-in-use": "Bu e-posta zaten kullanılıyor.",
       "auth/weak-password": "Şifre en az 6 karakter olmalı.",
+      "mc2/eslesmedi": "Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi.\nMağazaya bağlamak için hesabın güncel şifresini yazın.",
       "auth/operation-not-allowed": "Firebase'de e-posta/şifre girişi kapalı görünüyor.\nConsole → Authentication → Sign-in method → Email/Password → Enable."
     };
     return kodlar[err && err.code] || "İşlem tamamlanamadı: " + (err && err.message ? err.message : err);
@@ -746,7 +747,19 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   async function kullaniciOlustur(eposta, sifre) {
     if (!ikincil) ikincil = firebase.initializeApp(firebaseConfig, "kullaniciOlusturucu");
     const ia = ikincil.auth();
-    const cred = await ia.createUserWithEmailAndPassword(eposta, sifre);
+    let cred;
+    try {
+      cred = await ia.createUserWithEmailAndPassword(eposta, sifre);
+    } catch (e) {
+      if (e.code !== "auth/email-already-in-use") throw e;
+      try {
+        cred = await ia.signInWithEmailAndPassword(eposta, sifre);
+      } catch (e2) {
+        const h = new Error("Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi. Mağazaya bağlamak için hesabın güncel şifresini yazın.");
+        h.code = "mc2/eslesmedi";
+        throw h;
+      }
+    }
     const uid = cred.user.uid;
     try {
       await ia.signOut();
@@ -3318,7 +3331,12 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const db2 = dbAl();
     const eposta = (user.email || "").toLowerCase();
     const sabitYonetici = YONETICI_EPOSTALARI.includes(eposta);
-    let doc = await db2.collection(KULLANICILAR).doc(user.uid).get();
+    let doc;
+    try {
+      doc = await db2.collection(KULLANICILAR).doc(user.uid).get();
+    } catch (e) {
+      throw new Error("Kullanıcı kaydınız okunamadı (" + (e.code || e.message) + "). Firestore kurallarının güncel sürümü yüklü olmayabilir.");
+    }
     if (!doc.exists && sabitYonetici) {
       await db2.collection(KULLANICILAR).doc(user.uid).set({ eposta, rol: ROLLER.KURUCU, magazaKey: null });
       doc = await db2.collection(KULLANICILAR).doc(user.uid).get();
@@ -3332,12 +3350,21 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       kayitliMi: doc.exists
     };
   }
+  var bekleyenMesaj = "";
+  async function cikisYap(mesaj) {
+    bekleyenMesaj = mesaj || "";
+    bulutuKapat();
+    await authAl().signOut();
+    ciz(bulutGirisEkrani(bekleyenMesaj));
+  }
+  function eposta_ipucu(baglam) {
+    return "Bu hesap (" + baglam.eposta + ') hiçbir mağazaya bağlı değil.\nHesap Firebase konsolundan elle açıldıysa böyle olur: mağaza bağlantısı yalnızca uygulamadaki Kurucu → Ayarlar → Kullanıcılar bölümündeki "Hesap aç" düğmesiyle kurulur.';
+  }
   async function bulutOturumuAc(user) {
     ciz(el('<div class="acilis">Veriler yükleniyor…</div>'));
     const baglam = await kullaniciBaglami(user);
     if (!baglam.rol) {
-      await authAl().signOut();
-      ciz(bulutGirisEkrani("Bu hesap bir mağazaya bağlanmamış. Yöneticinize başvurun."));
+      await cikisYap(eposta_ipucu(baglam));
       return;
     }
     await veriYukle(baglam);
@@ -3347,14 +3374,12 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         ciz(kurulumEkrani(user));
         return;
       }
-      await authAl().signOut();
-      ciz(bulutGirisEkrani("Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor."));
+      await cikisYap("Sistem henüz kurulmamış. Kurucunun ilk kurulumu yapması gerekiyor.");
       return;
     }
     aktif = baglam.rol === ROLLER.MAGAZA ? profilGetir(baglam.magazaKey) : profiller.find((p) => p.rol === baglam.rol) || { key: baglam.rol, ad: baglam.eposta, rol: baglam.rol, simge: "👤", renk: "#3f6b8a" };
     if (!aktif) {
-      await authAl().signOut();
-      ciz(bulutGirisEkrani("Hesabınıza bağlı mağaza bulunamadı."));
+      await cikisYap("Hesabınıza bağlı mağaza (" + baglam.magazaKey + ") profil listesinde yok.");
       return;
     }
     bulutKullanicisi = baglam;
@@ -3514,7 +3539,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     ${aktif.rol === ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ""}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ""}
     ${bulutKullanicisi ? "" : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
-    <button data-act="cikis">🚪 Profil değiştir</button>
+    <button data-act="cikis">🚪 ${bulutKullanicisi ? "Çıkış yap" : "Profil değiştir"}</button>
   </div>`);
     menu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
       menu.remove();
@@ -3625,7 +3650,8 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         kurucuMagaza = null;
         bulutKullanicisi = null;
         bulutuKapat();
-        ciz(bulutGirisEkrani(""));
+        ciz(bulutGirisEkrani(bekleyenMesaj));
+        bekleyenMesaj = "";
         return;
       }
       try {

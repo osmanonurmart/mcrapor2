@@ -37,7 +37,10 @@ service cloud.firestore {
     // ---------- v2 ----------
     // Kullanıcı ↔ mağaza eşlemesi
     match /mc2_kullanicilar/{uid} {
-      allow read: if v2Uye() && (request.auth.uid == uid || genisYetki());
+      // Kendi kaydını okumak v2Uye()'ye bağlanamaz: v2Uye() zaten bu kaydın
+      // varlığına bakıyor, kayıtsız hesap "yok" cevabı yerine hata alırdı.
+      allow read: if girisli() && request.auth.uid == uid;
+      allow read: if genisYetki();
       // Kurucu kendi kaydını ilk girişte oluşturur; gerisini yalnızca kurucu yazar.
       allow write: if kurucuMu();
     }

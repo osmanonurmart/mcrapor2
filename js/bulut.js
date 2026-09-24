@@ -38,6 +38,9 @@ export function girisHatasi(err){
     'auth/network-request-failed': 'İnternet bağlantısı kurulamadı.',
     'auth/email-already-in-use': 'Bu e-posta zaten kullanılıyor.',
     'auth/weak-password': 'Şifre en az 6 karakter olmalı.',
+    'mc2/eslesmedi':
+      'Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi.\n' +
+      'Mağazaya bağlamak için hesabın güncel şifresini yazın.',
     'auth/operation-not-allowed':
       'Firebase\'de e-posta/şifre girişi kapalı görünüyor.\n' +
       'Console → Authentication → Sign-in method → Email/Password → Enable.'
@@ -50,7 +53,22 @@ let ikincil = null;
 export async function kullaniciOlustur(eposta, sifre){
   if(!ikincil) ikincil = firebase.initializeApp(firebaseConfig, 'kullaniciOlusturucu');
   const ia = ikincil.auth();
-  const cred = await ia.createUserWithEmailAndPassword(eposta, sifre);
+  let cred;
+  try{
+    cred = await ia.createUserWithEmailAndPassword(eposta, sifre);
+  }catch(e){
+    // Hesap Firebase konsolundan elle açılmışsa yeniden oluşturulamaz.
+    // Şifresi verildiyse giriş yapıp uid'sini alır, mağazaya öyle bağlarız.
+    if(e.code !== 'auth/email-already-in-use') throw e;
+    try{
+      cred = await ia.signInWithEmailAndPassword(eposta, sifre);
+    }catch(e2){
+      const h = new Error('Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi. ' +
+        'Mağazaya bağlamak için hesabın güncel şifresini yazın.');
+      h.code = 'mc2/eslesmedi';
+      throw h;
+    }
+  }
   const uid = cred.user.uid;
   try{ await ia.signOut(); }catch(e){ /* zaten kapanmış olabilir */ }
   return uid;
