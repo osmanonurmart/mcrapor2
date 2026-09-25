@@ -284,28 +284,38 @@ table{ border-collapse:collapse; }
 .oran-rozet.dusus{ background:var(--dusus-zemin); color:var(--dusus); }
 .hafta-urun{ display:flex; gap:6px; }
 .tablo-sar{ overflow-x:auto; }
-.hafta-tablo{ width:100%; min-width:720px; font-size:.76rem; }
+/* 2×2 düzende her tablo ekranın ~%37'sini kaplıyor; okunurluk için yazı
+   büyütüldü, en küçük genişlik o sütuna sığacak kadar indirildi. */
+/* Sabit sütun genişliği: izin etiketi gibi uzun içerik sütunu şişirip
+   Formüller sütununu dışarı itmesin. Gün sütunları eşit bölünür. */
+.hafta-tablo{ width:100%; min-width:620px; font-size:.82rem; table-layout:fixed; }
+.hafta-tablo .kpi-sutun{ width:118px; }
+.hafta-tablo .formul-sutun{ width:132px; }
+.hafta-tablo th,.hafta-tablo td{ overflow:hidden; }
 .hafta-tablo th,.hafta-tablo td{ border:var(--hucre-cizgi) solid var(--cizgi); padding:0; text-align:center; }
 .hafta-tablo thead th{ border-bottom-width:4px; }
 .hafta-tablo .kpi-sutun{ border-right-width:4px; }
 .hafta-tablo .formul-sutun{ border-left-width:4px; }
 .hafta-tablo thead th{ background:var(--zemin-3); padding:4px 3px; font-weight:600; vertical-align:top; }
 .hafta-tablo thead th.bugun{ background:var(--acik-vurgu); }
-.gun-ad{ display:block; font-size:.72rem; line-height:1.2; }
-.gun-tarih{ display:block; font-size:.62rem; color:var(--soluk); font-weight:400; line-height:1.2; }
+.gun-ad{ display:block; font-size:.78rem; line-height:1.25; }
+.gun-tarih{ display:block; font-size:.67rem; color:var(--soluk); font-weight:400; line-height:1.25; }
 .izin-btn{
   margin-top:2px; width:100%; background:none; border:1px dashed var(--cizgi); border-radius:5px;
-  padding:1px 3px; font-size:.6rem; color:var(--soluk); cursor:pointer;
+  padding:1px 3px; font-size:.65rem; color:var(--soluk); cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .izin-btn.dolu{ background:var(--acik-vurgu); border-style:solid; border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
-.kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:3px 8px !important; font-weight:600; white-space:nowrap; }
-.formul-sutun{ background:var(--zemin-3); font-weight:600; padding:3px 8px !important; white-space:nowrap; font-size:.72rem; }
-.hucre{ width:100%; border:none; background:none; padding:3px 4px; text-align:center; }
+.kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:4px 7px !important; font-weight:700;
+  font-size:.77rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* Formül metni uzun olabiliyor ("▼ %6,1 (ilk 5 gün)"); kırpmak yerine sarsın. */
+.formul-sutun{ background:var(--zemin-3); font-weight:700; padding:4px 6px !important; font-size:.77rem;
+  white-space:normal; line-height:1.3; }
+.hucre{ width:100%; border:none; background:none; padding:4px 4px; text-align:center; font-variant-numeric:tabular-nums; }
 .hucre:focus{ outline:2px solid var(--vurgu); outline-offset:-2px; background:#fff; }
 .hucre:disabled{ color:var(--yazi); }
 td.bugun{ background:var(--bugun-zemin); }
-td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
+td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 
 .simule-satir{ display:flex; align-items:center; gap:9px; font-size:.78rem; color:var(--soluk); flex-wrap:wrap; }
 .simule-satir input{ padding:5px 8px; border-radius:7px; border:1px solid var(--cizgi); background:var(--kagit); }
@@ -535,6 +545,20 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
 .urun-alan{ width:100%; height:92px; padding:8px; border:1px solid var(--cizgi); border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:.75rem; }
 
 /* ---------- Mobil: üst gezinme / orta tablo / alt kartlar ---------- */
+/* 2×2 haftalık tablolar için yeterli genişlik yoksa (dizüstü ekranlar),
+   özet sütunu alta iner ve hafta sütunları ekranın yarısını alır. */
+@media (max-width: 1750px) and (min-width: 901px){
+  .tuval-satir{ flex-wrap:wrap; }
+  .tuval-satir > .tuval-yigin{ flex:1 1 calc(50% - 8px) !important; }
+  .tuval-satir > .tuval-yigin:has(.tuval-blok[data-panel="ozet"]){ flex:1 1 100% !important; }
+  .tuval-satir > .tuval-yigin:has(.tuval-blok[data-panel="ozet"]) .tuval-blok{ height:auto !important; }
+  .tuval-ayirac{ display:none; }
+}
+@media (max-width: 1340px) and (min-width: 901px){
+  /* Bu genişlikte iki tablo yan yana da sığmıyor; hepsi tek sütun. */
+  .tuval-satir > .tuval-yigin{ flex:1 1 100% !important; }
+}
+
 @media (max-width: 900px){
   /* Dar ekranda bütün bloklar alt alta. */
   /* Dikey dizilişte bloklar kapsayıcıyı doldursun, içerik genişliğine büyümesin. */
@@ -2202,7 +2226,11 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   var EN_KUCUK_YUKSEKLIK = 80;
   var VARSAYILAN_DUZEN = [
     { bloklar: [{ panel: "hafta", yuzde: 34 }, { panel: "duyuru", yuzde: 28 }, { panel: "rutin", yuzde: 38 }] },
-    { bloklar: [{ yigin: ["haftaSecili", "haftaOnceki"], yuzde: 71 }, { yigin: ["ozet", "yorum"], yuzde: 29 }] }
+    { bloklar: [
+      { yigin: ["haftaOnceki2", "haftaOnceki3"], yuzde: 37 },
+      { yigin: ["haftaSecili", "haftaOnceki"], yuzde: 37 },
+      { yigin: ["ozet", "yorum"], yuzde: 26 }
+    ] }
   ];
   function yiginlariAc(satirlar) {
     const cikti = [];
@@ -2467,6 +2495,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   function magazaEkrani(magazaKey, secenekler = {}) {
     const pzt = seciliHafta();
     const oncekiPzt = haftaEkle(pzt, -1);
+    const onceki2Pzt = haftaEkle(pzt, -2);
+    const onceki3Pzt = haftaEkle(pzt, -3);
     const duzenlenebilir = secenekler.duzenlenebilir !== false;
     const yenile = secenekler.yenile || (() => {
     });
@@ -2484,6 +2514,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       rutin: rutinBlogu(magazaKey, pzt, { duzenlenebilir, yenile }),
       haftaSecili: haftaTablosu(magazaKey, pzt, tabloSecenekleri),
       haftaOnceki: haftaTablosu(magazaKey, oncekiPzt, tabloSecenekleri),
+      haftaOnceki2: haftaTablosu(magazaKey, onceki2Pzt, tabloSecenekleri),
+      haftaOnceki3: haftaTablosu(magazaKey, onceki3Pzt, tabloSecenekleri),
       ozet: yan.ozet,
       yorum: yan.yorum
     };
@@ -2493,6 +2525,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       rutin: "✓ Haftalık rutin",
       haftaSecili: "📊 " + haftaBasligi(pzt),
       haftaOnceki: "📊 " + haftaBasligi(oncekiPzt),
+      haftaOnceki2: "📊 " + haftaBasligi(onceki2Pzt),
+      haftaOnceki3: "📊 " + haftaBasligi(onceki3Pzt),
       ozet: "📌 Özet",
       yorum: "📝 Günlük yorum"
     };

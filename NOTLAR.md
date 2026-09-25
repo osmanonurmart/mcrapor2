@@ -201,3 +201,22 @@ silinip sayfa yeniden yüklenir. `sw.js` `surum.json`u hiç önbelleklemez.
 
 **Yeni sürüm çıkarırken:** `js/surum.js` içindeki sayıyı artır, `sw.js`
 içindeki `SURUM` önbellek adını da artır, `node olustur.mjs` çalıştır.
+
+## 2026-09-25 — haftalık tablolar 2×2
+
+Dört hafta aynı anda görünüyor. Yerleşim (`yerlesim.js`):
+
+      sol üst : 2 hafta önce      sağ üst : seçili hafta
+      sol alt : 3 hafta önce      sağ alt : 1 hafta önce
+
+Yeni paneller `haftaOnceki2` ve `haftaOnceki3` (`magaza.js`).
+
+Okunurluk: tablo yazısı .76 → .82rem, gün adı/tarihi ve KPI sütunu
+büyütüldü. İzin etiketi gibi uzun içerik sütunu şişirip Formüller
+sütununu dışarı itmesin diye `table-layout:fixed`; KPI 118px,
+Formüller 132px, gün sütunları eşit bölünüyor. Formül metni kırpılmak
+yerine sarıyor.
+
+Genişlik eşikleri: 1750px altında özet sütunu alta iner, hafta
+sütunları ekranın yarısını alır; 1340px altında hepsi tek sütun.
+1920 / 1600 / 1440 / 1280 / 1100 / 900'de tablo içi yatay kaydırma yok.

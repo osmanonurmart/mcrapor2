@@ -15,7 +15,10 @@ export function haftaSec(pzt){ seciliPzt = U.pazartesi(pzt); }
 
 export function magazaEkrani(magazaKey, secenekler = {}){
   const pzt = seciliHafta();
+  // Dört hafta 2×2 gösteriliyor: seçili hafta ve ondan önceki üç hafta.
   const oncekiPzt = U.haftaEkle(pzt, -1);
+  const onceki2Pzt = U.haftaEkle(pzt, -2);
+  const onceki3Pzt = U.haftaEkle(pzt, -3);
   const duzenlenebilir = secenekler.duzenlenebilir !== false;
   const yenile = secenekler.yenile || (() => {});
 
@@ -35,6 +38,8 @@ export function magazaEkrani(magazaKey, secenekler = {}){
     rutin:        rutinBlogu(magazaKey, pzt, {duzenlenebilir, yenile}),
     haftaSecili:  haftaTablosu(magazaKey, pzt, tabloSecenekleri),
     haftaOnceki:  haftaTablosu(magazaKey, oncekiPzt, tabloSecenekleri),
+    haftaOnceki2: haftaTablosu(magazaKey, onceki2Pzt, tabloSecenekleri),
+    haftaOnceki3: haftaTablosu(magazaKey, onceki3Pzt, tabloSecenekleri),
     ozet:         yan.ozet,
     yorum:        yan.yorum
   };
@@ -42,8 +47,10 @@ export function magazaEkrani(magazaKey, secenekler = {}){
     hafta:       '📅 Hafta seçimi',
     duyuru:      '📢 Duyurular',
     rutin:       '✓ Haftalık rutin',
-    haftaSecili: '📊 ' + U.haftaBasligi(pzt),
-    haftaOnceki: '📊 ' + U.haftaBasligi(oncekiPzt),
+    haftaSecili:  '📊 ' + U.haftaBasligi(pzt),
+    haftaOnceki:  '📊 ' + U.haftaBasligi(oncekiPzt),
+    haftaOnceki2: '📊 ' + U.haftaBasligi(onceki2Pzt),
+    haftaOnceki3: '📊 ' + U.haftaBasligi(onceki3Pzt),
     ozet:        '📌 Özet',
     yorum:       '📝 Günlük yorum'
   };

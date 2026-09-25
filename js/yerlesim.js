@@ -17,14 +17,22 @@ const EN_KUCUK_YUZDE = 12;
 const EN_KUCUK_YUKSEKLIK = 80;
 
 // Sabit düzen: üstte hafta seçimi / duyurular / rutin,
-// altta iki sütun. Sütunlar "yığın": içindeki bloklar alt alta dizilir ve her
+// altta üç sütun. Sütunlar "yığın": içindeki bloklar alt alta dizilir ve her
 // biri kendi boyu kadar yer kaplar, böylece kısa bloğun altında boşluk kalmaz.
-//   sol yığın : mevcut hafta, önceki hafta
+//
+// Haftalık tablolar 2×2 duruyor:
+//     sol üst : 2 hafta önce      sağ üst : seçili hafta
+//     sol alt : 3 hafta önce      sağ alt : 1 hafta önce
+// Yani sağ sütun yeni, sol sütun eski; her sütunda üstteki daha yeni.
 //   sağ yığın : dün-bugün özeti, günlük yorum
 // Yeni bir panel eklendiğinde burada yoksa en alta kendi satırında görünür.
 const VARSAYILAN_DUZEN = [
   {bloklar: [{panel:'hafta', yuzde:34}, {panel:'duyuru', yuzde:28}, {panel:'rutin', yuzde:38}]},
-  {bloklar: [{yigin:['haftaSecili','haftaOnceki'], yuzde:71}, {yigin:['ozet','yorum'], yuzde:29}]}
+  {bloklar: [
+    {yigin:['haftaOnceki2','haftaOnceki3'], yuzde:37},
+    {yigin:['haftaSecili','haftaOnceki'],   yuzde:37},
+    {yigin:['ozet','yorum'],                yuzde:26}
+  ]}
 ];
 // Yığınları tek tek bloklara açar; serbest yerleşim açıkken kullanılır.
 function yiginlariAc(satirlar){
