@@ -179,3 +179,25 @@ Eski açık zeminler (#f1efe9, #faf9f6, #fdfbf6 …) yeni temaya uyacak
 
 Kullanıcılar paneli ızgarada tam satır kaplıyor (`.panel-kutu.genis`) ve
 ızgaranın başına alındı; satır artık taşmadan sığıyor.
+
+## 2026-09-25 — tema seçimi, ölçü modu, sürüm rozeti
+
+**Tema seçimi** (`js/tema.js`): 5 hazır tema (bej, gri-mavi, yeşil-haki,
+lacivert, koyu). Sağ üstteki profil menüsünden seçiliyor, anında
+uygulanıyor. Seçim cihaza özel bir tercih olduğu için `localStorage`da
+(`mc2:tema`), buluta gitmiyor. Tema = CSS değişkenlerini kök öğede ezmek.
+Koyu tema için giriş alanlarına `background:var(--kagit)` eklendi, yoksa
+tarayıcı beyaz bırakıyordu.
+
+**Ölçü modu** (profil menüsü → 📐): her bloğun piksel ölçüsünü ve sağ altta
+100 px'lik referans kareyi gösterir. Ekran görüntüsü üzerinden ölçü
+konuşurken zoom/ekran oranı farkını ortadan kaldırır.
+
+**Sürüm rozeti**: `js/surum.js` içindeki `SURUM` sayısı elle artırılır;
+`olustur.mjs` aynı sayıyı `v2/surum.json`a yazar (ikisi ayrı düşmesin).
+Uygulama açılışta ve 30 dakikada bir `surum.json`a bakar, sunucudaki sayı
+büyükse rozet "v3 ↑" olur; tıklanınca servis çalışanı ve bütün önbellekler
+silinip sayfa yeniden yüklenir. `sw.js` `surum.json`u hiç önbelleklemez.
+
+**Yeni sürüm çıkarırken:** `js/surum.js` içindeki sayıyı artır, `sw.js`
+içindeki `SURUM` önbellek adını da artır, `node olustur.mjs` çalıştır.

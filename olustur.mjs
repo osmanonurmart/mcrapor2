@@ -29,6 +29,14 @@ html = html
 await writeFile('tek-dosya.html', html, 'utf8');
 console.log('tek-dosya.html yazıldı — ' + Math.round(html.length/1024) + ' KB');
 
+// Sürüm numarası tek yerde (js/surum.js) durur; surum.json ondan üretilir ki
+// ikisi ayrı düşmesin. Tarayıcı güncelleme kontrolünü bu dosyayla yapıyor.
+const surumKaynak = await readFile('js/surum.js', 'utf8');
+const surumNo = Number((surumKaynak.match(/export const SURUM = (\d+);/) || [])[1]);
+if(!surumNo) throw new Error('js/surum.js içinde SURUM bulunamadı.');
+await writeFile('surum.json', JSON.stringify({surum: surumNo}) + '\n', 'utf8');
+console.log('surum.json yazıldı — v' + surumNo);
+
 // --- Yer imi: kaynaktan tek satırlık sürüm üretip kurulum sayfasına göm ---
 const yerimi = await build({
   entryPoints: ['yerimi/kaynak.js'],

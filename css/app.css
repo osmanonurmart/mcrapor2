@@ -472,7 +472,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
 .acilir-menu button:hover{ background:var(--zemin-2); }
 .menu-baslik{ font-size:.72rem; color:var(--soluk); padding:4px 8px 8px; }
 .izin-satir{ display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:7px; font-size:.8rem; cursor:pointer; }
-.izin-satir:hover{ background:#f7f5f1; }
+.izin-satir:hover{ background:var(--zemin-hover); }
 /* Kutu yalnızca göstergedir; tıklamayı satır ele alır. */
 .izin-satir input[type=checkbox]{ pointer-events:none; }
 .izin-satir .izin-tur{ cursor:pointer; }
@@ -566,4 +566,60 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   border-color: #c0392b !important;
   box-shadow: 0 0 0 2px rgba(192,57,43,.22);
   animation: bosSarsinti .22s 2;
+}
+
+/* ---------- Profil menüsündeki tema seçimi ---------- */
+.profil-menu .menu-ayrac{ height:1px; background:var(--cizgi-ince); margin:6px 0; }
+.profil-menu .menu-baslik{ font-size:.7rem; color:var(--soluk); padding:2px 10px 4px; font-weight:600; }
+.tema-liste{ display:flex; flex-direction:column; }
+.tema-secim{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+  background:none; border:none; padding:6px 10px; cursor:pointer; font-size:.8rem;
+  border-radius:7px;
+}
+.tema-secim:hover{ background:var(--zemin-2); }
+.tema-secim.secili{ background:var(--acik-vurgu); font-weight:650; }
+.tema-secim.secili::after{ content:'✓'; margin-left:auto; color:var(--vurgu); font-weight:700; }
+.tema-ornek{ display:flex; flex:0 0 auto; border:1px solid var(--cizgi); border-radius:5px; overflow:hidden; }
+.tema-ornek i{ width:13px; height:15px; display:block; }
+
+/* Koyu temada tarayıcı varsayılanı beyaz kalmasın. */
+input,textarea,select{ background:var(--kagit); color:var(--yazi); }
+.giris-ekran input{ background:#242428; color:#fff; }
+.hucre{ background:none; }
+.hucre:focus{ background:var(--kagit); }
+
+/* ---------- Ölçü modu ---------- */
+.olcu-modu .tuval-blok,.olcu-modu .hafta-tablo,.olcu-modu .ozet-tablo,.olcu-modu .panel-kutu{
+  outline:1px dashed #e0462d; outline-offset:-1px;
+}
+.olcu-etiket{
+  position:absolute; z-index:300; pointer-events:none;
+  background:#e0462d; color:#fff; font-size:10px; line-height:1;
+  padding:2px 4px; border-radius:3px; font-variant-numeric:tabular-nums;
+}
+.olcu-referans{
+  position:fixed; z-index:301; right:14px; bottom:14px;
+  width:100px; height:100px; border:2px solid #e0462d; background:rgba(224,70,45,.08);
+  display:flex; align-items:flex-end; justify-content:center; pointer-events:none;
+}
+.olcu-referans span{ background:#e0462d; color:#fff; font-size:10px; padding:1px 4px; }
+
+/* ---------- Sürüm rozeti ---------- */
+.surum-rozet{
+  flex:0 0 auto; margin-left:-4px; align-self:center;
+  background:var(--zemin-2); border:1px solid var(--cizgi-ince); color:var(--soluk);
+  border-radius:20px; padding:1px 8px; font-size:.66rem; font-weight:700;
+  cursor:pointer; line-height:1.6; white-space:nowrap;
+}
+.surum-rozet:hover{ border-color:var(--cizgi); color:var(--yazi); }
+.surum-rozet.guncel{ border-color:var(--artis); color:var(--artis); }
+.surum-rozet.guncelleme{
+  background:var(--vurgu); border-color:var(--vurgu); color:#fff;
+  animation:surumNabiz 1.6s ease-in-out infinite;
+}
+.surum-ok{ font-weight:900; }
+@keyframes surumNabiz{
+  0%,100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  50%    { box-shadow:0 0 0 4px rgba(168,124,56,.28); }
 }

@@ -8,6 +8,8 @@ import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
 import { pencere, kapat } from './pencere.js';
 import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, KULLANICI_ALANI } from './bulut.js';
 import { yerlesimSifirla, TASINABILIR } from './yerlesim.js';
+import { TEMALAR, temaGetir, temaYaz, temaUygula } from './tema.js';
+import { SURUM, sunucuSurumu, guncelle } from './surum.js';
 
 const kokEl = document.getElementById('kok');
 let aktif = null;            // aktif profil
@@ -255,6 +257,7 @@ function ustCubuk(){
 
   const kok = U.el(`<header class="ust-cubuk">
     <button class="ust-logo" title="Ana sayfaya dön"><img alt="Mağaza Performans Takip"></button>
+    <button class="surum-rozet" title="Sürüm — güncelleme için tıklayın">v${SURUM}</button>
     <nav class="menu">${menu.map(([k,a]) => `<button class="menu-btn ${sayfa===k?'secili':''}" data-sayfa="${k}">${a}</button>`).join('')}</nav>
     <div class="ust-orta"></div>
     <div class="ust-sag">
@@ -295,7 +298,79 @@ function ustCubuk(){
   });
 
   kok.querySelector('.profil-rozet').addEventListener('click', profilMenusu);
+  surumRozetiKur(kok.querySelector('.surum-rozet'));
   return kok;
+}
+
+// Sürüm rozeti. Sunucuda daha yeni sürüm varsa yukarı ok çıkar; tıklayınca
+// önbellek temizlenip yeni sürüm yüklenir.
+let yeniSurum = null;          // bulunan sunucu sürümü (yoksa null)
+function surumRozetiKur(rozet){
+  if(!rozet) return;
+  const ciz = () => {
+    rozet.classList.remove('guncel');
+    if(yeniSurum && yeniSurum > SURUM){
+      rozet.classList.add('guncelleme');
+      rozet.innerHTML = 'v' + yeniSurum + ' <span class="surum-ok">↑</span>';
+      rozet.title = 'Yeni sürüm hazır (v' + yeniSurum + ') — yüklemek için tıklayın';
+    } else {
+      rozet.classList.remove('guncelleme');
+      rozet.textContent = 'v' + SURUM;
+      rozet.title = 'Sürüm v' + SURUM + ' — güncelleme aramak için tıklayın';
+    }
+  };
+  ciz();
+
+  rozet.addEventListener('click', async () => {
+    if(yeniSurum && yeniSurum > SURUM){ rozet.textContent = '...'; await guncelle(); return; }
+    rozet.textContent = '...';
+    yeniSurum = await sunucuSurumu();
+    ciz();
+    if(!(yeniSurum && yeniSurum > SURUM)){
+      rozet.classList.add('guncel');
+      rozet.title = yeniSurum === null
+        ? 'Sunucuya ulaşılamadı; çevrimdışı olabilirsiniz.'
+        : 'Son sürümü kullanıyorsunuz (v' + SURUM + ').';
+      setTimeout(() => rozet.classList.remove('guncel'), 2000);
+    }
+  });
+}
+
+// Açılışta ve yarım saatte bir sessiz kontrol.
+async function surumKontrolSessiz(){
+  const s = await sunucuSurumu();
+  if(s === null) return;
+  const oncekiyleAyni = yeniSurum === s;
+  yeniSurum = s;
+  // Giriş ekranındayken çizim yapılmaz; rozet zaten üst çubukta.
+  if(!oncekiyleAyni && s > SURUM && aktif) uygulamaCiz();
+}
+
+// Ölçü modu: ekran görüntüsü üzerinde konuşabilmek için her bloğun piksel
+// ölçüsünü ve 100 px'lik bir referans kareyi gösterir.
+function olcuModu(){
+  const acik = document.body.classList.toggle('olcu-modu');
+  document.querySelectorAll('.olcu-etiket,.olcu-referans').forEach(x => x.remove());
+  if(!acik) return;
+
+  const ref = U.el(`<div class="olcu-referans"><span>100 px</span></div>`);
+  document.body.appendChild(ref);
+
+  const yaz = () => {
+    document.querySelectorAll('.olcu-etiket').forEach(x => x.remove());
+    document.querySelectorAll('.tuval-blok,.hafta-tablo,.ozet-tablo,.panel-kutu').forEach(el => {
+      const r = el.getBoundingClientRect();
+      if(r.width < 40 || r.height < 24) return;
+      const et = U.el(`<div class="olcu-etiket">${Math.round(r.width)} × ${Math.round(r.height)}</div>`);
+      et.style.top  = (window.scrollY + r.top + 2) + 'px';
+      et.style.left = (window.scrollX + r.left + 2) + 'px';
+      document.body.appendChild(et);
+    });
+  };
+  yaz();
+  const tekrar = () => { if(document.body.classList.contains('olcu-modu')) yaz(); };
+  window.addEventListener('resize', tekrar);
+  window.addEventListener('scroll', tekrar);
 }
 
 function profilMenusu(e){
@@ -305,11 +380,29 @@ function profilMenusu(e){
     ${aktif.rol === V.ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ''}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ''}
     ${bulutKullanicisi ? '' : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
+    <div class="menu-ayrac"></div>
+    <div class="menu-baslik">🎨 Tema</div>
+    <div class="tema-liste">
+      ${TEMALAR.map(t => `<button class="tema-secim ${t.id === temaGetir() ? 'secili' : ''}" data-tema="${t.id}">
+        <span class="tema-ornek">${t.ornek.map(r => `<i style="background:${r}"></i>`).join('')}</span>
+        <span>${t.ad}</span>
+      </button>`).join('')}
+    </div>
+    <div class="menu-ayrac"></div>
+    <button data-act="olcu">📐 Ölçü modu ${document.body.classList.contains('olcu-modu') ? '(açık)' : ''}</button>
     <button data-act="cikis">🚪 ${bulutKullanicisi ? 'Çıkış yap' : 'Profil değiştir'}</button>
   </div>`);
-  menu.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+
+  // Tema seçimi menüyü kapatmaz: yan yana deneyebilsin.
+  menu.querySelectorAll('[data-tema]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    temaYaz(b.dataset.tema);
+    menu.querySelectorAll('[data-tema]').forEach(x => x.classList.toggle('secili', x === b));
+  }));
+  menu.querySelectorAll('button[data-act]').forEach(b => b.addEventListener('click', () => {
     menu.remove();
     if(b.dataset.act === 'personel') personelPenceresi(aktifMagaza(), uygulamaCiz);
+    if(b.dataset.act === 'olcu') olcuModu();
     if(b.dataset.act === 'yerlesim'){ yerlesimSifirla(aktifMagaza()); uygulamaCiz(); }
     if(b.dataset.act === 'cikis'){
       if(bulutVarMi() && authAl() && authAl().currentUser){ V.bulutuKapat(); authAl().signOut(); }
@@ -398,6 +491,9 @@ function uygulamaCiz(){
 }
 
 // ---------------- Açılış ----------------
+temaUygula(temaGetir());
+surumKontrolSessiz();
+setInterval(surumKontrolSessiz, 30 * 60 * 1000);
 haftaSec(U.pazartesi(U.bugun()));
 
 if(baglan()){

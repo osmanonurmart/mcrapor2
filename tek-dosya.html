@@ -481,7 +481,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
 .acilir-menu button:hover{ background:var(--zemin-2); }
 .menu-baslik{ font-size:.72rem; color:var(--soluk); padding:4px 8px 8px; }
 .izin-satir{ display:flex; align-items:center; gap:7px; padding:5px 8px; border-radius:7px; font-size:.8rem; cursor:pointer; }
-.izin-satir:hover{ background:#f7f5f1; }
+.izin-satir:hover{ background:var(--zemin-hover); }
 /* Kutu yalnızca göstergedir; tıklamayı satır ele alır. */
 .izin-satir input[type=checkbox]{ pointer-events:none; }
 .izin-satir .izin-tur{ cursor:pointer; }
@@ -575,6 +575,62 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   border-color: #c0392b !important;
   box-shadow: 0 0 0 2px rgba(192,57,43,.22);
   animation: bosSarsinti .22s 2;
+}
+
+/* ---------- Profil menüsündeki tema seçimi ---------- */
+.profil-menu .menu-ayrac{ height:1px; background:var(--cizgi-ince); margin:6px 0; }
+.profil-menu .menu-baslik{ font-size:.7rem; color:var(--soluk); padding:2px 10px 4px; font-weight:600; }
+.tema-liste{ display:flex; flex-direction:column; }
+.tema-secim{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+  background:none; border:none; padding:6px 10px; cursor:pointer; font-size:.8rem;
+  border-radius:7px;
+}
+.tema-secim:hover{ background:var(--zemin-2); }
+.tema-secim.secili{ background:var(--acik-vurgu); font-weight:650; }
+.tema-secim.secili::after{ content:'✓'; margin-left:auto; color:var(--vurgu); font-weight:700; }
+.tema-ornek{ display:flex; flex:0 0 auto; border:1px solid var(--cizgi); border-radius:5px; overflow:hidden; }
+.tema-ornek i{ width:13px; height:15px; display:block; }
+
+/* Koyu temada tarayıcı varsayılanı beyaz kalmasın. */
+input,textarea,select{ background:var(--kagit); color:var(--yazi); }
+.giris-ekran input{ background:#242428; color:#fff; }
+.hucre{ background:none; }
+.hucre:focus{ background:var(--kagit); }
+
+/* ---------- Ölçü modu ---------- */
+.olcu-modu .tuval-blok,.olcu-modu .hafta-tablo,.olcu-modu .ozet-tablo,.olcu-modu .panel-kutu{
+  outline:1px dashed #e0462d; outline-offset:-1px;
+}
+.olcu-etiket{
+  position:absolute; z-index:300; pointer-events:none;
+  background:#e0462d; color:#fff; font-size:10px; line-height:1;
+  padding:2px 4px; border-radius:3px; font-variant-numeric:tabular-nums;
+}
+.olcu-referans{
+  position:fixed; z-index:301; right:14px; bottom:14px;
+  width:100px; height:100px; border:2px solid #e0462d; background:rgba(224,70,45,.08);
+  display:flex; align-items:flex-end; justify-content:center; pointer-events:none;
+}
+.olcu-referans span{ background:#e0462d; color:#fff; font-size:10px; padding:1px 4px; }
+
+/* ---------- Sürüm rozeti ---------- */
+.surum-rozet{
+  flex:0 0 auto; margin-left:-4px; align-self:center;
+  background:var(--zemin-2); border:1px solid var(--cizgi-ince); color:var(--soluk);
+  border-radius:20px; padding:1px 8px; font-size:.66rem; font-weight:700;
+  cursor:pointer; line-height:1.6; white-space:nowrap;
+}
+.surum-rozet:hover{ border-color:var(--cizgi); color:var(--yazi); }
+.surum-rozet.guncel{ border-color:var(--artis); color:var(--artis); }
+.surum-rozet.guncelleme{
+  background:var(--vurgu); border-color:var(--vurgu); color:#fff;
+  animation:surumNabiz 1.6s ease-in-out infinite;
+}
+.surum-ok{ font-weight:900; }
+@keyframes surumNabiz{
+  0%,100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); }
+  50%    { box-shadow:0 0 0 4px rgba(168,124,56,.28); }
 }
 
 </style>
@@ -3494,6 +3550,173 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     return kok;
   }
 
+  // js/tema.js
+  var ANAHTAR = "mc2:tema";
+  var TEMALAR = [
+    {
+      id: "bej",
+      ad: "Bej",
+      ornek: ["#cfc7b6", "#f6f2e9", "#a87c38"],
+      renkler: {
+        "--arka": "#cfc7b6",
+        "--kagit": "#f6f2e9",
+        "--cizgi": "#6f6552",
+        "--cizgi-ince": "#9a8e77",
+        "--yazi": "#141417",
+        "--soluk": "#55555f",
+        "--vurgu": "#a87c38",
+        "--acik-vurgu": "#f2e6cf",
+        "--artis": "#236437",
+        "--dusus": "#96302f",
+        "--zemin-2": "#e4dcc9",
+        "--zemin-3": "#e6dfcc",
+        "--zemin-hover": "#ece4d2",
+        "--bugun-zemin": "#efe4c8",
+        "--dusus-zemin": "#f0d9d9"
+      }
+    },
+    {
+      id: "gri",
+      ad: "Gri-mavi",
+      ornek: ["#c8cbd0", "#f4f5f7", "#2f6f9e"],
+      renkler: {
+        "--arka": "#c8cbd0",
+        "--kagit": "#f4f5f7",
+        "--cizgi": "#5b6068",
+        "--cizgi-ince": "#8f959e",
+        "--yazi": "#14161a",
+        "--soluk": "#525861",
+        "--vurgu": "#2f6f9e",
+        "--acik-vurgu": "#dce9f3",
+        "--artis": "#1d6b3f",
+        "--dusus": "#a32f2f",
+        "--zemin-2": "#dfe2e7",
+        "--zemin-3": "#e3e6ea",
+        "--zemin-hover": "#e9ecf0",
+        "--bugun-zemin": "#dbe8f2",
+        "--dusus-zemin": "#f2dcdc"
+      }
+    },
+    {
+      id: "yesil",
+      ad: "Yeşil-haki",
+      ornek: ["#c3ccc1", "#f2f5f0", "#2f6b45"],
+      renkler: {
+        "--arka": "#c3ccc1",
+        "--kagit": "#f2f5f0",
+        "--cizgi": "#4f5c4c",
+        "--cizgi-ince": "#8a9786",
+        "--yazi": "#141813",
+        "--soluk": "#4f5a4d",
+        "--vurgu": "#2f6b45",
+        "--acik-vurgu": "#dceadf",
+        "--artis": "#1d6b3f",
+        "--dusus": "#a13230",
+        "--zemin-2": "#dbe3d8",
+        "--zemin-3": "#e0e7dd",
+        "--zemin-hover": "#e7ece4",
+        "--bugun-zemin": "#d9e8dd",
+        "--dusus-zemin": "#f0dcdb"
+      }
+    },
+    {
+      id: "lacivert",
+      ad: "Lacivert",
+      ornek: ["#bfc6d4", "#f2f4f8", "#1f4e8c"],
+      renkler: {
+        "--arka": "#bfc6d4",
+        "--kagit": "#f2f4f8",
+        "--cizgi": "#3f4a63",
+        "--cizgi-ince": "#828da4",
+        "--yazi": "#11141c",
+        "--soluk": "#4b5468",
+        "--vurgu": "#1f4e8c",
+        "--acik-vurgu": "#d8e3f2",
+        "--artis": "#1d6b3f",
+        "--dusus": "#a32f2f",
+        "--zemin-2": "#d8dee9",
+        "--zemin-3": "#dde3ee",
+        "--zemin-hover": "#e6eaf2",
+        "--bugun-zemin": "#d5e2f4",
+        "--dusus-zemin": "#f2dcdc"
+      }
+    },
+    {
+      id: "koyu",
+      ad: "Koyu",
+      ornek: ["#16181c", "#22252b", "#d2a24c"],
+      renkler: {
+        "--arka": "#16181c",
+        "--kagit": "#22252b",
+        "--cizgi": "#4c525c",
+        "--cizgi-ince": "#3a3f48",
+        "--yazi": "#e8eaee",
+        "--soluk": "#9aa1ad",
+        "--vurgu": "#d2a24c",
+        "--acik-vurgu": "#3a3423",
+        "--artis": "#4bb072",
+        "--dusus": "#e06a6a",
+        "--zemin-2": "#2c3038",
+        "--zemin-3": "#2a2e35",
+        "--zemin-hover": "#30343c",
+        "--bugun-zemin": "#3a3423",
+        "--dusus-zemin": "#3d2727",
+        "--golge": "0 2px 10px rgba(0,0,0,.5)",
+        "--golge-buyuk": "0 12px 40px rgba(0,0,0,.6)"
+      }
+    }
+  ];
+  var VARSAYILAN = "bej";
+  function temaGetir() {
+    try {
+      return localStorage.getItem(ANAHTAR) || VARSAYILAN;
+    } catch (e) {
+      return VARSAYILAN;
+    }
+  }
+  function temaUygula(id) {
+    const tema = TEMALAR.find((t) => t.id === id) || TEMALAR.find((t) => t.id === VARSAYILAN);
+    const kok = document.documentElement;
+    TEMALAR.forEach((t) => Object.keys(t.renkler).forEach((k) => kok.style.removeProperty(k)));
+    Object.entries(tema.renkler).forEach(([k, v]) => kok.style.setProperty(k, v));
+    kok.dataset.tema = tema.id;
+    return tema.id;
+  }
+  function temaYaz(id) {
+    try {
+      localStorage.setItem(ANAHTAR, id);
+    } catch (e) {
+    }
+    return temaUygula(id);
+  }
+
+  // js/surum.js
+  var SURUM = 1;
+  async function sunucuSurumu() {
+    try {
+      const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
+      if (!y.ok) return null;
+      const j = await y.json();
+      return typeof j.surum === "number" ? j.surum : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  async function guncelle() {
+    try {
+      if ("serviceWorker" in navigator) {
+        const kayitlar = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(kayitlar.map((k) => k.unregister()));
+      }
+      if (window.caches) {
+        const adlar = await caches.keys();
+        await Promise.all(adlar.map((a) => caches.delete(a)));
+      }
+    } catch (e) {
+    }
+    location.reload();
+  }
+
   // js/app.js
   var kokEl = document.getElementById("kok");
   var aktif = null;
@@ -3736,6 +3959,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     }
     const kok = el(`<header class="ust-cubuk">
     <button class="ust-logo" title="Ana sayfaya dön"><img alt="Mağaza Performans Takip"></button>
+    <button class="surum-rozet" title="Sürüm — güncelleme için tıklayın">v${SURUM}</button>
     <nav class="menu">${menu.map(([k, a]) => `<button class="menu-btn ${sayfa === k ? "secili" : ""}" data-sayfa="${k}">${a}</button>`).join("")}</nav>
     <div class="ust-orta"></div>
     <div class="ust-sag">
@@ -3772,7 +3996,71 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       uygulamaCiz();
     });
     kok.querySelector(".profil-rozet").addEventListener("click", profilMenusu);
+    surumRozetiKur(kok.querySelector(".surum-rozet"));
     return kok;
+  }
+  var yeniSurum = null;
+  function surumRozetiKur(rozet) {
+    if (!rozet) return;
+    const ciz2 = () => {
+      rozet.classList.remove("guncel");
+      if (yeniSurum && yeniSurum > SURUM) {
+        rozet.classList.add("guncelleme");
+        rozet.innerHTML = "v" + yeniSurum + ' <span class="surum-ok">↑</span>';
+        rozet.title = "Yeni sürüm hazır (v" + yeniSurum + ") — yüklemek için tıklayın";
+      } else {
+        rozet.classList.remove("guncelleme");
+        rozet.textContent = "v" + SURUM;
+        rozet.title = "Sürüm v" + SURUM + " — güncelleme aramak için tıklayın";
+      }
+    };
+    ciz2();
+    rozet.addEventListener("click", async () => {
+      if (yeniSurum && yeniSurum > SURUM) {
+        rozet.textContent = "...";
+        await guncelle();
+        return;
+      }
+      rozet.textContent = "...";
+      yeniSurum = await sunucuSurumu();
+      ciz2();
+      if (!(yeniSurum && yeniSurum > SURUM)) {
+        rozet.classList.add("guncel");
+        rozet.title = yeniSurum === null ? "Sunucuya ulaşılamadı; çevrimdışı olabilirsiniz." : "Son sürümü kullanıyorsunuz (v" + SURUM + ").";
+        setTimeout(() => rozet.classList.remove("guncel"), 2e3);
+      }
+    });
+  }
+  async function surumKontrolSessiz() {
+    const s = await sunucuSurumu();
+    if (s === null) return;
+    const oncekiyleAyni = yeniSurum === s;
+    yeniSurum = s;
+    if (!oncekiyleAyni && s > SURUM && aktif) uygulamaCiz();
+  }
+  function olcuModu() {
+    const acik2 = document.body.classList.toggle("olcu-modu");
+    document.querySelectorAll(".olcu-etiket,.olcu-referans").forEach((x) => x.remove());
+    if (!acik2) return;
+    const ref = el(`<div class="olcu-referans"><span>100 px</span></div>`);
+    document.body.appendChild(ref);
+    const yaz2 = () => {
+      document.querySelectorAll(".olcu-etiket").forEach((x) => x.remove());
+      document.querySelectorAll(".tuval-blok,.hafta-tablo,.ozet-tablo,.panel-kutu").forEach((el2) => {
+        const r = el2.getBoundingClientRect();
+        if (r.width < 40 || r.height < 24) return;
+        const et = el(`<div class="olcu-etiket">${Math.round(r.width)} × ${Math.round(r.height)}</div>`);
+        et.style.top = window.scrollY + r.top + 2 + "px";
+        et.style.left = window.scrollX + r.left + 2 + "px";
+        document.body.appendChild(et);
+      });
+    };
+    yaz2();
+    const tekrar = () => {
+      if (document.body.classList.contains("olcu-modu")) yaz2();
+    };
+    window.addEventListener("resize", tekrar);
+    window.addEventListener("scroll", tekrar);
   }
   function profilMenusu(e) {
     e.stopPropagation();
@@ -3781,11 +4069,27 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     ${aktif.rol === ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ""}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ""}
     ${bulutKullanicisi ? "" : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
+    <div class="menu-ayrac"></div>
+    <div class="menu-baslik">🎨 Tema</div>
+    <div class="tema-liste">
+      ${TEMALAR.map((t) => `<button class="tema-secim ${t.id === temaGetir() ? "secili" : ""}" data-tema="${t.id}">
+        <span class="tema-ornek">${t.ornek.map((r2) => `<i style="background:${r2}"></i>`).join("")}</span>
+        <span>${t.ad}</span>
+      </button>`).join("")}
+    </div>
+    <div class="menu-ayrac"></div>
+    <button data-act="olcu">📐 Ölçü modu ${document.body.classList.contains("olcu-modu") ? "(açık)" : ""}</button>
     <button data-act="cikis">🚪 ${bulutKullanicisi ? "Çıkış yap" : "Profil değiştir"}</button>
   </div>`);
-    menu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    menu.querySelectorAll("[data-tema]").forEach((b) => b.addEventListener("click", (e2) => {
+      e2.stopPropagation();
+      temaYaz(b.dataset.tema);
+      menu.querySelectorAll("[data-tema]").forEach((x) => x.classList.toggle("secili", x === b));
+    }));
+    menu.querySelectorAll("button[data-act]").forEach((b) => b.addEventListener("click", () => {
       menu.remove();
       if (b.dataset.act === "personel") personelPenceresi(aktifMagaza(), uygulamaCiz);
+      if (b.dataset.act === "olcu") olcuModu();
       if (b.dataset.act === "yerlesim") {
         yerlesimSifirla(aktifMagaza());
         uygulamaCiz();
@@ -3883,6 +4187,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     sar.appendChild(govde);
     ciz(sar);
   }
+  temaUygula(temaGetir());
+  surumKontrolSessiz();
+  setInterval(surumKontrolSessiz, 30 * 60 * 1e3);
   haftaSec(pazartesi(bugun()));
   if (baglan()) {
     authAl().onAuthStateChanged(async (user) => {
