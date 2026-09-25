@@ -165,3 +165,17 @@ Kurucu → Ayarlar → Kullanıcılar bölümüne eklenenler: **+ Mağaza ekle**
 mağaza satırında **🗑** (mağaza ve bütün verisi), **Kullanıcıyı ayır**.
 `veri.js` içine `magazaEkle`, `magazaSil`, genel `sil`/`anahtarlar`
 yardımcıları ve `buluttanSil` girdi.
+
+## 2026-09-25 — tema koyulaştırıldı
+
+`css/app.css` değişkenleri: `--arka` #f0ede8 → #cfc7b6, `--kagit` #fff →
+#f6f2e9, `--cizgi` #c9c1b3 → #6f6552, `--cizgi-ince` #ddd6c9 → #9a8e77.
+Yazı ve soluk renkler de koyulaştı. İki yeni kalınlık değişkeni:
+`--cerceve` (panel/blok çerçeveleri, 2px) ve `--hucre-cizgi` (tablo
+hücreleri, 2px). Tablo başlık altları 4px.
+
+Eski açık zeminler (#f1efe9, #faf9f6, #fdfbf6 …) yeni temaya uyacak
+şekilde toplu değiştirildi.
+
+Kullanıcılar paneli ızgarada tam satır kaplıyor (`.panel-kutu.genis`) ve
+ızgaranın başına alındı; satır artık taşmadan sığıyor.

@@ -12,15 +12,15 @@ export function kurucuPaneli(yenile){
     <div class="bolum-ust"><h2>Kurucu ayarları</h2>
       <span class="alt">Mağaza ve bölge ekranlarını üst menüden açabilirsiniz</span></div>
     <div class="kurucu-izgara">
-      <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
-        <div class="satir-ekle"><input class="yeni-kategori" type="text" placeholder="Yeni kategori"><button class="mini birincil kategori-ekle">+ Ekle</button></div>
-      </div>
       <div class="panel-kutu genis"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
         <div class="satir-ekle magaza-ekle-satir">
           <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
           <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
         </div>
         <p class="aciklama kullanici-not"></p></div>
+      <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
+        <div class="satir-ekle"><input class="yeni-kategori" type="text" placeholder="Yeni kategori"><button class="mini birincil kategori-ekle">+ Ekle</button></div>
+      </div>
       <div class="panel-kutu"><h3>Görünür KPI satırları</h3><div class="satir-ayar"></div>
         <p class="aciklama">Mağaza tablolarında hangi satırların görüneceğini belirler.</p></div>
       <div class="panel-kutu"><h3>Toplu satış eşiği</h3>
