@@ -79,8 +79,12 @@ function haftaGezinti(pzt, yenile){
     <div class="hafta-satir">
       <button class="ok" data-kaydir="-1" title="Önceki hafta">◀</button>
       <div class="hafta-listesi">
-        ${haftalar.map(h => `<button class="hafta ${U.haftaKey(h)===seciliKey?'secili':''}" data-pzt="${U.dateStr(h)}">
-            <span class="h-no">H${U.isoHafta(h).hafta}</span>
+        ${haftalar.map((h,i) => `<button class="hafta ${U.haftaKey(h)===seciliKey?'secili':''}"
+              data-pzt="${U.dateStr(h)}" title="${U.AY_KISA[ay-1]} ayının ${i+1}. haftası — yılın ${U.isoHafta(h).hafta}. haftası">
+            <span class="h-ust">
+              <span class="h-sira">${i+1}</span>
+              <span class="h-no">H${U.isoHafta(h).hafta}</span>
+            </span>
             <span class="h-aralik">${U.haftaAraligiEtiketi(h)}</span>
           </button>`).join('')}
       </div>

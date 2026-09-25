@@ -220,3 +220,16 @@ yerine sarıyor.
 Genişlik eşikleri: 1750px altında özet sütunu alta iner, hafta
 sütunları ekranın yarısını alır; 1340px altında hepsi tek sütun.
 1920 / 1600 / 1440 / 1280 / 1100 / 900'de tablo içi yatay kaydırma yok.
+
+## 2026-09-25 — hafta seçimi kutuları
+
+Hafta kutusu artık iki bilgiyi birden gösteriyor: üstte büyük punto **ay
+içi sıra** (Eylül'ün 1., 2., 3. haftası) ve yanında küçük gri **yılın
+haftası** (H36). Altında tarih aralığı. Kutu iki satır kaldığı için boyu
+eskisiyle aynı (98 × 38 px, genişlik sabit).
+
+Üzerine gelince tam açıklama çıkıyor: "Eyl ayının 1. haftası — yılın 36.
+haftası".
+
+Ay şeridi ve yıl seçimi yerinde kaldı. Hafta satırı artık kendi
+çerçevesinin içinde (`--cerceve` kalınlığında).
