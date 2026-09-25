@@ -184,7 +184,7 @@ export function bolgePaneli(pzt, yenile){
   duyuruCiz();
   kok.querySelector('.duyuru-gonder').addEventListener('click', () => {
     const m = duyuruAlan.value.trim();
-    if(!m) return;
+    if(!m){ U.bosUyar(duyuruAlan); return; }
     V.duyuruEkle(m);
     duyuruAlan.value = '';
     duyuruCiz();

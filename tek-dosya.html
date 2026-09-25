@@ -551,6 +551,18 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   .bolge-alt{ grid-template-columns:1fr; }
 }
 
+/* Boş alanla tuşa basıldığında alanı vurgula (bkz. util.bosUyar) */
+@keyframes bosSarsinti {
+  0%,100% { transform: translateX(0); }
+  25%     { transform: translateX(-4px); }
+  75%     { transform: translateX(4px); }
+}
+.bos-uyari {
+  border-color: #c0392b !important;
+  box-shadow: 0 0 0 2px rgba(192,57,43,.22);
+  animation: bosSarsinti .22s 2;
+}
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -703,6 +715,14 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     t.innerHTML = html.trim();
     return t.content.firstElementChild;
   }
+  function bosUyar(girdi) {
+    if (!girdi) return;
+    girdi.classList.remove("bos-uyari");
+    void girdi.offsetWidth;
+    girdi.classList.add("bos-uyari");
+    girdi.focus();
+    setTimeout(() => girdi.classList.remove("bos-uyari"), 1200);
+  }
 
   // js/bulut.js
   var firebaseConfig = {
@@ -714,6 +734,15 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     appId: "1:788228140989:web:106c9057fb8f27fe86ecd4"
   };
   var KULLANICILAR = "mc2_kullanicilar";
+  var KULLANICI_ALANI = "mcrapor.local";
+  function epostaYap(kullaniciAdi) {
+    const k = String(kullaniciAdi || "").trim().toLowerCase();
+    return k.includes("@") ? k : k + "@" + KULLANICI_ALANI;
+  }
+  function kullaniciAdiYap(eposta) {
+    const e = String(eposta || "");
+    return e.endsWith("@" + KULLANICI_ALANI) ? e.slice(0, -("@" + KULLANICI_ALANI).length) : e;
+  }
   var MAGAZALAR = "mc2_magazalar";
   var ORTAK = "mc2_ortak";
   var bulutVarMi = () => typeof firebase !== "undefined" && !!firebase.firestore;
@@ -730,16 +759,17 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   var dbAl = () => db;
   function girisHatasi(err) {
     const kodlar = {
-      "auth/invalid-email": "E-posta adresi geçersiz.",
-      "auth/user-not-found": "Bu e-posta ile kayıtlı kullanıcı yok.",
+      "auth/invalid-email": "Kullanıcı adı geçersiz.",
+      "auth/user-not-found": "Böyle bir kullanıcı yok.",
       "auth/wrong-password": "Şifre yanlış.",
-      "auth/invalid-credential": "E-posta veya şifre hatalı.",
+      "auth/invalid-credential": "Kullanıcı adı veya şifre hatalı.",
       "auth/too-many-requests": "Çok fazla deneme yapıldı, biraz bekleyin.",
       "auth/network-request-failed": "İnternet bağlantısı kurulamadı.",
-      "auth/email-already-in-use": "Bu e-posta zaten kullanılıyor.",
+      "auth/email-already-in-use": "Bu kullanıcı adı zaten kullanılıyor.",
       "auth/weak-password": "Şifre en az 6 karakter olmalı.",
-      "mc2/eslesmedi": "Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi.\nMağazaya bağlamak için hesabın güncel şifresini yazın.",
-      "auth/operation-not-allowed": "Firebase'de e-posta/şifre girişi kapalı görünüyor.\nConsole → Authentication → Sign-in method → Email/Password → Enable."
+      "mc2/eskiSifreYanlis": 'Mevcut şifre doğru değil. Şifre unutulduysa "Kullanıcıyı ayır" deyip\nyeni kullanıcı adı ve şifreyle yeniden açın.',
+      "mc2/eslesmedi": "Bu kullanıcı adı zaten kayıtlı ama verilen şifreyle girilemedi.\nMağazaya bağlamak için o kullanıcının güncel şifresini yazın.",
+      "auth/operation-not-allowed": "Firebase'de e-posta/şifre girişi kapalı görünüyor (kullanıcı adları\niçeride e-postaya çevriliyor).\nConsole → Authentication → Sign-in method → Email/Password → Enable."
     };
     return kodlar[err && err.code] || "İşlem tamamlanamadı: " + (err && err.message ? err.message : err);
   }
@@ -755,7 +785,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       try {
         cred = await ia.signInWithEmailAndPassword(eposta, sifre);
       } catch (e2) {
-        const h = new Error("Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi. Mağazaya bağlamak için hesabın güncel şifresini yazın.");
+        const h = new Error("Bu kullanıcı adı zaten kayıtlı ama verilen şifreyle girilemedi. Mağazaya bağlamak için o kullanıcının güncel şifresini yazın.");
         h.code = "mc2/eslesmedi";
         throw h;
       }
@@ -766,6 +796,23 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     } catch (e) {
     }
     return uid;
+  }
+  async function sifreDegistir(eposta, eskiSifre, yeniSifre) {
+    if (!ikincil) ikincil = firebase.initializeApp(firebaseConfig, "kullaniciOlusturucu");
+    const ia = ikincil.auth();
+    let cred;
+    try {
+      cred = await ia.signInWithEmailAndPassword(eposta, eskiSifre);
+    } catch (e) {
+      const h = new Error("Mevcut şifre doğrulanamadı.");
+      h.code = "mc2/eskiSifreYanlis";
+      throw h;
+    }
+    await cred.user.updatePassword(yeniSifre);
+    try {
+      await ia.signOut();
+    } catch (e) {
+    }
   }
 
   // js/veri.js
@@ -804,6 +851,28 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       buluta_gonder(anahtar, deger);
     }
     olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar } }));
+  }
+  function sil(anahtar) {
+    if (yerelMi(anahtar) || !bulutAcik) {
+      try {
+        localStorage.removeItem(ON_EK + anahtar);
+      } catch (e) {
+      }
+    } else {
+      bellek.delete(anahtar);
+      buluttanSil(anahtar);
+    }
+    olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar } }));
+  }
+  function anahtarlar() {
+    if (!bulutAcik) {
+      try {
+        return Object.keys(localStorage).filter((k) => k.startsWith(ON_EK)).map((k) => k.slice(ON_EK.length));
+      } catch (e) {
+        return [];
+      }
+    }
+    return [...bellek.keys()];
   }
   var bulutAcikMi = () => bulutAcik;
   var ROLLER = { MAGAZA: "magaza", BOLGE: "bolge", KURUCU: "kurucu" };
@@ -1207,6 +1276,18 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       }
     }, 400));
   }
+  async function buluttanSil(anahtar) {
+    const db2 = dbAl();
+    const yol = anahtarYolu(anahtar);
+    if (!db2 || !yol || topluMod) return;
+    try {
+      if (yol.tur === "ortakListe") await db2.collection(ORTAK).doc(yol.belge).delete();
+      else if (yol.tur === "magazaAyar") await db2.collection(MAGAZALAR).doc(yol.magaza).collection("ayarlar").doc(yol.belge).delete();
+      else if (yol.tur === "magazaBelge") await db2.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge).delete();
+    } catch (e) {
+      console.warn("Buluttan silinemedi:", anahtar, e.message);
+    }
+  }
   function belgeyiCoz(tur, veri) {
     if (tur === "magazaAyar" || tur === "ortakListe") return veri.liste;
     const { magaza, anahtar, ...kalan } = veri;
@@ -1315,6 +1396,31 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       if (k && k.startsWith(ON_EK)) silinecek.push(k);
     }
     silinecek.forEach((k) => localStorage.removeItem(k));
+  }
+  var PROFIL_RENKLERI = ["#C8A066", "#5f8d6a", "#6f6494", "#a34141", "#3f6b8a", "#8a6a3f", "#4d7d78", "#9a5f7a"];
+  function magazaEkle(ad) {
+    const liste = profilleriGetir();
+    let n = 1;
+    while (liste.some((p) => p.key === "m" + n)) n++;
+    const yeni = {
+      key: "m" + n,
+      ad,
+      rol: ROLLER.MAGAZA,
+      simge: "🏪",
+      renk: PROFIL_RENKLERI[liste.length % PROFIL_RENKLERI.length]
+    };
+    liste.push(yeni);
+    profilleriYaz(liste);
+    return yeni;
+  }
+  function magazaSil(key) {
+    profilleriYaz(profilleriGetir().filter((p) => p.key !== key));
+    const db2 = dbAl();
+    if (bulutAcik && db2) db2.collection(MAGAZALAR).doc(key).delete().catch((e) => console.warn(e.message));
+    ["personel", "kartlar", "rutin"].forEach((a) => sil(a + ":" + key));
+    ["gun", "hedef", "urun", "rutinDurum"].forEach((on) => {
+      anahtarlar().filter((a) => a.startsWith(on + ":" + key + ":")).forEach(sil);
+    });
   }
 
   // js/hafta.js
@@ -1721,7 +1827,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     form.querySelector(".k-iptal").addEventListener("click", () => form.remove());
     form.querySelector(".k-kaydet").addEventListener("click", () => {
       const ad = form.querySelector(".k-ad").value.trim();
-      if (!ad) return;
+      if (!ad) {
+        bosUyar(form.querySelector(".k-ad"));
+        return;
+      }
       const tur = form.querySelector(".k-tur").value;
       const liste = kartlarGetir(magazaKey);
       liste.push(tur === "elle" ? { id: "k" + Date.now(), ad, alan: null, tur: "elle" } : { id: "k" + Date.now(), ad, alan: tur, tur: "kaynak" });
@@ -2384,7 +2493,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const kok = el(`<div class="simule-satir">
     <span>🕒 Simüle tarihi</span>
     <input type="date" value="${simuleDeger() || ""}">
-    <button class="mini" data-sifirla="1">Gerçek güne dön</button>
+    ${simuleDeger() ? '<button class="mini" data-sifirla="1">Gerçek güne dön</button>' : ""}
     <span class="simule-not">${simuleDeger() ? "Girilen veriler " + simuleDeger() + " tarihine kaydedilir." : ""}</span>
   </div>`);
     kok.querySelector("input").addEventListener("change", function() {
@@ -2392,7 +2501,8 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       haftaSec(pazartesi(bugun()));
       yenile();
     });
-    kok.querySelector("[data-sifirla]").addEventListener("click", () => {
+    const sifirlaBtn = kok.querySelector("[data-sifirla]");
+    if (sifirlaBtn) sifirlaBtn.addEventListener("click", () => {
       simuleAyarla(null);
       haftaSec(pazartesi(bugun()));
       yenile();
@@ -2536,7 +2646,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const ekleBtn = govde.querySelector(".personel-ekle button");
     const ekle = () => {
       const ad = girdi.value.trim();
-      if (!ad) return;
+      if (!ad) {
+        bosUyar(girdi);
+        return;
+      }
       const l = personelGetir(magazaKey);
       l.push({ id: "p" + Date.now(), ad, aktif: true });
       personelYaz(magazaKey, l);
@@ -2815,10 +2928,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         const satir = el(`<div class="urun-satir ${isteyenler.length ? "secili" : ""}">
         <span class="u-ad">${esc(u.ad)}</span>
         ${isteyenler.length ? '<span class="u-tik" title="İstenmiş">✓</span>' : ""}
-        <button class="u-sayac ${isteyenler.length ? "" : "bos"}"
-                title="${isteyenler.length ? "İsteyen mağazaları göster" : "Kimse istemedi"}">
-          ${isteyenler.length ? isteyenler.length + " mağaza · " + toplamAdet + " adet" : "–"}
-        </button>
+        ${isteyenler.length ? `<button class="u-sayac" title="İsteyen mağazaları göster">${isteyenler.length} mağaza · ${toplamAdet} adet</button>` : '<span class="u-sayac bos" title="Kimse istemedi">–</span>'}
       </div>`);
         if (isteyenler.length) {
           satir.querySelector(".u-sayac").addEventListener("click", () => {
@@ -3026,7 +3136,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     duyuruCiz();
     kok.querySelector(".duyuru-gonder").addEventListener("click", () => {
       const m = duyuruAlan.value.trim();
-      if (!m) return;
+      if (!m) {
+        bosUyar(duyuruAlan);
+        return;
+      }
       duyuruEkle(m);
       duyuruAlan.value = "";
       duyuruCiz();
@@ -3044,6 +3157,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   }
 
   // js/kurucu.js
+  var sonNot = "";
   function kurucuPaneli(yenile) {
     const kok = el(`<div class="kurucu-panel">
     <div class="bolum-ust"><h2>Kurucu ayarları</h2>
@@ -3052,7 +3166,11 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
         <div class="satir-ekle"><input class="yeni-kategori" type="text" placeholder="Yeni kategori"><button class="mini birincil kategori-ekle">+ Ekle</button></div>
       </div>
-      <div class="panel-kutu"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+      <div class="panel-kutu genis"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+        <div class="satir-ekle magaza-ekle-satir">
+          <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
+          <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
+        </div>
         <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Görünür KPI satırları</h3><div class="satir-ayar"></div>
         <p class="aciklama">Mağaza tablolarında hangi satırların görüneceğini belirler.</p></div>
@@ -3114,7 +3232,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         const yeni = blok.querySelector(".yeni-urun");
         const urunEkle = () => {
           const ad = yeni.value.trim();
-          if (!ad) return;
+          if (!ad) {
+            bosUyar(yeni);
+            return;
+          }
           const l = kategorilerGetir();
           const k = l.find((x) => x.id === kat.id);
           k.urunler = k.urunler || [];
@@ -3136,7 +3257,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     kok.querySelector(".kategori-ekle").addEventListener("click", () => {
       const girdi = kok.querySelector(".yeni-kategori");
       const ad = girdi.value.trim();
-      if (!ad) return;
+      if (!ad) {
+        bosUyar(girdi);
+        return;
+      }
       const l = kategorilerGetir();
       l.push({ id: "k" + Date.now(), ad, urunler: [] });
       kategorilerYaz(l);
@@ -3144,20 +3268,35 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       katCiz();
     });
     const kulKutu = kok.querySelector(".kullanici-yonet");
-    const kulNot = kok.querySelector(".kullanici-not");
+    const kulNotEl = kok.querySelector(".kullanici-not");
     const bulutta = bulutAcikMi();
-    kulNot.textContent = bulutta ? 'Her mağazanın tek kullanıcısı olur. Hesap açıldıktan sonra şifreyi kullanıcı "şifremi unuttum" ile kendisi değiştirebilir.' : "Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.";
+    const kulNot = {
+      set textContent(v) {
+        sonNot = v;
+        kulNotEl.textContent = v;
+      },
+      get textContent() {
+        return kulNotEl.textContent;
+      }
+    };
+    kulNotEl.textContent = sonNot || (bulutta ? "Her mağazanın tek kullanıcısı olur. Kullanıcı adı ve şifreyi siz belirlersiniz; mağaza bunlarla girer ve yalnızca kendi verisini görür." : "Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.");
     const kulCiz = () => {
       kulKutu.innerHTML = "";
       profilleriGetir().forEach((p) => {
+        const kAdi = p.kullaniciMaili ? kullaniciAdiYap(p.kullaniciMaili) : "";
         const satir = el(`<div class="kullanici-satir">
         <span class="k-simge" style="background:${p.renk}">${p.simge || "🏪"}</span>
-        <input class="k-ad" type="text" value="${esc(p.ad)}">
+        <input class="k-ad" type="text" value="${esc(p.ad)}" title="Mağaza adı">
         <span class="k-rol">${p.rol}</span>
-        ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="${esc(p.kullaniciMaili)}">${esc(p.kullaniciMaili)}</span>
-                 <button class="mini k-sifre">Şifre sıfırla</button>` : `<input class="k-yeni-mail" type="email" placeholder="e-posta">
+        ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="Kullanıcı adı">${esc(kAdi)}</span>
+                 <input class="k-eski-sifre" type="text" placeholder="mevcut şifre">
+                 <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
+                 <button class="mini birincil k-degistir">Şifreyi değiştir</button>
+                 <button class="mini k-coz">Kullanıcıyı ayır</button>` : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
+                        autocapitalize="off" spellcheck="false">
                  <input class="k-yeni-sifre" type="text" placeholder="şifre (6+)">
-                 <button class="mini birincil k-ac">Hesap aç</button>` : `<input class="k-sifre-yerel" type="text" value="${esc(p.sifre || "")}" title="Şifre">`}
+                 <button class="mini birincil k-ac">Kullanıcı aç</button>` : `<input class="k-sifre-yerel" type="text" value="${esc(p.sifre || "")}" title="Şifre">`}
+        ${p.rol === ROLLER.MAGAZA ? '<button class="mini k-magaza-sil" title="Mağazayı ve bütün verisini sil">🗑</button>' : ""}
       </div>`);
         satir.querySelector(".k-ad").addEventListener("change", function() {
           profilGuncelle(p.key, { ad: this.value.trim() || p.ad });
@@ -3170,43 +3309,121 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
         });
         const acBtn = satir.querySelector(".k-ac");
         if (acBtn) acBtn.addEventListener("click", async () => {
-          const mail = satir.querySelector(".k-yeni-mail").value.trim().toLowerCase();
-          const sifre = satir.querySelector(".k-yeni-sifre").value;
-          if (!mail || sifre.length < 6) {
-            kulNot.textContent = "E-posta ve en az 6 karakterlik şifre gerekli.";
+          const adAlan = satir.querySelector(".k-yeni-mail");
+          const sifAlan = satir.querySelector(".k-yeni-sifre");
+          const ad = adAlan.value.trim().toLowerCase();
+          const sifre = sifAlan.value;
+          if (!ad) {
+            bosUyar(adAlan);
+            kulNot.textContent = "Kullanıcı adı gerekli.";
+            return;
+          }
+          if (!/^[a-z0-9._-]+$/.test(ad)) {
+            bosUyar(adAlan);
+            kulNot.textContent = "Kullanıcı adında yalnızca harf, rakam, nokta, tire ve alt çizgi olabilir (boşluk ve @ olmaz).";
+            return;
+          }
+          if (sifre.length < 6) {
+            bosUyar(sifAlan);
+            kulNot.textContent = "Şifre en az 6 karakter olmalı.";
+            return;
+          }
+          if (profilleriGetir().some((x) => x.kullaniciMaili === epostaYap(ad))) {
+            bosUyar(adAlan);
+            kulNot.textContent = "Bu kullanıcı adı başka bir mağazada kullanılıyor.";
             return;
           }
           acBtn.disabled = true;
           acBtn.textContent = "Açılıyor...";
           try {
-            const uid = await kullaniciOlustur(mail, sifre);
+            const uid = await kullaniciOlustur(epostaYap(ad), sifre);
             await dbAl().collection(KULLANICILAR).doc(uid).set({
-              eposta: mail,
+              eposta: epostaYap(ad),
               rol: p.rol,
               magazaKey: p.rol === ROLLER.MAGAZA ? p.key : null
             });
-            profilGuncelle(p.key, { kullaniciMaili: mail });
-            kulNot.textContent = p.ad + " için hesap açıldı: " + mail;
+            profilGuncelle(p.key, { kullaniciMaili: epostaYap(ad) });
+            kulNot.textContent = p.ad + ' → kullanıcı adı "' + ad + '", şifre "' + sifre + '". Bu bilgiyi mağazaya verin.';
             kulCiz();
           } catch (e) {
             kulNot.textContent = girisHatasi(e);
             acBtn.disabled = false;
-            acBtn.textContent = "Hesap aç";
+            acBtn.textContent = "Kullanıcı aç";
           }
         });
-        const sifreBtn = satir.querySelector(".k-sifre");
-        if (sifreBtn) sifreBtn.addEventListener("click", async () => {
+        const degistirBtn = satir.querySelector(".k-degistir");
+        if (degistirBtn) degistirBtn.addEventListener("click", async () => {
+          const eskiAlan = satir.querySelector(".k-eski-sifre");
+          const yeniAlan = satir.querySelector(".k-yeni-sifre2");
+          if (!eskiAlan.value) {
+            bosUyar(eskiAlan);
+            kulNot.textContent = "Mevcut şifre gerekli.";
+            return;
+          }
+          if (yeniAlan.value.length < 6) {
+            bosUyar(yeniAlan);
+            kulNot.textContent = "Yeni şifre en az 6 karakter olmalı.";
+            return;
+          }
+          degistirBtn.disabled = true;
+          degistirBtn.textContent = "Değiştiriliyor...";
           try {
-            await authAl().sendPasswordResetEmail(p.kullaniciMaili);
-            kulNot.textContent = "Sıfırlama bağlantısı " + p.kullaniciMaili + " adresine gönderildi.";
+            await sifreDegistir(p.kullaniciMaili, eskiAlan.value, yeniAlan.value);
+            kulNot.textContent = p.ad + " şifresi değiştirildi. Yeni şifre: " + yeniAlan.value;
+            kulCiz();
+          } catch (e) {
+            kulNot.textContent = girisHatasi(e);
+            degistirBtn.disabled = false;
+            degistirBtn.textContent = "Şifreyi değiştir";
+          }
+        });
+        const cozBtn = satir.querySelector(".k-coz");
+        if (cozBtn) cozBtn.addEventListener("click", async () => {
+          const adYedek = kullaniciAdiYap(p.kullaniciMaili);
+          const mailYedek = p.kullaniciMaili;
+          if (!confirm(p.ad + ' ile "' + adYedek + '" kullanıcısının bağlantısı kaldırılacak.\n\nMağazanın verisi silinmez. Ardından buradan yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.\n\nDevam edilsin mi?')) return;
+          try {
+            const snap = await dbAl().collection(KULLANICILAR).where("magazaKey", "==", p.key).get();
+            const yigin = dbAl().batch();
+            snap.forEach((d) => yigin.delete(dbAl().collection(KULLANICILAR).doc(d.id)));
+            await yigin.commit();
+            profilGuncelle(p.key, { kullaniciMaili: null });
+            kulNot.textContent = adYedek + " ayrıldı. Aynı kullanıcı adını yeniden kullanmak isterseniz önce Firebase Console → Authentication → Users bölümünden " + mailYedek + " hesabını silin.";
+            kulCiz();
           } catch (e) {
             kulNot.textContent = girisHatasi(e);
           }
+        });
+        const magSilBtn = satir.querySelector(".k-magaza-sil");
+        if (magSilBtn) magSilBtn.addEventListener("click", () => {
+          if (!confirm(p.ad + " silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve rutin listesi kalıcı olarak gidecek. Geri alınamaz.\n\nDevam edilsin mi?")) return;
+          magazaSil(p.key);
+          kulNot.textContent = p.ad + " ve verisi silindi." + (p.kullaniciMaili ? " Kullanıcı hesabını Firebase Console → Authentication → Users bölümünden silin." : "");
+          kulCiz();
+          yenile && yenile();
         });
         kulKutu.appendChild(satir);
       });
     };
     kulCiz();
+    const magazaAlan = kok.querySelector(".yeni-magaza");
+    kok.querySelector(".magaza-ekle").addEventListener("click", () => {
+      const ad = magazaAlan.value.trim();
+      if (!ad) {
+        bosUyar(magazaAlan);
+        return;
+      }
+      if (profilleriGetir().some((p) => p.ad.toLowerCase() === ad.toLowerCase())) {
+        bosUyar(magazaAlan);
+        kulNot.textContent = "Bu adda bir mağaza zaten var.";
+        return;
+      }
+      const yeniM = magazaEkle(ad);
+      magazaAlan.value = "";
+      kulNot.textContent = yeniM.ad + ' eklendi. Şimdi karşısındaki alanlara kullanıcı adı ve şifre yazıp "Kullanıcı aç" deyin.';
+      kulCiz();
+      yenile && yenile();
+    });
     const satirKutu = kok.querySelector(".satir-ayar");
     const satirCiz = () => {
       const secili = satirAyariGetir();
@@ -3251,7 +3468,10 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     kok.querySelector(".etiket-ekle").addEventListener("click", () => {
       const a = kok.querySelector(".e-anahtar").value.trim();
       const k = kok.querySelector(".e-kart").value.trim();
-      if (!a || !k) return;
+      if (!a || !k) {
+        bosUyar(kok.querySelector(a ? ".e-kart" : ".e-anahtar"));
+        return;
+      }
       etiketleriYaz(etiketleriGetir().concat({ anahtar: a, kart: k }));
       kok.querySelector(".e-anahtar").value = "";
       kok.querySelector(".e-kart").value = "";
@@ -3272,13 +3492,15 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     <div class="giris-kutu">
       <div class="giris-logo"></div>
       <h1>Mağaza Performans Takip</h1>
-      <label class="giris-etiket">E-posta</label>
-      <input type="email" id="girisEposta" class="giris-girdi" autocomplete="username">
+      <label class="giris-etiket">Kullanıcı adı</label>
+      <input type="text" id="girisEposta" class="giris-girdi" autocomplete="username"
+             autocapitalize="off" spellcheck="false">
       <label class="giris-etiket">Şifre</label>
       <input type="password" id="girisSifre" class="giris-girdi" autocomplete="current-password">
       <div class="giris-hata ${iyiMi ? "iyi" : ""}">${esc(mesaj || "")}</div>
       <button class="mini birincil giris-btn">Giriş yap</button>
       <button class="giris-bag" id="sifreUnuttum">Şifremi unuttum</button>
+      <p class="giris-not">Kullanıcı adınızı ve şifrenizi kurucunuz verir.</p>
     </div>
   </div>`);
     const simge = document.querySelector('link[rel="icon"]');
@@ -3290,13 +3512,13 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const dene = async () => {
       hata.className = "giris-hata";
       if (!mail.value.trim() || !sifre.value) {
-        hata.textContent = "E-posta ve şifre gerekli.";
+        hata.textContent = "Kullanıcı adı ve şifre gerekli.";
         return;
       }
       btn.disabled = true;
       btn.textContent = "Giriş yapılıyor...";
       try {
-        await authAl().signInWithEmailAndPassword(mail.value.trim(), sifre.value);
+        await authAl().signInWithEmailAndPassword(epostaYap(mail.value), sifre.value);
       } catch (e) {
         hata.textContent = girisHatasi(e);
       }
@@ -3311,12 +3533,18 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
       }
     }));
     kok.querySelector("#sifreUnuttum").addEventListener("click", async () => {
-      if (!mail.value.trim()) {
-        hata.textContent = "Önce e-posta adresinizi yazın.";
+      const ad = mail.value.trim();
+      if (!ad) {
+        hata.textContent = "Önce kullanıcı adınızı yazın.";
+        return;
+      }
+      if (!ad.includes("@")) {
+        hata.className = "giris-hata";
+        hata.textContent = "Kullanıcı adlarına posta gönderilemez. Şifrenizi kurucunuz değiştirir.";
         return;
       }
       try {
-        await authAl().sendPasswordResetEmail(mail.value.trim());
+        await authAl().sendPasswordResetEmail(ad);
         hata.className = "giris-hata iyi";
         hata.textContent = "Sıfırlama bağlantısı gönderildi.";
       } catch (e) {
@@ -3358,7 +3586,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     ciz(bulutGirisEkrani(bekleyenMesaj));
   }
   function eposta_ipucu(baglam) {
-    return "Bu hesap (" + baglam.eposta + ') hiçbir mağazaya bağlı değil.\nHesap Firebase konsolundan elle açıldıysa böyle olur: mağaza bağlantısı yalnızca uygulamadaki Kurucu → Ayarlar → Kullanıcılar bölümündeki "Hesap aç" düğmesiyle kurulur.';
+    return "Bu kullanıcı (" + kullaniciAdiYap(baglam.eposta) + ") hiçbir mağazaya bağlı değil.\nKurucu → Ayarlar → Kullanıcılar bölümünden bu kullanıcıyı bir mağazaya bağlayın.";
   }
   async function bulutOturumuAc(user) {
     ciz(el('<div class="acilis">Veriler yükleniyor…</div>'));
@@ -3486,9 +3714,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     const magazaGibi = aktif.rol === ROLLER.MAGAZA || aktif.rol === ROLLER.KURUCU && kurucuMagaza;
     const menu = [];
     if (aktif.rol === ROLLER.MAGAZA) {
-      menu.push(["ana", "Ana Sayfa"], ["talep", "Ürün Talepleri"], ["araclar", "Araçlar"]);
+      menu.push(["ana", "Ana Sayfa"], ["talep", "Ürün Talepleri"]);
     } else if (aktif.rol === ROLLER.BOLGE) {
-      menu.push(["bolge", "Özet"], ["talep-rapor", "Ürün Talepleri"], ["araclar", "Araçlar"]);
+      menu.push(["bolge", "Özet"], ["talep-rapor", "Ürün Talepleri"]);
     } else {
       menu.push(["kurucu", "Ayarlar"], ["bolge", "Bölge Görünümü"], ["ana", "Mağaza Ekranı"], ["talep-rapor", "Ürün Talepleri"]);
     }
@@ -3592,7 +3820,6 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
     if (sayfa === "kurucu") return kurucuPaneli(uygulamaCiz);
     if (sayfa === "talep") return talepEkrani(aktifMagaza(), uygulamaCiz);
     if (sayfa === "talep-rapor") return talepRaporSayfasi();
-    if (sayfa === "araclar") return el('<div class="bos-sayfa"><h2>Araçlar</h2><p>Bu bölüm sonraki adımda eklenecek. Eski sürümdeki araç kutuları buraya taşınacak.</p></div>');
     const magaza = aktifMagaza();
     if (!magaza) return el('<div class="bos-sayfa"><h2>Mağaza seçilmedi</h2><p>Üstteki listeden bir mağaza seçin.</p></div>');
     const duzenlenebilir = aktif.rol !== ROLLER.BOLGE;

@@ -12,6 +12,20 @@ export const firebaseConfig = {
 };
 
 export const KULLANICILAR = 'mc2_kullanicilar';
+
+// Firebase Auth e-posta ister; kullanıcılar ise yalnızca kullanıcı adı yazar.
+// İçeride "2307" → "2307@mcrapor.local" olur. İçinde @ varsa dokunulmaz,
+// böylece kurucunun gerçek e-postasıyla girişi bozulmaz.
+export const KULLANICI_ALANI = 'mcrapor.local';
+export function epostaYap(kullaniciAdi){
+  const k = String(kullaniciAdi || '').trim().toLowerCase();
+  return k.includes('@') ? k : k + '@' + KULLANICI_ALANI;
+}
+// Ekranda gösterilirken yapay alan adı gizlenir.
+export function kullaniciAdiYap(eposta){
+  const e = String(eposta || '');
+  return e.endsWith('@' + KULLANICI_ALANI) ? e.slice(0, -('@' + KULLANICI_ALANI).length) : e;
+}
 export const MAGAZALAR   = 'mc2_magazalar';
 export const ORTAK       = 'mc2_ortak';
 
@@ -30,19 +44,23 @@ export const dbAl = () => db;
 
 export function girisHatasi(err){
   const kodlar = {
-    'auth/invalid-email': 'E-posta adresi geçersiz.',
-    'auth/user-not-found': 'Bu e-posta ile kayıtlı kullanıcı yok.',
+    'auth/invalid-email': 'Kullanıcı adı geçersiz.',
+    'auth/user-not-found': 'Böyle bir kullanıcı yok.',
     'auth/wrong-password': 'Şifre yanlış.',
-    'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+    'auth/invalid-credential': 'Kullanıcı adı veya şifre hatalı.',
     'auth/too-many-requests': 'Çok fazla deneme yapıldı, biraz bekleyin.',
     'auth/network-request-failed': 'İnternet bağlantısı kurulamadı.',
-    'auth/email-already-in-use': 'Bu e-posta zaten kullanılıyor.',
+    'auth/email-already-in-use': 'Bu kullanıcı adı zaten kullanılıyor.',
     'auth/weak-password': 'Şifre en az 6 karakter olmalı.',
+    'mc2/eskiSifreYanlis':
+      'Mevcut şifre doğru değil. Şifre unutulduysa "Kullanıcıyı ayır" deyip\n' +
+      'yeni kullanıcı adı ve şifreyle yeniden açın.',
     'mc2/eslesmedi':
-      'Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi.\n' +
-      'Mağazaya bağlamak için hesabın güncel şifresini yazın.',
+      'Bu kullanıcı adı zaten kayıtlı ama verilen şifreyle girilemedi.\n' +
+      'Mağazaya bağlamak için o kullanıcının güncel şifresini yazın.',
     'auth/operation-not-allowed':
-      'Firebase\'de e-posta/şifre girişi kapalı görünüyor.\n' +
+      'Firebase\'de e-posta/şifre girişi kapalı görünüyor (kullanıcı adları\n' +
+      'içeride e-postaya çevriliyor).\n' +
       'Console → Authentication → Sign-in method → Email/Password → Enable.'
   };
   return kodlar[err && err.code] || ('İşlem tamamlanamadı: ' + (err && err.message ? err.message : err));
@@ -63,8 +81,8 @@ export async function kullaniciOlustur(eposta, sifre){
     try{
       cred = await ia.signInWithEmailAndPassword(eposta, sifre);
     }catch(e2){
-      const h = new Error('Bu e-posta zaten kayıtlı ama verilen şifreyle girilemedi. ' +
-        'Mağazaya bağlamak için hesabın güncel şifresini yazın.');
+      const h = new Error('Bu kullanıcı adı zaten kayıtlı ama verilen şifreyle girilemedi. ' +
+        'Mağazaya bağlamak için o kullanıcının güncel şifresini yazın.');
       h.code = 'mc2/eslesmedi';
       throw h;
     }
@@ -72,4 +90,21 @@ export async function kullaniciOlustur(eposta, sifre){
   const uid = cred.user.uid;
   try{ await ia.signOut(); }catch(e){ /* zaten kapanmış olabilir */ }
   return uid;
+}
+
+// Şifre değiştirme. Tarayıcıdan başka birinin şifresi ancak mevcut şifresi
+// bilinerek değiştirilebilir (Admin SDK olmadan başka yolu yok).
+export async function sifreDegistir(eposta, eskiSifre, yeniSifre){
+  if(!ikincil) ikincil = firebase.initializeApp(firebaseConfig, 'kullaniciOlusturucu');
+  const ia = ikincil.auth();
+  let cred;
+  try{
+    cred = await ia.signInWithEmailAndPassword(eposta, eskiSifre);
+  }catch(e){
+    const h = new Error('Mevcut şifre doğrulanamadı.');
+    h.code = 'mc2/eskiSifreYanlis';
+    throw h;
+  }
+  await cred.user.updatePassword(yeniSifre);
+  try{ await ia.signOut(); }catch(e){}
 }

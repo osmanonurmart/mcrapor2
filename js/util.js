@@ -126,3 +126,14 @@ export function el(html){
   t.innerHTML = html.trim();
   return t.content.firstElementChild;
 }
+
+// Boş alanla basılan "ekle/gönder" tuşları sessiz kalmasın: alan kısa süre
+// vurgulanır ve imleç oraya gider. Tuşun neden bir şey yapmadığı görülür.
+export function bosUyar(girdi){
+  if(!girdi) return;
+  girdi.classList.remove('bos-uyari');
+  void girdi.offsetWidth;          // animasyon yeniden başlasın
+  girdi.classList.add('bos-uyari');
+  girdi.focus();
+  setTimeout(() => girdi.classList.remove('bos-uyari'), 1200);
+}

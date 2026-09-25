@@ -34,11 +34,29 @@ haftalık örnek veri Firestore'a yazılır.
 
 ## 4. Mağaza kullanıcılarını açın
 
-Kurucu → **Kullanıcılar** bölümünde her profilin yanında e-posta ve geçici
-şifre alanı var. "Hesap aç" hem Firebase hesabını açar hem de kullanıcıyı o
-mağazaya bağlar. Şifreyi kullanıcı sonradan "şifremi unuttum" ile değiştirir.
+Kurucu → **Ayarlar → Kullanıcılar**. Her mağazanın yanında kullanıcı adı ve
+şifre alanı var. **Kullanıcı aç** hem Firebase hesabını açar hem de kullanıcıyı
+o mağazaya bağlar. Mağaza bu kullanıcı adı ve şifreyle girer, yalnızca kendi
+verisini görür.
 
-Bölge müdürü ve kurucu profilleri için de aynı şekilde hesap açılır.
+Kullanıcı adı yalnızca harf, rakam, nokta, tire ve alt çizgi içerebilir —
+boşluk ve @ olmaz. İçeride `2307` → `2307@mcrapor.local` adresine çevrilir;
+bu yüzden Firebase'de e-posta/şifre girişinin açık olması gerekir, ama
+kullanıcı hiçbir zaman e-posta yazmaz.
+
+Aynı bölümde:
+
+- **+ Mağaza ekle** — istediğiniz kadar mağaza açabilirsiniz, her birinin
+  verisi kendi anahtarının altında ayrı durur.
+- **Şifreyi değiştir** — mevcut şifre + yeni şifre. Tarayıcıdan başkasının
+  şifresi ancak mevcut şifresi bilinerek değişir.
+- **Kullanıcıyı ayır** — şifre tamamen unutulduysa: ayırın, sonra yeni
+  kullanıcı adı ve şifreyle yeniden açın. Aynı kullanıcı adını tekrar
+  kullanmak isterseniz önce Console → Authentication → Users'dan eski
+  hesabı silin.
+- **🗑** — mağazayı ve bütün verisini siler. Geri alınamaz.
+
+Bölge müdürü ve kurucu profilleri için de aynı şekilde kullanıcı açılır.
 
 ## 5. Güvenlik kurallarını yükleyin
 
@@ -75,6 +93,10 @@ koleksiyonlarını role bağlıyor. `rapor.html` çalışmaya devam eder.
 | `mc2_magazalar/{m}/ayarlar/{personel\|kartlar\|rutin}` | mağaza ayarları |
 
 Panel yerleşimi ve açık sekme gibi kişisel tercihler buluta gitmez, cihazda kalır.
+
+Kullanıcı adları Firebase'de `<kullanıcı adı>@mcrapor.local` olarak durur.
+Gerçek bir alan adı değildir; oraya posta gönderilemez, bu yüzden şifre
+sıfırlama postası bu hesaplarda işe yaramaz. Şifreyi kurucu değiştirir.
 
 ## Bilinmesi gerekenler
 

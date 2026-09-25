@@ -44,6 +44,26 @@ function yaz(anahtar, deger){
   }
   olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar}}));
 }
+// Tek bir anahtarı hem bellekten hem kalıcı yerden siler.
+function sil(anahtar){
+  if(yerelMi(anahtar) || !bulutAcik){
+    try{ localStorage.removeItem(ON_EK + anahtar); }catch(e){}
+  } else {
+    bellek.delete(anahtar);
+    buluttanSil(anahtar);
+  }
+  olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar}}));
+}
+// O an bilinen bütün anahtarlar (bulutta bellek, yerelde localStorage).
+function anahtarlar(){
+  if(!bulutAcik){
+    try{
+      return Object.keys(localStorage).filter(k => k.startsWith(ON_EK)).map(k => k.slice(ON_EK.length));
+    }catch(e){ return []; }
+  }
+  return [...bellek.keys()];
+}
+
 export function dinle(fn){ olaylar.addEventListener('degisti', fn); }
 export const bulutAcikMi = () => bulutAcik;
 
@@ -447,6 +467,17 @@ function buluta_gonder(anahtar, deger){
   }, 400));
 }
 
+async function buluttanSil(anahtar){
+  const db = dbAl();
+  const yol = anahtarYolu(anahtar);
+  if(!db || !yol || topluMod) return;
+  try{
+    if(yol.tur === 'ortakListe')      await db.collection(ORTAK).doc(yol.belge).delete();
+    else if(yol.tur === 'magazaAyar') await db.collection(MAGAZALAR).doc(yol.magaza).collection('ayarlar').doc(yol.belge).delete();
+    else if(yol.tur === 'magazaBelge')await db.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge).delete();
+  }catch(e){ console.warn('Buluttan silinemedi:', anahtar, e.message); }
+}
+
 function belgeyiCoz(tur, veri){
   if(tur === 'magazaAyar' || tur === 'ortakListe') return veri.liste;
   const {magaza, anahtar, ...kalan} = veri;
@@ -580,4 +611,31 @@ export function hepsiniSil(){
     if(k && k.startsWith(ON_EK)) silinecek.push(k);
   }
   silinecek.forEach(k => localStorage.removeItem(k));
+}
+
+// Kurucu panelinden yeni mağaza eklenir. Anahtar benzersiz olmalı: verinin
+// tamamı (gün, hedef, personel, rutin) bu anahtarın altında tutuluyor.
+const PROFIL_RENKLERI = ['#C8A066','#5f8d6a','#6f6494','#a34141','#3f6b8a','#8a6a3f','#4d7d78','#9a5f7a'];
+export function magazaEkle(ad){
+  const liste = profilleriGetir();
+  let n = 1;
+  while(liste.some(p => p.key === 'm' + n)) n++;
+  const yeni = {
+    key: 'm' + n, ad: ad, rol: ROLLER.MAGAZA, simge: '🏪',
+    renk: PROFIL_RENKLERI[liste.length % PROFIL_RENKLERI.length]
+  };
+  liste.push(yeni);
+  profilleriYaz(liste);
+  return yeni;
+}
+
+// Mağazayı ve ona ait bütün verileri siler.
+export function magazaSil(key){
+  profilleriYaz(profilleriGetir().filter(p => p.key !== key));
+  const db = dbAl();
+  if(bulutAcik && db) db.collection(MAGAZALAR).doc(key).delete().catch(e => console.warn(e.message));
+  ['personel','kartlar','rutin'].forEach(a => sil(a + ':' + key));
+  ['gun','hedef','urun','rutinDurum'].forEach(on => {
+    anahtarlar().filter(a => a.startsWith(on + ':' + key + ':')).forEach(sil);
+  });
 }

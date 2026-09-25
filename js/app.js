@@ -6,12 +6,12 @@ import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
 import { pencere, kapat } from './pencere.js';
-import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, KULLANICILAR } from './bulut.js';
+import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, KULLANICI_ALANI } from './bulut.js';
 import { yerlesimSifirla, TASINABILIR } from './yerlesim.js';
 
 const kokEl = document.getElementById('kok');
 let aktif = null;            // aktif profil
-let sayfa = 'ana';           // ana | talep | bolge | kurucu | araclar
+let sayfa = 'ana';           // ana | talep | talep-rapor | bolge | kurucu
 let kurucuMagaza = null;     // kurucu bir mağazayı incelerken
 let bulutKullanicisi = null; // {uid, eposta, rol, magazaKey}
 
@@ -25,13 +25,15 @@ function bulutGirisEkrani(mesaj, iyiMi){
     <div class="giris-kutu">
       <div class="giris-logo"></div>
       <h1>Mağaza Performans Takip</h1>
-      <label class="giris-etiket">E-posta</label>
-      <input type="email" id="girisEposta" class="giris-girdi" autocomplete="username">
+      <label class="giris-etiket">Kullanıcı adı</label>
+      <input type="text" id="girisEposta" class="giris-girdi" autocomplete="username"
+             autocapitalize="off" spellcheck="false">
       <label class="giris-etiket">Şifre</label>
       <input type="password" id="girisSifre" class="giris-girdi" autocomplete="current-password">
       <div class="giris-hata ${iyiMi ? 'iyi' : ''}">${U.esc(mesaj || '')}</div>
       <button class="mini birincil giris-btn">Giriş yap</button>
       <button class="giris-bag" id="sifreUnuttum">Şifremi unuttum</button>
+      <p class="giris-not">Kullanıcı adınızı ve şifrenizi kurucunuz verir.</p>
     </div>
   </div>`);
   const simge = document.querySelector('link[rel="icon"]');
@@ -44,9 +46,9 @@ function bulutGirisEkrani(mesaj, iyiMi){
 
   const dene = async () => {
     hata.className = 'giris-hata';
-    if(!mail.value.trim() || !sifre.value){ hata.textContent = 'E-posta ve şifre gerekli.'; return; }
+    if(!mail.value.trim() || !sifre.value){ hata.textContent = 'Kullanıcı adı ve şifre gerekli.'; return; }
     btn.disabled = true; btn.textContent = 'Giriş yapılıyor...';
-    try{ await authAl().signInWithEmailAndPassword(mail.value.trim(), sifre.value); }
+    try{ await authAl().signInWithEmailAndPassword(epostaYap(mail.value), sifre.value); }
     catch(e){ hata.textContent = girisHatasi(e); }
     btn.disabled = false; btn.textContent = 'Giriş yap';
   };
@@ -55,9 +57,16 @@ function bulutGirisEkrani(mesaj, iyiMi){
     if(e.key === 'Enter'){ e.preventDefault(); dene(); }
   }));
   kok.querySelector('#sifreUnuttum').addEventListener('click', async () => {
-    if(!mail.value.trim()){ hata.textContent = 'Önce e-posta adresinizi yazın.'; return; }
+    const ad = mail.value.trim();
+    if(!ad){ hata.textContent = 'Önce kullanıcı adınızı yazın.'; return; }
+    // Kullanıcı adları yapay bir alan adı kullandığı için onlara posta gitmez.
+    if(!ad.includes('@')){
+      hata.className = 'giris-hata';
+      hata.textContent = 'Kullanıcı adlarına posta gönderilemez. Şifrenizi kurucunuz değiştirir.';
+      return;
+    }
     try{
-      await authAl().sendPasswordResetEmail(mail.value.trim());
+      await authAl().sendPasswordResetEmail(ad);
       hata.className = 'giris-hata iyi';
       hata.textContent = 'Sıfırlama bağlantısı gönderildi.';
     }catch(e){ hata.className = 'giris-hata'; hata.textContent = girisHatasi(e); }
@@ -104,9 +113,8 @@ async function cikisYap(mesaj){
 }
 
 function eposta_ipucu(baglam){
-  return 'Bu hesap (' + baglam.eposta + ') hiçbir mağazaya bağlı değil.\n' +
-    'Hesap Firebase konsolundan elle açıldıysa böyle olur: mağaza bağlantısı yalnızca ' +
-    'uygulamadaki Kurucu → Ayarlar → Kullanıcılar bölümündeki "Hesap aç" düğmesiyle kurulur.';
+  return 'Bu kullanıcı (' + kullaniciAdiYap(baglam.eposta) + ') hiçbir mağazaya bağlı değil.\n' +
+    'Kurucu → Ayarlar → Kullanıcılar bölümünden bu kullanıcıyı bir mağazaya bağlayın.';
 }
 
 // Girişten sonra: veriyi yükle, aktif profili belirle, uygulamayı çiz.
@@ -238,9 +246,9 @@ function ustCubuk(){
   const magazaGibi = aktif.rol === V.ROLLER.MAGAZA || (aktif.rol === V.ROLLER.KURUCU && kurucuMagaza);
   const menu = [];
   if(aktif.rol === V.ROLLER.MAGAZA){
-    menu.push(['ana','Ana Sayfa'], ['talep','Ürün Talepleri'], ['araclar','Araçlar']);
+    menu.push(['ana','Ana Sayfa'], ['talep','Ürün Talepleri']);
   } else if(aktif.rol === V.ROLLER.BOLGE){
-    menu.push(['bolge','Özet'], ['talep-rapor','Ürün Talepleri'], ['araclar','Araçlar']);
+    menu.push(['bolge','Özet'], ['talep-rapor','Ürün Talepleri']);
   } else {
     menu.push(['kurucu','Ayarlar'], ['bolge','Bölge Görünümü'], ['ana','Mağaza Ekranı'], ['talep-rapor','Ürün Talepleri']);
   }
@@ -333,7 +341,8 @@ function sayfaIcerigi(){
   if(sayfa === 'kurucu')      return kurucuPaneli(uygulamaCiz);
   if(sayfa === 'talep')       return talepEkrani(aktifMagaza(), uygulamaCiz);
   if(sayfa === 'talep-rapor') return talepRaporSayfasi();
-  if(sayfa === 'araclar')     return U.el('<div class="bos-sayfa"><h2>Araçlar</h2><p>Bu bölüm sonraki adımda eklenecek. Eski sürümdeki araç kutuları buraya taşınacak.</p></div>');
+  // 'araclar' sayfası menüden kaldırıldı: içi boştu. Eski sürümün araç
+  // kutuları taşındığında menüye geri eklenecek (bkz. NOTLAR.md).
 
   const magaza = aktifMagaza();
   if(!magaza) return U.el('<div class="bos-sayfa"><h2>Mağaza seçilmedi</h2><p>Üstteki listeden bir mağaza seçin.</p></div>');

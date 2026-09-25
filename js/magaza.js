@@ -114,7 +114,7 @@ function simuleSatiri(yenile){
   const kok = U.el(`<div class="simule-satir">
     <span>🕒 Simüle tarihi</span>
     <input type="date" value="${U.simuleDeger() || ''}">
-    <button class="mini" data-sifirla="1">Gerçek güne dön</button>
+    ${U.simuleDeger() ? '<button class="mini" data-sifirla="1">Gerçek güne dön</button>' : ''}
     <span class="simule-not">${U.simuleDeger() ? 'Girilen veriler ' + U.simuleDeger() + ' tarihine kaydedilir.' : ''}</span>
   </div>`);
   kok.querySelector('input').addEventListener('change', function(){
@@ -122,7 +122,9 @@ function simuleSatiri(yenile){
     haftaSec(U.pazartesi(U.bugun()));
     yenile();
   });
-  kok.querySelector('[data-sifirla]').addEventListener('click', () => {
+  // Tuş yalnızca simüle tarihi varken çizilir.
+  const sifirlaBtn = kok.querySelector('[data-sifirla]');
+  if(sifirlaBtn) sifirlaBtn.addEventListener('click', () => {
     U.simuleAyarla(null);
     haftaSec(U.pazartesi(U.bugun()));
     yenile();
@@ -258,7 +260,7 @@ export function personelPenceresi(magazaKey, yenile){
   const ekleBtn = govde.querySelector('.personel-ekle button');
   const ekle = () => {
     const ad = girdi.value.trim();
-    if(!ad) return;
+    if(!ad){ U.bosUyar(girdi); return; }
     const l = V.personelGetir(magazaKey);
     l.push({id:'p'+Date.now(), ad, aktif:true});
     V.personelYaz(magazaKey, l);

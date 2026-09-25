@@ -184,7 +184,7 @@ function kartEklemeFormu(magazaKey, kap, secenekler){
   form.querySelector('.k-iptal').addEventListener('click', () => form.remove());
   form.querySelector('.k-kaydet').addEventListener('click', () => {
     const ad = form.querySelector('.k-ad').value.trim();
-    if(!ad) return;
+    if(!ad){ U.bosUyar(form.querySelector('.k-ad')); return; }
     const tur = form.querySelector('.k-tur').value;
     const liste = V.kartlarGetir(magazaKey);
     liste.push(tur === 'elle'

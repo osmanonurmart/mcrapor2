@@ -541,3 +541,15 @@ td.hesaplanan{ color:var(--soluk); font-size:.76rem; }
   .hafta-baslik{ font-size:.86rem; }
   .bolge-alt{ grid-template-columns:1fr; }
 }
+
+/* Boş alanla tuşa basıldığında alanı vurgula (bkz. util.bosUyar) */
+@keyframes bosSarsinti {
+  0%,100% { transform: translateX(0); }
+  25%     { transform: translateX(-4px); }
+  75%     { transform: translateX(4px); }
+}
+.bos-uyari {
+  border-color: #c0392b !important;
+  box-shadow: 0 0 0 2px rgba(192,57,43,.22);
+  animation: bosSarsinti .22s 2;
+}

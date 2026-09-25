@@ -128,3 +128,40 @@ kaynağın "39.HAFTA" sütunu 84.867 — fark yalnızca kaynağın kendi yuvarla
   performans ekranı için hazır veri.
 - **Ürün Adedi** ve **Fatura Sayısı** KPI satırları eklendi, varsayılanda kapalı;
   kurucu panelinden açılabilir.
+
+## 2026-09-25 — tuş denetimi
+
+Her rolün (kurucu, mağaza, bölge) her sayfasındaki bütün tuşlar tek tek
+tıklandı (226 tuş). Sonuç:
+
+- JS hatası veren tuş yok.
+- Hiçbir şey yapmayan tuş kalmadı. Boş alanla basılan "ekle/gönder"
+  tuşları artık alanı kırmızı çerçeveyle vurguluyor (`util.bosUyar`).
+- **Araçlar** sayfası menüden kaldırıldı; içi boş bir yer tutucuydu.
+  v1'deki araç kutuları taşındığında `app.js` içindeki menü satırlarına
+  `['araclar','Araçlar']` geri eklenip sayfa gövdesi yazılacak.
+
+### Şifre yönetimi
+Firebase'in `sendOobCode` ucu var olmayan adresler için de HTTP 200
+dönüyor, bu yüzden "şifre sıfırla" hiçbir zaman hata vermiyor ama gerçek
+posta kutusu olmayan adreslerde de hiçbir şey yapmıyor. Tarayıcıdan
+başkasının şifresi ancak mevcut şifresi bilinerek değiştirilebilir
+(Admin SDK olmadan başka yol yok). Bu yüzden kullanıcı satırında üç yol
+var: **Şifreyi değiştir** (mevcut + yeni), **Sıfırlama postası**,
+**Bağlantıyı kaldır** (konsoldan silip yeniden açmak için).
+
+## 2026-09-25 — kullanıcı adıyla giriş
+
+Giriş ekranı artık e-posta değil **kullanıcı adı** soruyor. Firebase Auth
+e-posta zorunlu tuttuğu için içeride `2307` → `2307@mcrapor.local` çevrimi
+yapılıyor (`bulut.js` → `epostaYap` / `kullaniciAdiYap`). Kurucunun gerçek
+e-postası içinde @ olduğu için olduğu gibi geçiyor, eski girişi bozulmadı.
+
+`mcrapor.local` gerçek bir alan adı değil; oraya posta gitmez. Bu yüzden
+"şifremi unuttum" bu hesaplarda kapalı ve kullanıcı satırındaki
+"Sıfırlama postası" tuşu kaldırıldı. Şifreyi kurucu değiştirir.
+
+Kurucu → Ayarlar → Kullanıcılar bölümüne eklenenler: **+ Mağaza ekle**,
+mağaza satırında **🗑** (mağaza ve bütün verisi), **Kullanıcıyı ayır**.
+`veri.js` içine `magazaEkle`, `magazaSil`, genel `sil`/`anahtarlar`
+yardımcıları ve `buluttanSil` girdi.

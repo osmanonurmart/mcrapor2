@@ -194,10 +194,9 @@ export function urunTalepListesi(pzt){
       const satir = U.el(`<div class="urun-satir ${isteyenler.length ? 'secili' : ''}">
         <span class="u-ad">${U.esc(u.ad)}</span>
         ${isteyenler.length ? '<span class="u-tik" title="İstenmiş">✓</span>' : ''}
-        <button class="u-sayac ${isteyenler.length ? '' : 'bos'}"
-                title="${isteyenler.length ? 'İsteyen mağazaları göster' : 'Kimse istemedi'}">
-          ${isteyenler.length ? isteyenler.length + ' mağaza · ' + toplamAdet + ' adet' : '–'}
-        </button>
+        ${isteyenler.length
+          ? `<button class="u-sayac" title="İsteyen mağazaları göster">${isteyenler.length} mağaza · ${toplamAdet} adet</button>`
+          : '<span class="u-sayac bos" title="Kimse istemedi">–</span>'}
       </div>`);
       if(isteyenler.length){
         satir.querySelector('.u-sayac').addEventListener('click', () => {
