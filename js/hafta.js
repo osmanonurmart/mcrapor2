@@ -134,7 +134,7 @@ export function haftaTablosu(magazaKey, pzt, secenekler = {}){
       ? izinler.map(z => V.personelAdi(magazaKey, z.personelId) + ' · ' + z.tur).join(', ')
       : 'İzinli yok';
     const th = U.el(`<th class="${tarih === bugunStr ? 'bugun' : ''}">
-      <span class="gun-ad">${U.GUN_KISA[i]}${kayit.kesin ? '<span class="gun-kesin" title="Kapanmış gün, veri kesin">✓</span>' : ''}</span>
+      <span class="gun-ad">${U.GUN_KISA[i]}</span>
       <span class="gun-tarih">${U.kisaTarih(g)}</span>
       <button class="izin-btn ${izinler.length ? 'dolu' : ''}" data-tarih="${tarih}" title="${U.esc(etiket)}">${izinler.length ? U.esc(etiket.split(',')[0]) : 'İzin ▾'}</button>
     </th>`);

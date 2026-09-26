@@ -550,7 +550,6 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .on-uyari{ color:var(--vurgu); font-size:.7rem; margin-left:3px; }
 .on-kesin{ color:var(--artis); font-size:.72rem; margin-left:3px; }
 .on-gecici{ color:var(--soluk); font-size:.72rem; margin-left:3px; }
-.gun-kesin{ color:var(--artis); font-size:.62rem; margin-left:3px; vertical-align:1px; }
 .uyari{ background:var(--dusus-zemin); color:var(--dusus); border-radius:8px; padding:9px 11px; font-size:.8rem; margin-top:10px; }
 .personel-satir{ display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--cizgi); }
 .personel-satir.pasif{ opacity:.55; }
