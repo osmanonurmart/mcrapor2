@@ -1,10 +1,10 @@
 /* Mağaza Performans Takip — tek stil dosyası.
    Açık tema esas; renkler değişkenlerden geliyor. */
 :root{
-  --arka:#cfc7b6; --kagit:#f6f2e9; --cizgi:#a09689; --cizgi-ince:#bdb4a6; --yazi:#141417; --soluk:#55555f;
+  --arka:#cfc7b6; --kagit:#ffffff; --cizgi:#a09689; --cizgi-ince:#bdb4a6; --yazi:#141417; --soluk:#55555f;
   --vurgu:#a87c38; --koyu:#1d1d1f; --artis:#236437; --dusus:#96302f; --acik-vurgu:#f2e6cf;
   /* Hafta tablosunun başlık satırı — ayrı değişken, tema ile değişebilsin. */
-  --baslik-zemin:#4a4136; --baslik-yazi:#f4efe6; --baslik-bugun:#6b5a33;
+  --baslik-zemin:#eae4d6; --baslik-yazi:#2a251d; --baslik-bugun:#f4e3c2;
   --golge:0 2px 10px rgba(0,0,0,.10); --golge-buyuk:0 12px 40px rgba(0,0,0,.26);
   /* Panel ve tablo çerçeveleri tek yerden kalınlaşsın. */
   /* Ara zeminler: rozet, tablo başlığı, satır vurgusu, bugün sütunu */
@@ -322,8 +322,6 @@ table{ border-collapse:collapse; }
 /* Sabit sütun genişliği: izin etiketi gibi uzun içerik sütunu şişirip
    Formüller sütununu dışarı itmesin. Gün sütunları eşit bölünür. */
 .hafta-tablo{ width:100%; min-width:620px; font-size:.82rem; table-layout:fixed; }
-.hafta-tablo thead tr:first-child th:first-child{ border-top-left-radius:calc(var(--r) - 2px); }
-.hafta-tablo thead tr:first-child th:last-child{ border-top-right-radius:calc(var(--r) - 2px); }
 .hafta-tablo .kpi-sutun{ width:118px; }
 .hafta-tablo .formul-sutun{ width:132px; }
 .hafta-tablo th,.hafta-tablo td{ overflow:hidden; }
@@ -333,9 +331,9 @@ table{ border-collapse:collapse; }
 .hafta-tablo .formul-sutun{ border-left-width:2px; }
 .hafta-tablo thead th{
   background:var(--baslik-zemin); color:var(--baslik-yazi); padding:5px 3px;
-  font-weight:700; vertical-align:middle; border-color:var(--baslik-zemin);
+  font-weight:700; vertical-align:middle;
 }
-.hafta-tablo thead .gun-tarih{ color:var(--baslik-yazi); opacity:.78; }
+.hafta-tablo thead .gun-tarih{ color:var(--baslik-yazi); opacity:.62; }
 .hafta-tablo thead .kpi-sutun{
   background:var(--baslik-zemin); color:var(--baslik-yazi); text-align:center !important;
 }
@@ -343,12 +341,12 @@ table{ border-collapse:collapse; }
 .gun-ad{ display:block; font-size:.78rem; line-height:1.25; }
 .gun-tarih{ display:block; font-size:.67rem; color:var(--soluk); font-weight:400; line-height:1.25; }
 .izin-btn{
-  margin-top:2px; width:100%; background:rgba(255,255,255,.10); border:1px dashed rgba(255,255,255,.45);
+  margin-top:2px; width:100%; background:var(--kagit); border:1px solid var(--cizgi-ince);
   border-radius:5px;
-  padding:1px 3px; font-size:.65rem; color:rgba(255,255,255,.8); cursor:pointer;
+  padding:1px 3px; font-size:.65rem; color:var(--soluk); cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.izin-btn.dolu{ background:var(--acik-vurgu); border-style:solid; border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
+.izin-btn.dolu{ background:var(--acik-vurgu); border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
 .kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:5px 8px !important; font-weight:700;
   font-size:.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Formül metni uzun olabiliyor ("▼ %6,1 (ilk 5 gün)"); kırpmak yerine sarsın. */
@@ -380,7 +378,7 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .tuval-blok > .panel-kutu{ border:none; border-radius:0; padding:0; background:none; }
 /* Hafta tablosunda çerçeve tek: dış kart kalkar, tablonun kendisi kutu olur. */
 .tuval-blok:has(> .hafta-blok){ border:none; background:none; padding:0; overflow:visible; }
-.tuval-blok > .hafta-blok{ border:var(--cerceve) solid var(--cizgi); border-radius:var(--r); }
+.tuval-blok > .hafta-blok{ border:var(--cerceve) solid var(--cizgi); border-radius:var(--r); overflow:hidden; }
 /* Sekmeli özet kutusu — üst menüyle aynı görünüm. */
 .ozet-kutu{ padding:8px 10px 10px; }
 .sekme-bar{ display:flex; gap:2px; border-bottom:3px solid var(--cizgi); margin-bottom:9px; padding-right:24px; }

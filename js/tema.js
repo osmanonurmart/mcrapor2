@@ -12,9 +12,9 @@ const ANAHTAR = 'mc2:tema';
 
 export const TEMALAR = [
   {
-    id:'bej', ad:'Bej', ornek:['#cfc7b6','#f6f2e9','#a87c38'],
+    id:'bej', ad:'Bej', ornek:['#cfc7b6','#ffffff','#a87c38'],
     renkler:{
-      '--arka':'#cfc7b6','--kagit':'#f6f2e9','--cizgi':'#a09689','--cizgi-ince':'#bdb4a6',
+      '--arka':'#cfc7b6','--kagit':'#ffffff','--cizgi':'#a09689','--cizgi-ince':'#bdb4a6',
       '--yazi':'#141417','--soluk':'#55555f','--vurgu':'#a87c38','--acik-vurgu':'#f2e6cf',
       '--artis':'#236437','--dusus':'#96302f','--zemin-2':'#e4dcc9','--zemin-3':'#e6dfcc',
       '--zemin-hover':'#ece4d2','--bugun-zemin':'#efe4c8','--dusus-zemin':'#f0d9d9'

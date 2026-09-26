@@ -411,3 +411,13 @@ göz yoruyordu. Üç yeni değişken: `--baslik-zemin`, `--baslik-yazi`,
 Değiştirmek için `css/app.css` içindeki `:root` bloğundaki üç satır
 yeter; tema başına ayrı ton istenirse `js/tema.js`'e de eklenir
 (orası app.css'i ezer, bkz. yukarıdaki not).
+
+## 2026-09-26 — açık başlık, beyaz zemin
+
+- Başlık satırı **açık** oldu (`--baslik-zemin:#eae4d6`, koyu yazı).
+  Siyah başlık göz yoruyordu.
+- `--kagit` beyaza çekildi (app.css **ve** bej teması).
+- Blok köşesindeki bozulma: başlık hücrelerine elle verilen
+  `border-top-*-radius` kaldırıldı, `.hafta-blok`a `overflow:hidden`
+  kondu; köşeyi artık kutu kırpıyor.
+- İzin düğmelerindeki kesik çizgi düz çizgiye çevrildi.
