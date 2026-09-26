@@ -431,3 +431,14 @@ yalnızca `display:none` — ekran büyüyünce dördü de geri geliyor.
 Mobil ve masaüstü görünümü birbirinden tamamen ayırmak mümkün: her panel
 `data-panel` ile işaretli, medya sorgusuyla hangi genişlikte hangisinin
 görüneceği ayrı ayrı belirlenebiliyor.
+
+## 2026-09-26 — mobil üst çubuk
+
+Telefonda üst çubuk tek satır: logo, sürüm rozeti, menü, mağaza seçici,
+profil. Menü sığmazsa kendi içinde yatay kayıyor (kaydırma çubuğu gizli),
+satır alta taşmıyor. Yükseklik masaüstüyle aynı (43–44px).
+
+"Yapıştır / Veri Ekle" telefonda gizli — veri orada girilmiyor.
+
+Masaüstüne dokunulmadı; bütün değişiklikler 900px medya sorgusunun
+içinde.

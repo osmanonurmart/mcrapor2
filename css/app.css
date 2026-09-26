@@ -637,10 +637,23 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
   .tuval-ayirac{ display:none; }
   .talep-ekran{ grid-template-columns:1fr; }
   .sayfa{ padding:10px; }
-  .ust-cubuk{ padding:7px 10px; gap:8px; }
-  .menu{ order:1; width:100%; overflow-x:auto; }
-  .ust-orta{ order:3; width:100%; }
-  .ust-sag{ order:2; margin-left:auto; }
+  /* Üst çubuk telefonda tek satır: logo, sürüm, menü, mağaza, profil.
+     Sığmazsa menü kendi içinde yatay kayar; satır alta taşmaz. */
+  .ust-cubuk{ padding:6px 8px; gap:6px; flex-wrap:nowrap; }
+  .menu{ flex:1 1 auto; min-width:0; overflow-x:auto; gap:2px; flex-wrap:nowrap; scrollbar-width:none; }
+  .menu-btn{ flex:0 0 auto; white-space:nowrap; }
+  .menu::-webkit-scrollbar{ display:none; }
+  .menu-btn{ padding:5px 8px; font-size:.78rem; }
+  .ust-orta{ flex:0 1 auto; min-width:0; }
+  .ust-sag{ flex:0 0 auto; gap:6px; }
+  .magaza-sec{ max-width:120px; padding:5px 6px; font-size:.78rem; }
+  .profil-rozet{ padding:4px 8px; gap:5px; max-width:130px; }
+  .profil-rozet > span:last-child{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .surum-rozet{ padding:1px 6px; font-size:.62rem; }
+  .ust-logo{ flex:0 0 auto; }
+
+  /* Telefonda veri yapıştırılmıyor; düğme yalnızca yer kaplıyordu. */
+  .ust-sag [data-yapistir]{ display:none; }
   .hafta-gezinti{ flex-direction:column; gap:10px; }
 
   .duyuru-satir{ white-space:normal; }
