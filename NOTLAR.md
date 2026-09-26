@@ -401,3 +401,13 @@ görünmemişti.
 Beş temanın da çizgi renkleri kendi tonlarında açıldı. Bundan sonra
 app.css'te bir renk değiştirirken karşılığını tema.js'te de güncellemek
 gerekiyor; dosyanın başına uyarı kondu.
+
+## 2026-09-26 — tablo başlığı ayrı değişkene alındı
+
+Başlık satırı `--koyu` (#1d1d1f) kullanıyordu, siyaha yakın olduğu için
+göz yoruyordu. Üç yeni değişken: `--baslik-zemin`, `--baslik-yazi`,
+`--baslik-bugun`. Varsayılan yumuşak koyu kahve (#4a4136).
+
+Değiştirmek için `css/app.css` içindeki `:root` bloğundaki üç satır
+yeter; tema başına ayrı ton istenirse `js/tema.js`'e de eklenir
+(orası app.css'i ezer, bkz. yukarıdaki not).

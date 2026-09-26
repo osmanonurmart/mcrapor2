@@ -3,6 +3,8 @@
 :root{
   --arka:#cfc7b6; --kagit:#f6f2e9; --cizgi:#a09689; --cizgi-ince:#bdb4a6; --yazi:#141417; --soluk:#55555f;
   --vurgu:#a87c38; --koyu:#1d1d1f; --artis:#236437; --dusus:#96302f; --acik-vurgu:#f2e6cf;
+  /* Hafta tablosunun başlık satırı — ayrı değişken, tema ile değişebilsin. */
+  --baslik-zemin:#4a4136; --baslik-yazi:#f4efe6; --baslik-bugun:#6b5a33;
   --golge:0 2px 10px rgba(0,0,0,.10); --golge-buyuk:0 12px 40px rgba(0,0,0,.26);
   /* Panel ve tablo çerçeveleri tek yerden kalınlaşsın. */
   /* Ara zeminler: rozet, tablo başlığı, satır vurgusu, bugün sütunu */
@@ -330,16 +332,18 @@ table{ border-collapse:collapse; }
 .hafta-tablo .kpi-sutun{ border-right-width:2px; }
 .hafta-tablo .formul-sutun{ border-left-width:2px; }
 .hafta-tablo thead th{
-  background:var(--koyu); color:#fff; padding:5px 3px; font-weight:700; vertical-align:middle;
-  border-color:var(--koyu);
+  background:var(--baslik-zemin); color:var(--baslik-yazi); padding:5px 3px;
+  font-weight:700; vertical-align:middle; border-color:var(--baslik-zemin);
 }
-.hafta-tablo thead .gun-tarih{ color:rgba(255,255,255,.72); }
-.hafta-tablo thead .kpi-sutun{ background:var(--koyu); color:#fff; text-align:center !important; }
-.hafta-tablo thead th.bugun{ background:#3a3524; }
+.hafta-tablo thead .gun-tarih{ color:var(--baslik-yazi); opacity:.78; }
+.hafta-tablo thead .kpi-sutun{
+  background:var(--baslik-zemin); color:var(--baslik-yazi); text-align:center !important;
+}
+.hafta-tablo thead th.bugun{ background:var(--baslik-bugun); }
 .gun-ad{ display:block; font-size:.78rem; line-height:1.25; }
 .gun-tarih{ display:block; font-size:.67rem; color:var(--soluk); font-weight:400; line-height:1.25; }
 .izin-btn{
-  margin-top:2px; width:100%; background:rgba(255,255,255,.08); border:1px dashed rgba(255,255,255,.4);
+  margin-top:2px; width:100%; background:rgba(255,255,255,.10); border:1px dashed rgba(255,255,255,.45);
   border-radius:5px;
   padding:1px 3px; font-size:.65rem; color:rgba(255,255,255,.8); cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;

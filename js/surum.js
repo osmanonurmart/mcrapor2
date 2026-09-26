@@ -4,7 +4,7 @@
 // buraya, sw.js'e ve surum.json'a yazar; her yayında kendiliğinden artar.
 // Tarayıcı surum.json'a bakıp sunucudaki sayı büyükse güncelleme rozetini
 // gösterir.
-export const SURUM = 25;
+export const SURUM = 26;
 
 // Sunucudaki sürümü sorar. Dönen değer: sayı ya da null (bakılamadı).
 export async function sunucuSurumu(){
