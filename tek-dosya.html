@@ -18,6 +18,8 @@
   --zemin-2:#e4dcc9; --zemin-3:#e6dfcc; --zemin-hover:#ece4d2;
   --bugun-zemin:#efe4c8; --dusus-zemin:#f0d9d9;
   --cerceve:1px; --hucre-cizgi:1px;
+  /* Arayüzün genel ölçeği (bkz. body). 1 = tarayıcı %100'ü. */
+  --olcek:0.9;
   --r:10px;
 }
 *{ box-sizing:border-box; }
@@ -28,8 +30,13 @@ body{
   -webkit-text-size-adjust:100%;
   /* Uygulama kabuğu: sayfa hiç kaymaz, içerik kendi içinde kayar.
      Böylece alt bilgi her zaman ekranda kalır. */
-  height:100vh; height:100dvh; overflow:hidden;
-  display:flex; flex-direction:column;
+  overflow:hidden; display:flex; flex-direction:column;
+  /* Tarayıcıda %90 yakınlaştırmada en iyi göründüğü için varsayılan ölçek
+     buna sabitlendi; kullanıcı Ctrl+- yapmak zorunda kalmıyor. Yükseklik
+     ölçeğe bölünüyor, yoksa gövde ekrandan taşar. */
+  zoom:var(--olcek);
+  height:calc(100vh / var(--olcek));
+  height:calc(100dvh / var(--olcek));
 }
 #kok{ flex:1 1 auto; min-height:0; overflow:auto; }
 .alt-bilgi{
@@ -3934,7 +3941,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 22;
+  var SURUM = 23;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

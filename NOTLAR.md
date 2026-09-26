@@ -352,3 +352,23 @@ sürüm yazımı paketlemeden önce çalışır, yoksa `tek-dosya.html` eski
 numarayı taşır.
 
 Yayın öncesi tek komut: `node olustur.mjs`.
+
+## 2026-09-26 — arayüz ölçeği %90'a sabitlendi
+
+Kullanıcı tarayıcıda Ctrl+- ile %90'a çekince her şeyin yerli yerine
+oturduğunu söyledi. Aynısı varsayılan yapıldı: `body { zoom: var(--olcek) }`
+ve `--olcek: 0.9`.
+
+`zoom` Ctrl+- ile birebir aynı işi yapar (yalnız yazıyı değil, kenar
+boşluklarını ve çizgileri de küçültür), o yüzden tek tek px değerlerini
+elden geçirmeye gerek kalmadı. Gövde yüksekliği `calc(100dvh /
+var(--olcek))` — bölme olmazsa gövde ekrandan taşar.
+
+Ölçeği değiştirmek isteyen tek satırı düzeltir: `:root { --olcek }`.
+
+Kontrol edildi (1920, 1600, 1440, 1366, 1280, 390): hiçbirinde sayfa
+kayması ya da yatay taşma yok, alt bilgi hep ekranda. 1600 ve 1440'ta
+haftalık tablolar da artık kaymıyor — %90 ölçek yer açtı.
+
+**Not:** Tarayıcı yakınlaştırması %100 olmalı (Ctrl+0). Kullanıcı ayrıca
+%90 yaparsa toplam %81 olur.
