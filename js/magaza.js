@@ -57,7 +57,6 @@ export function magazaEkrani(magazaKey, secenekler = {}){
 
   const kok = U.el('<div class="magaza-ekran"></div>');
   kok.appendChild(tuvalCiz(paneller, {magaza: magazaKey, adlar}));
-  kok.appendChild(simuleSatiri(yenile));
   return kok;
 }
 
@@ -110,6 +109,10 @@ function haftaGezinti(pzt, yenile){
     const hedef = U.ayinHaftalari(Number(this.value), ay)[0];
     if(hedef){ haftaSec(hedef); yenile(); }
   });
+  // Simüle tarihi ay şeridinin sağındaki boşluğa oturuyor; sayfanın altında
+  // tek başına duruyordu, oradan alındı.
+  hafta.querySelector('.ay-satir').appendChild(simuleSatiri(yenile));
+
   hafta.querySelectorAll('[data-pzt]').forEach(b => b.addEventListener('click', () => {
     haftaSec(new Date(b.dataset.pzt + 'T12:00:00')); yenile();
   }));
@@ -122,11 +125,12 @@ function haftaGezinti(pzt, yenile){
 }
 
 function simuleSatiri(yenile){
-  const kok = U.el(`<div class="simule-satir">
-    <span>🕒 Simüle tarihi</span>
-    <input type="date" value="${U.simuleDeger() || ''}">
-    ${U.simuleDeger() ? '<button class="mini" data-sifirla="1">Gerçek güne dön</button>' : ''}
-    <span class="simule-not">${U.simuleDeger() ? 'Girilen veriler ' + U.simuleDeger() + ' tarihine kaydedilir.' : ''}</span>
+  const acik = U.simuleDeger();
+  const kok = U.el(`<div class="simule-satir ${acik ? 'acik' : ''}"
+      title="${acik ? 'Girilen veriler ' + acik + ' tarihine kaydedilir.' : 'Başka bir günü deniyormuş gibi çalışmak için tarih seçin.'}">
+    <span class="simule-etiket">🕒</span>
+    <input type="date" value="${acik || ''}">
+    ${acik ? '<button class="mini" data-sifirla="1" title="Gerçek güne dön">✕</button>' : ''}
   </div>`);
   kok.querySelector('input').addEventListener('change', function(){
     U.simuleAyarla(this.value);

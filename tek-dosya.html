@@ -190,11 +190,13 @@ table{ border-collapse:collapse; }
 .rutin-tablo td:last-child{ border-right:none; }
 .rutin-tablo td.bugun{ background:var(--bugun-zemin); }
 /* Sade yazı; üzerine gelince kutuya döner, tıklanınca yeşile. */
+/* Her madde kendi kutusunda dursun; hangi günde ne olduğu bir bakışta belli. */
 .rutin-madde{
   display:flex; align-items:center; gap:2px; font-size:.68rem; line-height:1.3;
-  border:1px solid transparent; border-radius:6px; padding:2px 4px; margin-bottom:2px;
+  border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 5px; margin-bottom:3px;
+  background:var(--kagit);
 }
-.rutin-madde:hover{ background:var(--kagit); border-color:var(--cizgi); }
+.rutin-madde:hover{ border-color:var(--cizgi); }
 .rutin-madde .r-metin{
   flex:1; min-width:0; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
@@ -274,10 +276,10 @@ table{ border-collapse:collapse; }
 }
 
 .ay-satir{ display:flex; gap:2px; align-items:center; flex-wrap:wrap; }
-.ay{ background:none; border:none; padding:4px 8px; border-radius:7px; cursor:pointer; font-size:.78rem; color:var(--soluk); }
+.ay{ background:none; border:none; padding:4px 6px; border-radius:7px; cursor:pointer; font-size:.78rem; color:var(--soluk); }
 .ay:hover{ background:var(--zemin-2); }
 .ay.secili{ background:var(--koyu); color:#fff; font-weight:600; }
-.yil-sec{ margin-left:6px; padding:4px 8px; border-radius:7px; border:1px solid var(--cizgi); background:var(--kagit); font-size:.78rem; }
+.yil-sec{ margin-left:4px; padding:4px 6px; border-radius:7px; border:1px solid var(--cizgi); background:var(--kagit); font-size:.78rem; }
 /* Hafta seçimi bir bütün olarak çerçeveli dursun. */
 .hafta-satir{
   display:flex; align-items:center; gap:6px; margin-top:7px;
@@ -327,25 +329,33 @@ table{ border-collapse:collapse; }
 /* Sabit sütun genişliği: izin etiketi gibi uzun içerik sütunu şişirip
    Formüller sütununu dışarı itmesin. Gün sütunları eşit bölünür. */
 .hafta-tablo{ width:100%; min-width:620px; font-size:.82rem; table-layout:fixed; }
+.hafta-tablo thead tr:first-child th:first-child{ border-top-left-radius:calc(var(--r) - 2px); }
+.hafta-tablo thead tr:first-child th:last-child{ border-top-right-radius:calc(var(--r) - 2px); }
 .hafta-tablo .kpi-sutun{ width:118px; }
 .hafta-tablo .formul-sutun{ width:132px; }
 .hafta-tablo th,.hafta-tablo td{ overflow:hidden; }
 .hafta-tablo th,.hafta-tablo td{ border:var(--hucre-cizgi) solid var(--cizgi); padding:0; text-align:center; }
-.hafta-tablo thead th{ border-bottom-width:2px; }
+.hafta-tablo thead th{ border-bottom:2px solid var(--cizgi); }
 .hafta-tablo .kpi-sutun{ border-right-width:2px; }
 .hafta-tablo .formul-sutun{ border-left-width:2px; }
-.hafta-tablo thead th{ background:var(--zemin-3); padding:4px 3px; font-weight:600; vertical-align:top; }
-.hafta-tablo thead th.bugun{ background:var(--acik-vurgu); }
+.hafta-tablo thead th{
+  background:var(--koyu); color:#fff; padding:5px 3px; font-weight:700; vertical-align:middle;
+  border-color:var(--koyu);
+}
+.hafta-tablo thead .gun-tarih{ color:rgba(255,255,255,.72); }
+.hafta-tablo thead .kpi-sutun{ background:var(--koyu); color:#fff; text-align:center !important; }
+.hafta-tablo thead th.bugun{ background:#3a3524; }
 .gun-ad{ display:block; font-size:.78rem; line-height:1.25; }
 .gun-tarih{ display:block; font-size:.67rem; color:var(--soluk); font-weight:400; line-height:1.25; }
 .izin-btn{
-  margin-top:2px; width:100%; background:none; border:1px dashed var(--cizgi); border-radius:5px;
-  padding:1px 3px; font-size:.65rem; color:var(--soluk); cursor:pointer;
+  margin-top:2px; width:100%; background:rgba(255,255,255,.08); border:1px dashed rgba(255,255,255,.4);
+  border-radius:5px;
+  padding:1px 3px; font-size:.65rem; color:rgba(255,255,255,.8); cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .izin-btn.dolu{ background:var(--acik-vurgu); border-style:solid; border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
-.kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:4px 7px !important; font-weight:700;
-  font-size:.77rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:5px 8px !important; font-weight:700;
+  font-size:.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Formül metni uzun olabiliyor ("▼ %6,1 (ilk 5 gün)"); kırpmak yerine sarsın. */
 .formul-sutun{ background:var(--zemin-3); font-weight:700; padding:4px 6px !important; font-size:.77rem;
   white-space:normal; line-height:1.3; }
@@ -355,15 +365,27 @@ table{ border-collapse:collapse; }
 td.bugun{ background:var(--bugun-zemin); }
 td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 
-.simule-satir{ display:flex; align-items:center; gap:9px; font-size:.78rem; color:var(--soluk); flex-wrap:wrap; }
-.simule-satir input{ padding:5px 8px; border-radius:7px; border:1px solid var(--cizgi); background:var(--kagit); }
+/* Ay şeridinin sağ ucunda duran küçük simüle tarihi kutusu. */
+.simule-satir{
+  display:flex; align-items:center; gap:5px; font-size:.78rem; color:var(--soluk);
+  margin-left:auto; flex:0 0 auto;
+  border:1px solid var(--cizgi-ince); border-radius:8px; padding:2px 5px;
+}
+.simule-satir.acik{ border-color:var(--vurgu); background:var(--acik-vurgu); color:var(--vurgu); }
+.simule-etiket{ font-size:.8rem; line-height:1; }
+.simule-satir .mini{ padding:1px 6px; font-size:.72rem; line-height:1.4; }
+.simule-satir input{ padding:2px 4px; border-radius:7px; border:1px solid var(--cizgi);
+  background:var(--kagit); font-size:.72rem; }
 .simule-not{ color:var(--vurgu); }
 
 /* ---------- Sağ panel ---------- */
 
 .panel-kutu{ background:var(--kagit); border:var(--cerceve) solid var(--cizgi); border-radius:var(--r); padding:12px; }
 /* Tuvalde blok zaten çerçeveli; içteki kutu çıplak durur. */
-.tuval-blok > .panel-kutu,.tuval-blok > .hafta-blok{ border:none; border-radius:0; padding:0; background:none; }
+.tuval-blok > .panel-kutu{ border:none; border-radius:0; padding:0; background:none; }
+/* Hafta tablosunda çerçeve tek: dış kart kalkar, tablonun kendisi kutu olur. */
+.tuval-blok:has(> .hafta-blok){ border:none; background:none; padding:0; overflow:visible; }
+.tuval-blok > .hafta-blok{ border:var(--cerceve) solid var(--cizgi); border-radius:var(--r); }
 /* Sekmeli özet kutusu — üst menüyle aynı görünüm. */
 .ozet-kutu{ padding:8px 10px 10px; }
 .sekme-bar{ display:flex; gap:2px; border-bottom:3px solid var(--cizgi); margin-bottom:9px; padding-right:24px; }
@@ -2658,7 +2680,6 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     };
     const kok = el('<div class="magaza-ekran"></div>');
     kok.appendChild(tuvalCiz(paneller, { magaza: magazaKey, adlar }));
-    kok.appendChild(simuleSatiri(yenile));
     return kok;
   }
   function haftaGezinti(pzt, yenile) {
@@ -2709,6 +2730,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         yenile();
       }
     });
+    hafta.querySelector(".ay-satir").appendChild(simuleSatiri(yenile));
     hafta.querySelectorAll("[data-pzt]").forEach((b) => b.addEventListener("click", () => {
       haftaSec(/* @__PURE__ */ new Date(b.dataset.pzt + "T12:00:00"));
       yenile();
@@ -2724,11 +2746,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     return { hafta, duyuru };
   }
   function simuleSatiri(yenile) {
-    const kok = el(`<div class="simule-satir">
-    <span>🕒 Simüle tarihi</span>
-    <input type="date" value="${simuleDeger() || ""}">
-    ${simuleDeger() ? '<button class="mini" data-sifirla="1">Gerçek güne dön</button>' : ""}
-    <span class="simule-not">${simuleDeger() ? "Girilen veriler " + simuleDeger() + " tarihine kaydedilir." : ""}</span>
+    const acik2 = simuleDeger();
+    const kok = el(`<div class="simule-satir ${acik2 ? "acik" : ""}"
+      title="${acik2 ? "Girilen veriler " + acik2 + " tarihine kaydedilir." : "Başka bir günü deniyormuş gibi çalışmak için tarih seçin."}">
+    <span class="simule-etiket">🕒</span>
+    <input type="date" value="${acik2 || ""}">
+    ${acik2 ? '<button class="mini" data-sifirla="1" title="Gerçek güne dön">✕</button>' : ""}
   </div>`);
     kok.querySelector("input").addEventListener("change", function() {
       simuleAyarla(this.value);
@@ -3941,7 +3964,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 23;
+  var SURUM = 24;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

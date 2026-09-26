@@ -372,3 +372,20 @@ haftalık tablolar da artık kaymıyor — %90 ölçek yer açtı.
 
 **Not:** Tarayıcı yakınlaştırması %100 olmalı (Ctrl+0). Kullanıcı ayrıca
 %90 yaparsa toplam %81 olur.
+
+## 2026-09-26 — tablo görünümü v1'e yaklaştırıldı
+
+- **Simüle tarihi** sayfanın altından alınıp ay şeridinin sağ ucundaki
+  boşluğa kondu; küçük bir kutu (🕒 + tarih + açıkken ✕). Açıkken altın
+  renginde. Ay düğmelerinin ve yıl seçicinin iç boşluğu biraz kısıldı ki
+  tek satıra sığsın.
+- **Çerçeve içinde çerçeve kalktı.** Hafta tablolarında dış tuval kartının
+  çerçevesi kaldırıldı (`:has(> .hafta-blok)`), çerçeve artık yalnızca
+  tablonun kendisinde. Tablo tek bir dikdörtgen olarak okunuyor.
+- **Başlık satırı koyu** (v1'deki gibi): `--koyu` zemin, beyaz yazı, KPI
+  hücresi de dahil. Bugün sütunu koyu altın tonda. İzin düğmeleri koyu
+  zeminde okunacak şekilde açıldı.
+- KPI sütunu gövdede büyütüldü (.77 → .82rem), başlık hücresi dikey
+  ortalandı.
+- **Haftalık rutin maddeleri** artık her biri kendi kutusunda; önce
+  yalnız üzerine gelince çerçeve çıkıyordu.
