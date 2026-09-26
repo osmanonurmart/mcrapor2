@@ -46,19 +46,10 @@ isterseniz iki yerde geçiyor:
 ## 5. Web uygulamasını ekleyin ve ayarları alın
 
 Proje ayarları (⚙) → **Your apps** → **Web** (`</>`) simgesi → takma ad
-verin → Register app. Çıkan `firebaseConfig` bloğunu kopyalayın ve bana
-verin; `js/bulut.js` içindeki karşılığıyla değiştireceğim.
+verin → Register app. Çıkan `firebaseConfig` bloğu `js/bulut.js` içinde
+duruyor; proje değişirse orası güncellenir.
 
-```js
-const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  projectId: "...",
-  storageBucket: "...",
-  messagingSenderId: "...",
-  appId: "..."
-};
-```
+Şu an bağlı proje: **mcrapor2** (`projectId: "mcrapor2"`).
 
 ## 6. Uygulamayı açın ve giriş yapın
 

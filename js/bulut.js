@@ -1,14 +1,16 @@
 // Firebase bağlantısı: kimlik doğrulama ve Firestore.
 //
-// v1 (rapor.html) aynı projeyi kullanıyor ve kendi koleksiyonlarında çalışıyor.
-// Çakışmamak için v2'nin bütün koleksiyonları "mc2_" ile başlar.
+// v2 kendi Firebase projesinde (mcrapor2) çalışır; v1 (rapor.html) ayrı
+// projededir, ikisi hiçbir şey paylaşmaz. Koleksiyon adlarındaki "mc2_"
+// öneki eski ortak projeden kalma; verinin yerini değiştirmemek için
+// olduğu gibi bırakıldı.
 export const firebaseConfig = {
-  apiKey: "AIzaSyCHkuLl0l90xXjEoeUnbCgxJsi4iIbjmK0",
-  authDomain: "mcrapor-e97aa.firebaseapp.com",
-  projectId: "mcrapor-e97aa",
-  storageBucket: "mcrapor-e97aa.firebasestorage.app",
-  messagingSenderId: "788228140989",
-  appId: "1:788228140989:web:106c9057fb8f27fe86ecd4"
+  apiKey: "AIzaSyDxxOR3QNoIbXtVsrvFF6KNSXtATWgFPB4",
+  authDomain: "mcrapor2.firebaseapp.com",
+  projectId: "mcrapor2",
+  storageBucket: "mcrapor2.firebasestorage.app",
+  messagingSenderId: "608298271391",
+  appId: "1:608298271391:web:9a7af43547fb2f795a58aa"
 };
 
 export const KULLANICILAR = 'mc2_kullanicilar';
@@ -31,10 +33,10 @@ export const ORTAK       = 'mc2_ortak';
 
 export const bulutVarMi = () => typeof firebase !== 'undefined' && !!firebase.firestore;
 
-// v1 (rapor.html) ile aynı alan adında ve aynı Firebase projesinde çalışıyoruz.
-// Varsayılan uygulama adı kullanılırsa ikisi aynı oturum kaydını paylaşır:
-// v1 sekmesi anonim giriş yapınca v2 sekmesi de o oturumu görür ve sürekli
-// yeniden yüklenir. Kendi uygulama adımızla ayrı bir oturum kaydı tutuyoruz.
+// v1 ile aynı alan adında yayınlanıyoruz (osmanonurmart.github.io).
+// Firebase Auth oturumu "firebase:authUser:<apiKey>:<uygulamaAdı>" anahtarında
+// saklıyor ve aynı alan adındaki sekmeler arasında eşitliyor. Ayrı projede
+// olduğumuz için apiKey zaten farklı; kendi uygulama adımız ucuz bir güvence.
 export const UYGULAMA_ADI = 'mc2';
 
 let auth = null, db = null;
