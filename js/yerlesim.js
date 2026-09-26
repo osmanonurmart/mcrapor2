@@ -27,14 +27,14 @@ const EN_KUCUK_YUKSEKLIK = 80;
 //     sol üst : 2 hafta önce      sağ üst : seçili hafta
 //     sol alt : 3 hafta önce      sağ alt : 1 hafta önce
 // Yani sağ sütun yeni, sol sütun eski; her sütunda üstteki daha yeni.
-//   sağ yığın : özet (dün/bugün + ay içi), ay toplamı, günlük yorum
+//   sağ yığın : özet (solda dün/bugün, sağda ay içi/ay toplamı), günlük yorum
 // Yeni bir panel eklendiğinde burada yoksa en alta kendi satırında görünür.
 const VARSAYILAN_DUZEN = [
   {bloklar: [{panel:'hafta', yuzde:34}, {panel:'duyuru', yuzde:28}, {panel:'rutin', yuzde:38}]},
   {bloklar: [
     {yigin:['haftaOnceki2','haftaOnceki3'], yuzde:37},
     {yigin:['haftaSecili','haftaOnceki'],   yuzde:37},
-    {yigin:['ozet','ayToplam','yorum'],     yuzde:26}
+    {yigin:['ozet','yorum'],                yuzde:26}
   ]}
 ];
 // Yığınları tek tek bloklara açar; serbest yerleşim açıkken kullanılır.

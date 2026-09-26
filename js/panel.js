@@ -67,9 +67,14 @@ function kiyasIcerigi(altBaslik, sol, sag, solEtiket, sagEtiket){
 
 // Ay içi sütunu: her ölçüt için geçen ayın aynı dönemiyle kıyas.
 // Soldaki dün/bugün kartlarıyla aynı görünümde olsun diye kart biçiminde.
-function ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun){
-  const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, gun);
+// kip: 'ayIci'   → geçen ayın aynı dönemi ile bu ayın aynı dönemi
+//      'ayToplam' → geçen ayın tamamı ile bu ayın bugüne kadarki kısmı
+function ayKiyasIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun, kip){
+  const ayIci = kip !== 'ayToplam';
+  const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, ayIci ? gun : null);
   const simdi  = ayToplami(magazaKey, yil, ay, gun);
+  const ustEtiket = ayIci ? `1–${gun} ${U.AY_KISA[oncekiAy-1]}` : `${U.AY_KISA[oncekiAy-1]} tamamı`;
+  const altEtiket = `1–${gun} ${U.AY_KISA[ay-1]}`;
   const govde = U.el('<div class="kart-liste"></div>');
   // Soldaki kartlarla aynı sırada, aynı sayıda: satırlar hizalı dursun.
   V.kartlarGetir(magazaKey).forEach(kart => {
@@ -81,9 +86,9 @@ function ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun){
       : (v === null || v === undefined ? '–' : U.fmtSayi(v, 0));
     govde.appendChild(U.el(`<div class="kart">
       <div class="kart-ust"><span class="kart-ad">${U.esc(kart.ad)}</span></div>
-      <div class="kart-satir"><span>1–${gun} ${U.AY_KISA[oncekiAy-1]}</span><b>${bicim(o)}</b></div>
+      <div class="kart-satir"><span>${U.esc(ustEtiket)}</span><b>${bicim(o)}</b><span></span></div>
       <div class="kart-satir kart-bugun">
-        <span>1–${gun} ${U.AY_KISA[ay-1]}</span>
+        <span>${U.esc(altEtiket)}</span>
         <b>${bicim(y)}</b>
         <span class="kart-degisim ${U.degisimSinifi(d)}">${U.fmtDegisim(d)}</span>
       </div>
@@ -114,7 +119,7 @@ function kartIcerigi(magazaKey, secenekler){
         <span class="kart-ad">${U.esc(kart.ad)}</span>
         <button class="kart-sil" title="Kartı kaldır">✕</button>
       </div>
-      <div class="kart-satir"><span>Dün</span><b>${alanBicimle(kart.alan, onceki)}</b></div>
+      <div class="kart-satir"><span>Dün</span><b>${alanBicimle(kart.alan, onceki)}</b><span></span></div>
       <div class="kart-satir kart-bugun">
         <span>Bugün</span>
         ${kart.tur === 'kaynak'
@@ -160,7 +165,10 @@ export function panelOlustur(magazaKey, secenekler = {}){
   const ozet = U.el(`<div class="panel-kutu ozet-kutu" data-panel="ozet">
     <div class="ozet-basliklar">
       <div class="ozet-baslik">Dün / Bugün</div>
-      <div class="ozet-baslik">Ay içi</div>
+      <div class="ozet-sekmeler">
+        <button class="ozet-sekme" data-kip="ayIci">Ay içi</button>
+        <button class="ozet-sekme" data-kip="ayToplam">Ay toplamı</button>
+      </div>
     </div>
     <div class="ozet-sutunlar">
       <div class="ozet-sol"></div>
@@ -168,15 +176,19 @@ export function panelOlustur(magazaKey, secenekler = {}){
     </div>
   </div>`);
   ozet.querySelector('.ozet-sol').appendChild(kartIcerigi(magazaKey, secenekler));
-  ozet.querySelector('.ozet-sag').appendChild(
-    ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun));
 
-  // --- Ay toplamı: kendi kutusunda ---
-  const ayToplam = U.el('<div class="panel-kutu" data-panel="ayToplam"></div>');
-  ayToplam.appendChild(kiyasIcerigi(
-    `${U.AY_ADLARI[oncekiAy-1]} tamamı · ${U.AY_ADLARI[ay-1]} bugüne kadar`,
-    ayToplami(magazaKey, oncekiYil, oncekiAy), ayToplami(magazaKey, yil, ay, gun),
-    U.AY_KISA[oncekiAy-1], U.AY_KISA[ay-1]));
+  const sag = ozet.querySelector('.ozet-sag');
+  const sagCiz = kip => {
+    sag.innerHTML = '';
+    sag.appendChild(ayKiyasIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun, kip));
+    ozet.querySelectorAll('.ozet-sekme').forEach(b => b.classList.toggle('secili', b.dataset.kip === kip));
+  };
+  ozet.querySelectorAll('.ozet-sekme').forEach(b => b.addEventListener('click', () => {
+    V.ozetSekmesiYaz(magazaKey, b.dataset.kip);
+    sagCiz(b.dataset.kip);
+  }));
+  const kayitliKip = V.ozetSekmesiGetir(magazaKey);
+  sagCiz(kayitliKip === 'ayToplam' ? 'ayToplam' : 'ayIci');
 
   // --- Günlük yorum ---
   const yorumKutu = U.el(`<div class="panel-kutu" data-panel="yorum">
@@ -194,7 +206,7 @@ export function panelOlustur(magazaKey, secenekler = {}){
       setTimeout(() => { yorumKutu.querySelector('.yorum-durum').textContent = ''; }, 1800);
     }, 500);
   });
-  return {ozet, ayToplam, yorum: yorumKutu};
+  return {ozet, yorum: yorumKutu};
 }
 
 function kartEklemeFormu(magazaKey, kap, secenekler){

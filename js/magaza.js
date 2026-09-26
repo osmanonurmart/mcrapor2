@@ -41,7 +41,6 @@ export function magazaEkrani(magazaKey, secenekler = {}){
     haftaOnceki2: haftaTablosu(magazaKey, onceki2Pzt, tabloSecenekleri),
     haftaOnceki3: haftaTablosu(magazaKey, onceki3Pzt, tabloSecenekleri),
     ozet:         yan.ozet,
-    ayToplam:     yan.ayToplam,
     yorum:        yan.yorum
   };
   const adlar = {
@@ -53,7 +52,6 @@ export function magazaEkrani(magazaKey, secenekler = {}){
     haftaOnceki2: '📊 ' + U.haftaBasligi(onceki2Pzt),
     haftaOnceki3: '📊 ' + U.haftaBasligi(onceki3Pzt),
     ozet:        '📌 Özet',
-    ayToplam:    '📈 Ay toplamı',
     yorum:       '📝 Günlük yorum'
   };
 

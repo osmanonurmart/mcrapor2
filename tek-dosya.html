@@ -377,11 +377,16 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .kart-ad{ font-weight:700; font-size:.76rem; }
 .kart-sil{ background:none; border:none; color:#c2c2ca; cursor:pointer; font-size:.68rem; padding:0 1px; line-height:1; }
 .kart-sil:hover{ color:var(--dusus); }
-.kart-satir{ display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.74rem; margin-top:1px; color:var(--soluk); line-height:1.35; }
-.kart-satir > span:first-child{ flex:0 0 38px; }
-.kart-satir b{ color:var(--yazi); margin-left:auto; }
+/* Üç sütun: etiket | değer | değişim. Değişim sütunu ilk satırda boş kalsa
+   da yer tutar, böylece iki satırın sayıları aynı hizada durur. */
+.kart-satir{
+  display:grid; grid-template-columns:auto 1fr 62px; align-items:center; gap:6px;
+  font-size:.74rem; margin-top:1px; color:var(--soluk); line-height:1.35;
+}
+.kart-satir > span:first-child{ min-width:38px; white-space:nowrap; }
+.kart-satir b{ color:var(--yazi); text-align:right; }
 .kart-girdi{ width:74px; padding:1px 6px; border:1px solid var(--cizgi); border-radius:5px; text-align:right; font-size:.74rem; margin-left:auto; }
-.kart-degisim{ flex:0 0 auto; font-size:.72rem; font-weight:700; min-width:62px; text-align:right; }
+.kart-degisim{ font-size:.72rem; font-weight:700; text-align:right; }
 .kart-ekle{ width:100%; margin-top:7px; background:none; border:1px dashed var(--cizgi); border-radius:8px; padding:5px; cursor:pointer; color:var(--soluk); font-size:.76rem; }
 .kart-ekle:hover{ border-color:var(--vurgu); color:var(--vurgu); }
 .kart-form{ display:flex; flex-direction:column; gap:7px; }
@@ -730,6 +735,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   padding:4px 2px 6px;
 }
 .ozet-sutunlar{ display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:start; }
+/* Sağ sütundaki etiketler uzun ("1–26 Ağu"); değer sütunu ona göre daralsın. */
+.ozet-sag .kart-satir{ grid-template-columns:auto 1fr 58px; }
 .ozet-sol,.ozet-sag{ min-width:0; }
 .ozet-sag .kart-satir span:first-child{ white-space:nowrap; }
 /* Ay içi kartlarında silme düğmesi yok; başlık tek başına dursun. */
@@ -744,6 +751,15 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 /* Hafta başlığı artık Hedef satırının solunda */
 .hafta-ust .hafta-baslik{ margin-right:auto; }
 
+/* Özet sağ sütunundaki kip seçimi */
+.ozet-sekmeler{ display:flex; gap:3px; padding-bottom:4px; }
+.ozet-sekme{
+  background:none; border:none; padding:3px 7px; border-radius:6px; cursor:pointer;
+  font-size:.74rem; font-weight:600; color:var(--soluk); white-space:nowrap;
+}
+.ozet-sekme:hover{ background:var(--zemin-2); color:var(--yazi); }
+.ozet-sekme.secili{ background:var(--acik-vurgu); color:var(--vurgu); }
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -756,7 +772,6 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 (() => {
   // js/util.js
   var GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-  var AY_ADLARI = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
   var AY_KISA = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
   var pad = (n) => (n < 10 ? "0" : "") + n;
   var dateStr = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
@@ -1189,6 +1204,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     else d[maddeId] = true;
     yaz("rutinDurum:" + magaza + ":" + haftaAnahtari, d);
     return d;
+  }
+  function ozetSekmesiGetir(magaza) {
+    return oku("ozetSekme:" + magaza, "gunluk");
+  }
+  function ozetSekmesiYaz(magaza, sekme) {
+    yaz("ozetSekme:" + magaza, sekme);
   }
   function yerlesimGetir(magaza) {
     return oku("yerlesim:" + magaza, { sira: {}, boyut: {} });
@@ -1879,27 +1900,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       kartlar: elle
     };
   }
-  function kiyasIcerigi(altBaslik, sol, sag, solEtiket, sagEtiket) {
-    const satirlar = ["ciro", "mdo", "fbu", "mgs", "fbs", "toplu"].map((alan) => {
-      const d = yuzdeDegisim(sol[alan], sag[alan]);
-      return `<tr>
-      <td>${ALAN_ADLARI[alan]}</td>
-      <td>${alanBicimle(alan, sol[alan])}</td>
-      <td>${alanBicimle(alan, sag[alan])}</td>
-      <td class="${degisimSinifi(d)}">${fmtDegisim(d)}</td>
-    </tr>`;
-    }).join("");
-    return el(`<div class="sekme-govde">
-    <div class="panel-alt">${esc(altBaslik)}</div>
-    <table class="kiyas-tablo">
-      <thead><tr><th></th><th>${esc(solEtiket)}</th><th>${esc(sagEtiket)}</th><th>Fark</th></tr></thead>
-      <tbody>${satirlar}</tbody>
-    </table>
-  </div>`);
-  }
-  function ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun) {
-    const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, gun);
+  function ayKiyasIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun, kip) {
+    const ayIci = kip !== "ayToplam";
+    const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, ayIci ? gun : null);
     const simdi = ayToplami(magazaKey, yil, ay, gun);
+    const ustEtiket = ayIci ? `1–${gun} ${AY_KISA[oncekiAy - 1]}` : `${AY_KISA[oncekiAy - 1]} tamamı`;
+    const altEtiket = `1–${gun} ${AY_KISA[ay - 1]}`;
     const govde = el('<div class="kart-liste"></div>');
     kartlarGetir(magazaKey).forEach((kart) => {
       const kaynakMi = kart.tur === "kaynak";
@@ -1909,9 +1915,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       const bicim2 = (v) => kaynakMi ? alanBicimle(kart.alan, v) : v === null || v === void 0 ? "–" : fmtSayi(v, 0);
       govde.appendChild(el(`<div class="kart">
       <div class="kart-ust"><span class="kart-ad">${esc(kart.ad)}</span></div>
-      <div class="kart-satir"><span>1–${gun} ${AY_KISA[oncekiAy - 1]}</span><b>${bicim2(o)}</b></div>
+      <div class="kart-satir"><span>${esc(ustEtiket)}</span><b>${bicim2(o)}</b><span></span></div>
       <div class="kart-satir kart-bugun">
-        <span>1–${gun} ${AY_KISA[ay - 1]}</span>
+        <span>${esc(altEtiket)}</span>
         <b>${bicim2(y)}</b>
         <span class="kart-degisim ${degisimSinifi(d)}">${fmtDegisim(d)}</span>
       </div>
@@ -1939,7 +1945,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         <span class="kart-ad">${esc(kart.ad)}</span>
         <button class="kart-sil" title="Kartı kaldır">✕</button>
       </div>
-      <div class="kart-satir"><span>Dün</span><b>${alanBicimle(kart.alan, onceki)}</b></div>
+      <div class="kart-satir"><span>Dün</span><b>${alanBicimle(kart.alan, onceki)}</b><span></span></div>
       <div class="kart-satir kart-bugun">
         <span>Bugün</span>
         ${kart.tur === "kaynak" ? `<b>${alanBicimle(kart.alan, simdi)}</b>` : `<input class="kart-girdi" type="text" inputmode="decimal" value="${simdi ?? ""}" ${duzenlenebilir ? "" : "disabled"}>`}
@@ -1978,7 +1984,10 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     const ozet = el(`<div class="panel-kutu ozet-kutu" data-panel="ozet">
     <div class="ozet-basliklar">
       <div class="ozet-baslik">Dün / Bugün</div>
-      <div class="ozet-baslik">Ay içi</div>
+      <div class="ozet-sekmeler">
+        <button class="ozet-sekme" data-kip="ayIci">Ay içi</button>
+        <button class="ozet-sekme" data-kip="ayToplam">Ay toplamı</button>
+      </div>
     </div>
     <div class="ozet-sutunlar">
       <div class="ozet-sol"></div>
@@ -1986,17 +1995,18 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     </div>
   </div>`);
     ozet.querySelector(".ozet-sol").appendChild(kartIcerigi(magazaKey, secenekler));
-    ozet.querySelector(".ozet-sag").appendChild(
-      ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun)
-    );
-    const ayToplam = el('<div class="panel-kutu" data-panel="ayToplam"></div>');
-    ayToplam.appendChild(kiyasIcerigi(
-      `${AY_ADLARI[oncekiAy - 1]} tamamı · ${AY_ADLARI[ay - 1]} bugüne kadar`,
-      ayToplami(magazaKey, oncekiYil, oncekiAy),
-      ayToplami(magazaKey, yil, ay, gun),
-      AY_KISA[oncekiAy - 1],
-      AY_KISA[ay - 1]
-    ));
+    const sag = ozet.querySelector(".ozet-sag");
+    const sagCiz = (kip) => {
+      sag.innerHTML = "";
+      sag.appendChild(ayKiyasIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun, kip));
+      ozet.querySelectorAll(".ozet-sekme").forEach((b) => b.classList.toggle("secili", b.dataset.kip === kip));
+    };
+    ozet.querySelectorAll(".ozet-sekme").forEach((b) => b.addEventListener("click", () => {
+      ozetSekmesiYaz(magazaKey, b.dataset.kip);
+      sagCiz(b.dataset.kip);
+    }));
+    const kayitliKip = ozetSekmesiGetir(magazaKey);
+    sagCiz(kayitliKip === "ayToplam" ? "ayToplam" : "ayIci");
     const yorumKutu = el(`<div class="panel-kutu" data-panel="yorum">
     <div class="panel-alt">${kisaTarih(bugunD)} — bölge müdürüne iletilir</div>
     <textarea class="yorum-alan" placeholder="Düşüş veya yükselişin sebebi..." ${duzenlenebilir ? "" : "disabled"}>${esc(buGun.yorum || "")}</textarea>
@@ -2014,7 +2024,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         }, 1800);
       }, 500);
     });
-    return { ozet, ayToplam, yorum: yorumKutu };
+    return { ozet, yorum: yorumKutu };
   }
   function kartEklemeFormu(magazaKey, kap, secenekler) {
     const form = el(`<div class="kart kart-form">
@@ -2337,7 +2347,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     { bloklar: [
       { yigin: ["haftaOnceki2", "haftaOnceki3"], yuzde: 37 },
       { yigin: ["haftaSecili", "haftaOnceki"], yuzde: 37 },
-      { yigin: ["ozet", "ayToplam", "yorum"], yuzde: 26 }
+      { yigin: ["ozet", "yorum"], yuzde: 26 }
     ] }
   ];
   function yiginlariAc(satirlar) {
@@ -2627,7 +2637,6 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       haftaOnceki2: haftaTablosu(magazaKey, onceki2Pzt, tabloSecenekleri),
       haftaOnceki3: haftaTablosu(magazaKey, onceki3Pzt, tabloSecenekleri),
       ozet: yan.ozet,
-      ayToplam: yan.ayToplam,
       yorum: yan.yorum
     };
     const adlar = {
@@ -2639,7 +2648,6 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       haftaOnceki2: "📊 " + haftaBasligi(onceki2Pzt),
       haftaOnceki3: "📊 " + haftaBasligi(onceki3Pzt),
       ozet: "📌 Özet",
-      ayToplam: "📈 Ay toplamı",
       yorum: "📝 Günlük yorum"
     };
     const kok = el('<div class="magaza-ekran"></div>');
@@ -3927,7 +3935,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 20;
+  var SURUM = 21;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

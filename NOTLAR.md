@@ -333,6 +333,12 @@ etmenin tek yolu.
 - **Özet paneli** ikiye bölündü: solda dün/bugün kartları, sağında ay içi
   kıyası, üstte iki başlık. **Ay toplamı** kendi kutusuna alındı
   (`ayToplam` paneli, sağ yığında özet ile yorum arasında).
+  Sağ sütunun üstünde **Ay içi / Ay toplamı** geçişi var (`ozet-sekme`);
+  seçim cihazda saklanıyor (`ozetSekme:` anahtarı). Ayrı "Ay toplamı"
+  kutusu kaldırıldı.
+  Kart satırları üç sütunlu ızgara (etiket | değer | değişim); değişim
+  sütunu ilk satırda boş kalsa da yer tutuyor, böylece iki satırın
+  sayıları aynı hizada duruyor.
   Sağ sütun sabit ölçüt listesi değil, **kullanıcının kartlarını** izliyor:
   aynı sıra, aynı sayı, satırlar birebir hizalı. Elle girilen kartların ay
   içi karşılığı için `ayToplami` artık `gun.kartlar` değerlerini de

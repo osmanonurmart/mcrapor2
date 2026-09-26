@@ -368,11 +368,16 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .kart-ad{ font-weight:700; font-size:.76rem; }
 .kart-sil{ background:none; border:none; color:#c2c2ca; cursor:pointer; font-size:.68rem; padding:0 1px; line-height:1; }
 .kart-sil:hover{ color:var(--dusus); }
-.kart-satir{ display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.74rem; margin-top:1px; color:var(--soluk); line-height:1.35; }
-.kart-satir > span:first-child{ flex:0 0 38px; }
-.kart-satir b{ color:var(--yazi); margin-left:auto; }
+/* Üç sütun: etiket | değer | değişim. Değişim sütunu ilk satırda boş kalsa
+   da yer tutar, böylece iki satırın sayıları aynı hizada durur. */
+.kart-satir{
+  display:grid; grid-template-columns:auto 1fr 62px; align-items:center; gap:6px;
+  font-size:.74rem; margin-top:1px; color:var(--soluk); line-height:1.35;
+}
+.kart-satir > span:first-child{ min-width:38px; white-space:nowrap; }
+.kart-satir b{ color:var(--yazi); text-align:right; }
 .kart-girdi{ width:74px; padding:1px 6px; border:1px solid var(--cizgi); border-radius:5px; text-align:right; font-size:.74rem; margin-left:auto; }
-.kart-degisim{ flex:0 0 auto; font-size:.72rem; font-weight:700; min-width:62px; text-align:right; }
+.kart-degisim{ font-size:.72rem; font-weight:700; text-align:right; }
 .kart-ekle{ width:100%; margin-top:7px; background:none; border:1px dashed var(--cizgi); border-radius:8px; padding:5px; cursor:pointer; color:var(--soluk); font-size:.76rem; }
 .kart-ekle:hover{ border-color:var(--vurgu); color:var(--vurgu); }
 .kart-form{ display:flex; flex-direction:column; gap:7px; }
@@ -721,6 +726,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   padding:4px 2px 6px;
 }
 .ozet-sutunlar{ display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:start; }
+/* Sağ sütundaki etiketler uzun ("1–26 Ağu"); değer sütunu ona göre daralsın. */
+.ozet-sag .kart-satir{ grid-template-columns:auto 1fr 58px; }
 .ozet-sol,.ozet-sag{ min-width:0; }
 .ozet-sag .kart-satir span:first-child{ white-space:nowrap; }
 /* Ay içi kartlarında silme düğmesi yok; başlık tek başına dursun. */
@@ -734,3 +741,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 
 /* Hafta başlığı artık Hedef satırının solunda */
 .hafta-ust .hafta-baslik{ margin-right:auto; }
+
+/* Özet sağ sütunundaki kip seçimi */
+.ozet-sekmeler{ display:flex; gap:3px; padding-bottom:4px; }
+.ozet-sekme{
+  background:none; border:none; padding:3px 7px; border-radius:6px; cursor:pointer;
+  font-size:.74rem; font-weight:600; color:var(--soluk); white-space:nowrap;
+}
+.ozet-sekme:hover{ background:var(--zemin-2); color:var(--yazi); }
+.ozet-sekme.secili{ background:var(--acik-vurgu); color:var(--vurgu); }
