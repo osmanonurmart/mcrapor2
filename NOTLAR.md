@@ -315,3 +315,30 @@ Uygulama içi bildirim: `util.bildir(tur, baslik, govde)`; sağ üstte
 **Yer imi adı** `🏪 Veri Kopyala` oldu. Chrome `javascript:` ile başlayan
 yer imlerine site simgesi koymuyor; simgeyi ada yazmak çubukta ayırt
 etmenin tek yolu.
+
+## 2026-09-26 — tema, düzen ve sürüm otomatiği
+
+- **Çizgiler grileştirildi.** `--cizgi` #6f6552 → #a09689, `--cizgi-ince`
+  #9a8e77 → #bdb4a6; `--cerceve` ve `--hucre-cizgi` 2px → 1px, tablo
+  başlık altları 4px → 2px. Siyaha yakın kontrast gitti, çizgiler belli
+  ama yormuyor.
+- **Sayfa artık hiç kaymıyor.** `body` 100dvh + `overflow:hidden`, içerik
+  `#kok` içinde kayıyor. Alt bilgi her zaman ekranda.
+- **Aynı satırdaki bloklar eşit boyda** (hafta seçimi ↔ duyurular).
+- **Giriş ekranı**: alanların çerçevesi gri ve belirgin, odaklanınca
+  çerçeve açılıyor, hafif gölge ve 1px yukarı kayma.
+- **Hafta başlığı** blok başlığından alınıp Hedef satırının soluna
+  taşındı; her tabloda bir satır yer kazanıldı. `yerlesim.js` →
+  `BASLIKSIZ` listesindeki paneller için tuval başlık çizmiyor.
+- **Özet paneli** ikiye bölündü: solda dün/bugün kartları, sağında ay içi
+  kıyası, üstte iki başlık. **Ay toplamı** kendi kutusuna alındı
+  (`ayToplam` paneli, sağ yığında özet ile yorum arasında).
+
+### Sürüm otomatiği
+`js/surum.js` artık elle değiştirilmiyor. `olustur.mjs` sürümü
+`git rev-list --count HEAD` + 1'den üretip üç yere birden yazıyor:
+`js/surum.js`, `sw.js` önbellek adı ve `surum.json`. Sıra önemli —
+sürüm yazımı paketlemeden önce çalışır, yoksa `tek-dosya.html` eski
+numarayı taşır.
+
+Yayın öncesi tek komut: `node olustur.mjs`.

@@ -106,6 +106,7 @@ export function haftaTablosu(magazaKey, pzt, secenekler = {}){
 
   const kok = U.el(`<section class="hafta-blok" data-hafta="${U.haftaKey(pzt)}">
     <header class="hafta-ust">
+      <div class="hafta-baslik">📊 ${U.esc(U.haftaBasligi(pzt))}</div>
       <div class="hafta-hedef">
         <span class="etiket">Hedef</span>
         <input class="hedef-girdi" type="text" inputmode="numeric" value="${ozet.hedefToplam ?? ''}" ${duzenlenebilir?'':'disabled'}>

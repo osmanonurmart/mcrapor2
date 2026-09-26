@@ -13,6 +13,9 @@ import { el } from './util.js';
 // boyutlandırılmıyor. Açmak için tek yapılacak bunu true yapmak.
 export const TASINABILIR = false;
 
+// Başlığını kendi içinde taşıyan paneller; tuval ayrıca başlık çizmez.
+const BASLIKSIZ = ['haftaSecili','haftaOnceki','haftaOnceki2','haftaOnceki3'];
+
 const EN_KUCUK_YUZDE = 12;
 const EN_KUCUK_YUKSEKLIK = 80;
 
@@ -24,14 +27,14 @@ const EN_KUCUK_YUKSEKLIK = 80;
 //     sol üst : 2 hafta önce      sağ üst : seçili hafta
 //     sol alt : 3 hafta önce      sağ alt : 1 hafta önce
 // Yani sağ sütun yeni, sol sütun eski; her sütunda üstteki daha yeni.
-//   sağ yığın : dün-bugün özeti, günlük yorum
+//   sağ yığın : özet (dün/bugün + ay içi), ay toplamı, günlük yorum
 // Yeni bir panel eklendiğinde burada yoksa en alta kendi satırında görünür.
 const VARSAYILAN_DUZEN = [
   {bloklar: [{panel:'hafta', yuzde:34}, {panel:'duyuru', yuzde:28}, {panel:'rutin', yuzde:38}]},
   {bloklar: [
     {yigin:['haftaOnceki2','haftaOnceki3'], yuzde:37},
     {yigin:['haftaSecili','haftaOnceki'],   yuzde:37},
-    {yigin:['ozet','yorum'],                yuzde:26}
+    {yigin:['ozet','ayToplam','yorum'],     yuzde:26}
   ]}
 ];
 // Yığınları tek tek bloklara açar; serbest yerleşim açıkken kullanılır.
@@ -96,10 +99,14 @@ export function tuvalCiz(panelHaritasi, {magaza, adlar = {}}){
   // Tek bir bloğun sarmalını kurar (başlık + gövde + varsa tutamaklar).
   function blokKur(blok, govde){
     const sarmal = el(`<div class="tuval-blok" data-panel="${blok.panel}"></div>`);
-    sarmal.appendChild(el(`<div class="blok-baslik">
-      ${TASINABILIR ? '<button class="panel-tut" title="Basılı tutup sürükleyin">⠿</button>' : ''}
-      <span class="blok-ad">${adlar[blok.panel] || blok.panel}</span>
-    </div>`));
+    // Hafta tablolarının başlığı kendi içinde (Hedef satırının solunda); burada
+    // ikinci kez yazmak bir satır boşa harcıyordu.
+    if(!BASLIKSIZ.includes(blok.panel)){
+      sarmal.appendChild(el(`<div class="blok-baslik">
+        ${TASINABILIR ? '<button class="panel-tut" title="Basılı tutup sürükleyin">⠿</button>' : ''}
+        <span class="blok-ad">${adlar[blok.panel] || blok.panel}</span>
+      </div>`));
+    }
     sarmal.appendChild(govde);
     if(TASINABILIR){
       const b = boyutlar[blok.panel];

@@ -6,6 +6,30 @@
 // Çalıştırma:  npm i -D esbuild && node olustur.mjs
 import { build } from 'esbuild';
 import { readFile, writeFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
+
+// Sürüm numarası elle artırılmaz: commit sayısından üretilir. Bu betik her
+// yayından önce çalıştığı için sayı her yayında kendiliğinden büyür.
+// Aynı sayı üç yere yazılır: js/surum.js (uygulama), surum.json (tarayıcının
+// baktığı dosya) ve sw.js önbellek adı (eski dosyalar düşsün diye).
+let surumNo;
+try{
+  surumNo = Number(execSync('git rev-list --count HEAD', {encoding:'utf8'}).trim()) + 1;
+}catch(e){
+  const eski = await readFile('js/surum.js', 'utf8');
+  surumNo = Number((eski.match(/export const SURUM = (\d+);/) || [])[1] || 0) + 1;
+}
+
+const surumKaynak = await readFile('js/surum.js', 'utf8');
+await writeFile('js/surum.js',
+  surumKaynak.replace(/export const SURUM = \d+;/, 'export const SURUM = ' + surumNo + ';'), 'utf8');
+
+const swKaynak = await readFile('sw.js', 'utf8');
+await writeFile('sw.js',
+  swKaynak.replace(/const SURUM = 'mc2-v\d+';/, "const SURUM = 'mc2-v" + surumNo + "';"), 'utf8');
+
+await writeFile('surum.json', JSON.stringify({surum: surumNo}) + '\n', 'utf8');
+console.log('sürüm v' + surumNo + ' — js/surum.js, sw.js ve surum.json güncellendi');
 
 const paket = await build({
   entryPoints: ['js/app.js'],
@@ -29,13 +53,6 @@ html = html
 await writeFile('tek-dosya.html', html, 'utf8');
 console.log('tek-dosya.html yazıldı — ' + Math.round(html.length/1024) + ' KB');
 
-// Sürüm numarası tek yerde (js/surum.js) durur; surum.json ondan üretilir ki
-// ikisi ayrı düşmesin. Tarayıcı güncelleme kontrolünü bu dosyayla yapıyor.
-const surumKaynak = await readFile('js/surum.js', 'utf8');
-const surumNo = Number((surumKaynak.match(/export const SURUM = (\d+);/) || [])[1]);
-if(!surumNo) throw new Error('js/surum.js içinde SURUM bulunamadı.');
-await writeFile('surum.json', JSON.stringify({surum: surumNo}) + '\n', 'utf8');
-console.log('surum.json yazıldı — v' + surumNo);
 
 // --- Yer imi: kaynaktan tek satırlık sürüm üretip kurulum sayfasına göm ---
 const yerimi = await build({

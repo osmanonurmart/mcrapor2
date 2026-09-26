@@ -57,6 +57,27 @@ function kiyasIcerigi(altBaslik, sol, sag, solEtiket, sagEtiket){
   </div>`);
 }
 
+// Ay içi sütunu: her ölçüt için geçen ayın aynı dönemiyle kıyas.
+// Soldaki dün/bugün kartlarıyla aynı görünümde olsun diye kart biçiminde.
+function ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun){
+  const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, gun);
+  const simdi  = ayToplami(magazaKey, yil, ay, gun);
+  const govde = U.el('<div class="kart-liste"></div>');
+  ['ciro','mgs','toplu','mdo','fbu','fbs'].forEach(alan => {
+    const d = U.yuzdeDegisim(onceki[alan], simdi[alan]);
+    govde.appendChild(U.el(`<div class="kart">
+      <div class="kart-ust"><span class="kart-ad">${ALAN_ADLARI[alan]}</span></div>
+      <div class="kart-satir"><span>1–${gun} ${U.AY_KISA[oncekiAy-1]}</span><b>${alanBicimle(alan, onceki[alan])}</b></div>
+      <div class="kart-satir kart-bugun">
+        <span>1–${gun} ${U.AY_KISA[ay-1]}</span>
+        <b>${alanBicimle(alan, simdi[alan])}</b>
+        <span class="kart-degisim ${U.degisimSinifi(d)}">${U.fmtDegisim(d)}</span>
+      </div>
+    </div>`));
+  });
+  return govde;
+}
+
 // ---------------- Dün / Bugün kartları ----------------
 function kartIcerigi(magazaKey, secenekler){
   const duzenlenebilir = secenekler.duzenlenebilir !== false;
@@ -66,8 +87,9 @@ function kartIcerigi(magazaKey, secenekler){
   const buGun = V.gunGetir(magazaKey, bugunStr) || {};
   const dun   = V.gunGetir(magazaKey, U.dateStr(dunD)) || {};
 
-  const govde = U.el('<div class="sekme-govde"><div class="kart-liste"></div></div>');
-  const kartListe = govde.querySelector('.kart-liste');
+  const govde = U.el('<div class="kart-sutun"></div>');
+  const kartListe = U.el('<div class="kart-liste"></div>');
+  govde.appendChild(kartListe);
 
   V.kartlarGetir(magazaKey).forEach(kart => {
     const onceki = kart.tur === 'kaynak' ? dun[kart.alan]   : (dun.kartlar   || {})[kart.id];
@@ -116,42 +138,31 @@ export function panelOlustur(magazaKey, secenekler = {}){
   const bugunD = U.bugun();
   const bugunStr = U.bugunStr();
   const buGun = V.gunGetir(magazaKey, bugunStr) || {};
-  // --- Sekmeli özet kutusu ---
-  const ozet = U.el(`<div class="panel-kutu ozet-kutu" data-panel="ozet">
-    <div class="sekme-bar">
-      ${SEKMELER.map(s => `<button class="sekme" data-sekme="${s.id}">${s.ad}</button>`).join('')}
-    </div>
-    <div class="sekme-icerik"></div>
-  </div>`);
-  const icerik = ozet.querySelector('.sekme-icerik');
-
+  // --- Özet kutusu: solda dün/bugün, sağında ay içi ---
   const yil = bugunD.getFullYear(), ay = bugunD.getMonth() + 1, gun = bugunD.getDate();
   const oncekiAy = ay === 1 ? 12 : ay - 1;
   const oncekiYil = ay === 1 ? yil - 1 : yil;
 
-  const sekmeCiz = id => {
-    icerik.innerHTML = '';
-    if(id === 'ayIci'){
-      icerik.appendChild(kiyasIcerigi(
-        `1–${gun} ${U.AY_ADLARI[oncekiAy-1]} · 1–${gun} ${U.AY_ADLARI[ay-1]}`,
-        ayToplami(magazaKey, oncekiYil, oncekiAy, gun), ayToplami(magazaKey, yil, ay, gun),
-        U.AY_KISA[oncekiAy-1], U.AY_KISA[ay-1]));
-    } else if(id === 'ayToplam'){
-      icerik.appendChild(kiyasIcerigi(
-        `${U.AY_ADLARI[oncekiAy-1]} tamamı · ${U.AY_ADLARI[ay-1]} bugüne kadar`,
-        ayToplami(magazaKey, oncekiYil, oncekiAy), ayToplami(magazaKey, yil, ay, gun),
-        U.AY_KISA[oncekiAy-1], U.AY_KISA[ay-1]));
-    } else {
-      icerik.appendChild(kartIcerigi(magazaKey, secenekler));
-    }
-    ozet.querySelectorAll('.sekme').forEach(b => b.classList.toggle('secili', b.dataset.sekme === id));
-  };
+  const ozet = U.el(`<div class="panel-kutu ozet-kutu" data-panel="ozet">
+    <div class="ozet-basliklar">
+      <div class="ozet-baslik">Dün / Bugün</div>
+      <div class="ozet-baslik">Ay içi</div>
+    </div>
+    <div class="ozet-sutunlar">
+      <div class="ozet-sol"></div>
+      <div class="ozet-sag"></div>
+    </div>
+  </div>`);
+  ozet.querySelector('.ozet-sol').appendChild(kartIcerigi(magazaKey, secenekler));
+  ozet.querySelector('.ozet-sag').appendChild(
+    ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun));
 
-  ozet.querySelectorAll('.sekme').forEach(b => b.addEventListener('click', () => {
-    V.ozetSekmesiYaz(magazaKey, b.dataset.sekme);
-    sekmeCiz(b.dataset.sekme);
-  }));
-  sekmeCiz(V.ozetSekmesiGetir(magazaKey));
+  // --- Ay toplamı: kendi kutusunda ---
+  const ayToplam = U.el('<div class="panel-kutu" data-panel="ayToplam"></div>');
+  ayToplam.appendChild(kiyasIcerigi(
+    `${U.AY_ADLARI[oncekiAy-1]} tamamı · ${U.AY_ADLARI[ay-1]} bugüne kadar`,
+    ayToplami(magazaKey, oncekiYil, oncekiAy), ayToplami(magazaKey, yil, ay, gun),
+    U.AY_KISA[oncekiAy-1], U.AY_KISA[ay-1]));
 
   // --- Günlük yorum ---
   const yorumKutu = U.el(`<div class="panel-kutu" data-panel="yorum">
@@ -169,7 +180,7 @@ export function panelOlustur(magazaKey, secenekler = {}){
       setTimeout(() => { yorumKutu.querySelector('.yorum-durum').textContent = ''; }, 1800);
     }, 500);
   });
-  return {ozet, yorum: yorumKutu};
+  return {ozet, ayToplam, yorum: yorumKutu};
 }
 
 function kartEklemeFormu(magazaKey, kap, secenekler){

@@ -1,9 +1,10 @@
 // Uygulama sürümü.
 //
-// Bu sayı elle artırılır; olustur.mjs aynı sayıyı v2/surum.json dosyasına
-// yazar. Tarayıcı açıkken surum.json'a bakıp sunucudaki sayı büyükse
-// güncelleme rozetini gösterir.
-export const SURUM = 1;
+// ELLE DEĞİŞTİRME. `node olustur.mjs` bu sayıyı commit sayısından üretip
+// buraya, sw.js'e ve surum.json'a yazar; her yayında kendiliğinden artar.
+// Tarayıcı surum.json'a bakıp sunucudaki sayı büyükse güncelleme rozetini
+// gösterir.
+export const SURUM = 19;
 
 // Sunucudaki sürümü sorar. Dönen değer: sayı ya da null (bakılamadı).
 export async function sunucuSurumu(){
