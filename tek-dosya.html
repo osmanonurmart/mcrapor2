@@ -629,6 +629,12 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 }
 
 @media (max-width: 900px){
+  /* Telefonda dört hafta çok uzun bir sayfa yapıyor; yalnızca seçili hafta
+     ve bir öncekini göster. Paneller duruyor, sadece gizleniyor — ekran
+     büyüyünce dördü de geri gelir. */
+  .tuval-blok[data-panel="haftaOnceki2"],
+  .tuval-blok[data-panel="haftaOnceki3"]{ display:none; }
+
   /* Dar ekranda bütün bloklar alt alta. */
   /* Dikey dizilişte bloklar kapsayıcıyı doldursun, içerik genişliğine büyümesin. */
   /* Aynı satırdaki bloklar eşit boyda dursun (hafta seçimi ↔ duyurular). */
@@ -3966,7 +3972,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 27;
+  var SURUM = 28;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

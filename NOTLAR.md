@@ -421,3 +421,13 @@ yeter; tema başına ayrı ton istenirse `js/tema.js`'e de eklenir
   `border-top-*-radius` kaldırıldı, `.hafta-blok`a `overflow:hidden`
   kondu; köşeyi artık kutu kırpıyor.
 - İzin düğmelerindeki kesik çizgi düz çizgiye çevrildi.
+
+## 2026-09-26 — mobilde iki hafta
+
+900px altında `haftaOnceki2` ve `haftaOnceki3` gizleniyor; telefonda
+yalnızca seçili hafta ve bir önceki görünüyor. Paneller silinmiyor,
+yalnızca `display:none` — ekran büyüyünce dördü de geri geliyor.
+
+Mobil ve masaüstü görünümü birbirinden tamamen ayırmak mümkün: her panel
+`data-panel` ile işaretli, medya sorgusuyla hangi genişlikte hangisinin
+görüneceği ayrı ayrı belirlenebiliyor.
