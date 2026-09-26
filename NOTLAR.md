@@ -254,3 +254,19 @@ Oturum kayıtları artık ayrı; `rapor.html` değişmedi.
 **Not:** Ayrı repo açmak bunu çözmez — aynı kullanıcının bütün GitHub
 Pages siteleri `osmanonurmart.github.io` altında, yani aynı alan adında.
 Çözüm uygulama adının ayrılması; o da yapıldı.
+
+
+## 2026-09-26 — v1 ve v2 tamamen ayrıldı
+
+v2 kendi deposuna (`osmanonurmart/mcrapor2`) taşındı, geçmişiyle birlikte.
+`magazarapor` deposunda yalnızca v1 (`rapor.html`) kaldı.
+
+Firebase de ayrıldı: v2 kendi projesinde çalışıyor. Bu yüzden
+`firestore.rules` artık yalnızca `mc2_` koleksiyonlarını tanıyor, v1'in
+yolları (settings, stores, entries, weekgoals, tools, ghbhr*) buradan
+çıkarıldı.
+
+`bulut.js` içindeki `UYGULAMA_ADI = 'mc2'` yerinde kaldı. Ayrı proje ayrı
+apiKey demek olduğu için oturum çakışması artık mümkün değil, ama iki
+uygulama aynı alan adında yayınlandığı sürece bu ad ayrımı ucuz bir
+güvence.

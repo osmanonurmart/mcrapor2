@@ -1,14 +1,12 @@
 rules_version = '2';
 
-// Mağaza Performans Takip — Firestore güvenlik kuralları
+// Mağaza Performans Takip (v2) — Firestore güvenlik kuralları
 //
-// Bu projede iki uygulama var:
-//   v1 (rapor.html)  → entries, weekgoals, settings, tools, ghbhr*, stores
-//                      anonim girişle çalışıyor, bozulmaması için açık bırakıldı
-//   v2 (v2/)         → mc2_ ile başlayan koleksiyonlar
-//                      e-posta/şifre girişi ve rol zorunlu
+// Bu proje yalnızca v2'ye aittir; v1 (rapor.html) ayrı bir Firebase
+// projesinde çalışır. Burada anonim giriş kullanılmaz, herkes kullanıcı
+// adı ve şifresiyle girer.
 //
-// Yöneticiyi belirleyen tek yer aşağıdaki e-posta listesidir.
+// Kurucuyu belirleyen tek yer aşağıdaki e-posta listesidir.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -28,13 +26,10 @@ service cloud.firestore {
       );
     }
     function bolgeMu(){ return kullaniciVar() && kullanici().rol == 'bolge'; }
-    // v2 yalnızca kayıtlı kullanıcılara açık. girisli() anonim girişi de kapsadığı
-    // için (v1 onu kullanıyor) v2 okumalarında bu kullanılır.
     function v2Uye(){ return kurucuMu() || kullaniciVar(); }
     function genisYetki(){ return kurucuMu() || bolgeMu(); }
     function kendiMagazam(magaza){ return kullaniciVar() && kullanici().magazaKey == magaza; }
 
-    // ---------- v2 ----------
     // Kullanıcı ↔ mağaza eşlemesi
     match /mc2_kullanicilar/{uid} {
       // Kendi kaydını okumak v2Uye()'ye bağlanamaz: v2Uye() zaten bu kaydın
@@ -64,14 +59,6 @@ service cloud.firestore {
       }
     }
 
-    // ---------- v1 (rapor.html) ----------
-    // Anonim girişle çalışmaya devam ediyor; v2'ye taşınana kadar dokunulmuyor.
-    match /entries/{belge}      { allow read, write: if girisli(); }
-    match /weekgoals/{belge}    { allow read, write: if girisli(); }
-    match /tools/{belge}        { allow read, write: if girisli(); }
-    match /ghbhrWeekly/{belge}  { allow read, write: if girisli(); }
-    match /ghbhrReports/{belge} { allow read, write: if girisli(); }
-    match /settings/{belge}     { allow read, write: if girisli(); }
-    match /stores/{magaza}/{belge=**} { allow read, write: if girisli(); }
+    // Başka hiçbir yol açık değil.
   }
 }

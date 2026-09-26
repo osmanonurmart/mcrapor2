@@ -1,15 +1,36 @@
 # v2 — Firebase kurulumu
 
-Sıra önemli. Kuralları en sona bırakıyoruz, yoksa kendiniz giremeden kilitlenir.
+v2 kendi Firebase projesinde çalışır. v1 (`rapor.html`) ayrı projededir;
+ikisi hiçbir şey paylaşmaz.
 
-## 1. E-posta/şifre girişini aç
+Sıra önemli. Kuralları en sona bırakıyoruz, yoksa kendiniz giremeden
+kilitlenir.
 
-Firebase Console → **Authentication** → **Sign-in method**
-→ **Email/Password** → Enable → Save.
+## 1. Yeni proje aç
 
-**Anonymous'u kapatmayın.** `rapor.html` (v1) hâlâ onunla çalışıyor.
+[console.firebase.google.com](https://console.firebase.google.com) → **Add
+project** → ad: `mcrapor2` (veya istediğiniz ad) → Google Analytics'e gerek
+yok, kapatabilirsiniz.
 
-## 2. Kendi hesabınızı oluşturun
+## 2. Firestore'u aç
+
+Build → **Firestore Database** → **Create database**
+→ konum: `eur3 (europe-west)` → **Production mode** ile başlayın.
+
+Kuralları 5. adımda yükleyeceğiz.
+
+## 3. E-posta/şifre girişini aç
+
+Build → **Authentication** → **Get started** → **Email/Password** → Enable
+→ Save.
+
+Anonim girişe gerek yok, kapalı kalsın.
+
+> Kullanıcılar e-posta değil kullanıcı adı yazar. Uygulama içeride
+> `2307` → `2307@mcrapor.local` çevirisi yapar, bu yüzden Firebase'de
+> e-posta/şifre yönteminin açık olması gerekir.
+
+## 4. Kendi hesabınızı oluşturun
 
 Authentication → **Users** → **Add user**
 
@@ -19,12 +40,29 @@ Authentication → **Users** → **Add user**
 Bu adres hem uygulamada hem kurallarda kurucu olarak tanımlı. Değiştirmek
 isterseniz iki yerde geçiyor:
 
-- `v2/js/app.js` → `YONETICI_EPOSTALARI`
-- `v2/firestore.rules` → `eposta() in [...]`
+- `js/app.js` → `YONETICI_EPOSTALARI`
+- `firestore.rules` → `eposta() in [...]`
 
-## 3. Uygulamayı açın ve giriş yapın
+## 5. Web uygulamasını ekleyin ve ayarları alın
 
-https://osmanonurmart.github.io/magazarapor/v2/
+Proje ayarları (⚙) → **Your apps** → **Web** (`</>`) simgesi → takma ad
+verin → Register app. Çıkan `firebaseConfig` bloğunu kopyalayın ve bana
+verin; `js/bulut.js` içindeki karşılığıyla değiştireceğim.
+
+```js
+const firebaseConfig = {
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "..."
+};
+```
+
+## 6. Uygulamayı açın ve giriş yapın
+
+https://osmanonurmart.github.io/mcrapor2/
 
 Bulutta veri olmadığı için **ilk kurulum** ekranı çıkar. Düğmeye basınca
 20 mağaza, bölge müdürü ve kurucu profilleri, kategoriler ve yaklaşık 10
@@ -32,7 +70,7 @@ haftalık örnek veri Firestore'a yazılır.
 
 > Örnek veriyi istemiyorsanız haber verin, boş kurulum yapan bir sürüm veririm.
 
-## 4. Mağaza kullanıcılarını açın
+## 7. Mağaza kullanıcılarını açın
 
 Kurucu → **Ayarlar → Kullanıcılar**. Her mağazanın yanında kullanıcı adı ve
 şifre alanı var. **Kullanıcı aç** hem Firebase hesabını açar hem de kullanıcıyı
@@ -58,20 +96,20 @@ Aynı bölümde:
 
 Bölge müdürü ve kurucu profilleri için de aynı şekilde kullanıcı açılır.
 
-## 5. Güvenlik kurallarını yükleyin
+## 8. Güvenlik kurallarını yükleyin
 
 Firebase Console → **Firestore Database** → **Rules**.
-`v2/firestore.rules` dosyasının içeriğini olduğu gibi yapıştırın → **Publish**.
+Bu depodaki `firestore.rules` dosyasının içeriğini olduğu gibi yapıştırın
+→ **Publish**.
 
-Bu kurallar v1'in koleksiyonlarını (entries, weekgoals, settings, tools,
-ghbhr*, stores) eskisi gibi açık bırakıyor; yalnızca `mc2_` ile başlayan v2
-koleksiyonlarını role bağlıyor. `rapor.html` çalışmaya devam eder.
+Kurallar yalnızca `mc2_` koleksiyonlarını tanır; başka hiçbir yol açık
+değildir.
 
-## 6. Kontrol
+## 9. Kontrol
 
 - Kurucu hesabıyla girip bütün mağazaları görebiliyor musunuz?
 - Bir mağaza hesabıyla girince yalnızca kendi mağazası açılıyor mu?
-- `rapor.html` hâlâ açılıyor mu?
+- v1 (`rapor.html`) ayrı projede olduğu için bundan etkilenmez.
 
 ---
 
