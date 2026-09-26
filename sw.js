@@ -1,6 +1,6 @@
 // Çevrimdışı kabuk. Sürüm değişince eski önbellek silinir.
 // Sürüm numarası js/surum.js ile birlikte artırılır.
-const SURUM = 'mc2-v29';
+const SURUM = 'mc2-v30';
 const DOSYALAR = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './yer-imi.html',
   './css/app.css',

@@ -2,7 +2,9 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Telefonda çift dokunma/parmak yakınlaştırması kapalı: tablo hücrelerine
+     basarken istemsizce yakınlaşıyordu. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1d1d1f">
 <title>Mağaza Performans Takip</title>
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjMWQxZDFmIi8+CiAgPHJlY3QgeD0iOTYiIHk9IjE1MCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSI1NiIgcng9IjEyIiBmaWxsPSIjQzhBMDY2Ii8+CiAgPHJlY3QgeD0iOTYiIHk9IjIzOCIgd2lkdGg9IjIzMCIgaGVpZ2h0PSI1NiIgcng9IjEyIiBmaWxsPSIjOGQ4ZDkzIi8+CiAgPHJlY3QgeD0iOTYiIHk9IjMyNiIgd2lkdGg9IjI4NiIgaGVpZ2h0PSI1NiIgcng9IjEyIiBmaWxsPSIjNWY4ZDZhIi8+Cjwvc3ZnPgo=">
@@ -356,6 +358,7 @@ table{ border-collapse:collapse; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .izin-btn.dolu{ background:var(--acik-vurgu); border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
+.kpi-kisa{ display:none; }
 .kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:5px 8px !important; font-weight:700;
   font-size:.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Formül metni uzun olabiliyor ("▼ %6,1 (ilk 5 gün)"); kırpmak yerine sarsın. */
@@ -633,7 +636,42 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
      ve bir öncekini göster. Paneller duruyor, sadece gizleniyor — ekran
      büyüyünce dördü de geri gelir. */
   .tuval-blok[data-panel="haftaOnceki2"],
-  .tuval-blok[data-panel="haftaOnceki3"]{ display:none; }
+  .tuval-blok[data-panel="haftaOnceki3"],
+  .tuval-blok[data-panel="hafta"]{ display:none; }
+
+  /* Satır ve yığın kapsayıcıları ortadan kalkıyor ki bütün bloklar tek bir
+     sütunun kardeşleri olsun; ancak öyle sıralarını değiştirebiliyoruz. */
+  .tuval{ display:flex; flex-direction:column; gap:12px; }
+  .tuval-satir,.tuval-yigin{ display:contents; }
+  .tuval-blok[data-panel="duyuru"]{ order:1; }
+  .tuval-blok[data-panel="haftaSecili"]{ order:2; }
+  .tuval-blok[data-panel="yorum"]{ order:3; }
+  .tuval-blok[data-panel="haftaOnceki"]{ order:4; }
+  .tuval-blok[data-panel="rutin"]{ order:5; }
+  .tuval-blok[data-panel="ozet"]{ order:6; }
+  /* display:contents yüzünden satır araları da sütunun çocuğu oluyor ve
+     ilk bloğun üstünde boş bir şerit bırakıyordu. */
+  .tuval-aralik{ display:none; }
+
+  /* Haftanın tamamı ekrana sığsın: en küçük genişlik kalkıyor, sütunlar
+     daraltılıyor, KPI sütunu "Hedef" yazısı kadar. */
+  .hafta-tablo{ min-width:0; font-size:.62rem; }
+  .hafta-tablo .kpi-sutun{ width:46px; }
+  .hafta-tablo .formul-sutun{ width:52px; }
+  .kpi-sutun{ font-size:.64rem; padding:3px 4px !important; }
+  .formul-sutun{ font-size:.6rem; padding:3px 3px !important; }
+  /* Kısa karşılığı olanlarda uzun ad gizlenir; olmayanlar (Ciro, MDO…)
+     zaten kısa, oldukları gibi kalır. */
+  .kpi-sutun:has(.kpi-kisa) .kpi-uzun{ display:none; }
+  .kpi-kisa{ display:inline; }
+  .hafta-tablo thead th{ padding:3px 1px; }
+  .gun-ad{ font-size:.64rem; }
+  .gun-tarih{ font-size:.55rem; }
+  .izin-btn{ font-size:.52rem; padding:0 2px; }
+  .hucre{ padding:3px 1px; }
+  .hafta-ust{ padding:5px 6px; gap:6px; }
+  .hafta-baslik{ font-size:.76rem; }
+  .hedef-girdi{ width:74px; }
 
   /* Dar ekranda bütün bloklar alt alta. */
   /* Dikey dizilişte bloklar kapsayıcıyı doldursun, içerik genişliğine büyümesin. */
@@ -667,7 +705,6 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 
   .duyuru-satir{ white-space:normal; }
   .hafta-listesi{ gap:6px; }
-  .hafta-tablo{ min-width:640px; font-size:.74rem; }
   .ozet-tablo{ min-width:720px; }
   .yan-panel{ order:3; }
   .pencere{ max-height:92vh; }
@@ -1691,10 +1728,10 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     { id: "fbs", ad: "FBS", tur: "para", formul: "ortalama", ipucu: "Haftalık ortalama" },
     { id: "hedef", ad: "Hedef", tur: "para", formul: "toplam", ipucu: "Haftalık toplam hedef" },
     { id: "oran", ad: "Oran", tur: "yuzde", formul: "oran", ipucu: "Hafta toplamı / hafta hedefi", hesaplanan: true },
-    { id: "toplu", ad: "Toplu Satışlar", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" },
+    { id: "toplu", ad: "Toplu Satışlar", kisa: "TP", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" },
     // Kaynak sayfada var; kurucu panelinden açılabilir, varsayılanda kapalı.
-    { id: "urunAdedi", ad: "Ürün Adedi", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" },
-    { id: "faturaSayisi", ad: "Fatura Sayısı", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" }
+    { id: "urunAdedi", ad: "Ürün Adedi", kisa: "ÜA", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" },
+    { id: "faturaSayisi", ad: "Fatura Sayısı", kisa: "FS", tur: "tam", formul: "toplam", ipucu: "Haftalık toplam" }
   ];
   function bicim(tur, deger) {
     if (deger === null || deger === void 0 || deger === "") return "";
@@ -1805,7 +1842,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     const tbody = kok.querySelector("tbody");
     kpiler.forEach((kpi) => {
       const satir = document.createElement("tr");
-      satir.appendChild(el(`<th class="kpi-sutun" title="${esc(kpi.ipucu)}">${kpi.ad}</th>`));
+      satir.appendChild(el(`<th class="kpi-sutun" title="${esc(kpi.ad)} — ${esc(kpi.ipucu)}">
+      <span class="kpi-uzun">${esc(kpi.ad)}</span>${kpi.kisa ? `<span class="kpi-kisa">${esc(kpi.kisa)}</span>` : ""}
+    </th>`));
       gunler.forEach((g, i) => {
         const tarih = dateStr(g);
         const kayit = ozet.kayitlar[i] || {};
@@ -3985,7 +4024,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 29;
+  var SURUM = 30;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
@@ -3995,6 +4034,15 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     } catch (e) {
       return null;
     }
+  }
+  async function varlikListesi() {
+    try {
+      const metin = await fetch("./sw.js?t=" + Date.now(), { cache: "no-store" }).then((r) => r.text());
+      const liste = [...metin.matchAll(/'(\.\/[^']*)'/g)].map((m) => m[1]);
+      if (liste.length) return [...new Set(liste)];
+    } catch (e) {
+    }
+    return ["./", "./index.html", "./css/app.css", "./js/app.js"];
   }
   async function guncelle() {
     try {
@@ -4006,6 +4054,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         const adlar = await caches.keys();
         await Promise.all(adlar.map((a) => caches.delete(a)));
       }
+      const dosyalar = await varlikListesi();
+      await Promise.all(dosyalar.map((u) => fetch(u, { cache: "reload" }).catch(() => {
+      })));
     } catch (e) {
     }
     location.reload();

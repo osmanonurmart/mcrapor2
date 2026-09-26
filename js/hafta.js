@@ -10,10 +10,10 @@ export const KPI_TANIM = [
   {id:'fbs',   ad:'FBS',            tur:'para',    formul:'ortalama',  ipucu:'Haftalık ortalama'},
   {id:'hedef', ad:'Hedef',          tur:'para',    formul:'toplam',    ipucu:'Haftalık toplam hedef'},
   {id:'oran',  ad:'Oran',           tur:'yuzde',   formul:'oran',      ipucu:'Hafta toplamı / hafta hedefi', hesaplanan:true},
-  {id:'toplu', ad:'Toplu Satışlar', tur:'tam',     formul:'toplam',    ipucu:'Haftalık toplam'},
+  {id:'toplu', ad:'Toplu Satışlar', kisa:'TP', tur:'tam', formul:'toplam',    ipucu:'Haftalık toplam'},
   // Kaynak sayfada var; kurucu panelinden açılabilir, varsayılanda kapalı.
-  {id:'urunAdedi',    ad:'Ürün Adedi',   tur:'tam', formul:'toplam', ipucu:'Haftalık toplam'},
-  {id:'faturaSayisi', ad:'Fatura Sayısı',tur:'tam', formul:'toplam', ipucu:'Haftalık toplam'}
+  {id:'urunAdedi',    ad:'Ürün Adedi',   kisa:'ÜA', tur:'tam', formul:'toplam', ipucu:'Haftalık toplam'},
+  {id:'faturaSayisi', ad:'Fatura Sayısı', kisa:'FS', tur:'tam', formul:'toplam', ipucu:'Haftalık toplam'}
 ];
 
 function bicim(tur, deger){
@@ -147,7 +147,9 @@ export function haftaTablosu(magazaKey, pzt, secenekler = {}){
   const tbody = kok.querySelector('tbody');
   kpiler.forEach(kpi => {
     const satir = document.createElement('tr');
-    satir.appendChild(U.el(`<th class="kpi-sutun" title="${U.esc(kpi.ipucu)}">${kpi.ad}</th>`));
+    satir.appendChild(U.el(`<th class="kpi-sutun" title="${U.esc(kpi.ad)} — ${U.esc(kpi.ipucu)}">
+      <span class="kpi-uzun">${U.esc(kpi.ad)}</span>${kpi.kisa ? `<span class="kpi-kisa">${U.esc(kpi.kisa)}</span>` : ''}
+    </th>`));
     gunler.forEach((g, i) => {
       const tarih = U.dateStr(g);
       const kayit = ozet.kayitlar[i] || {};

@@ -347,6 +347,7 @@ table{ border-collapse:collapse; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .izin-btn.dolu{ background:var(--acik-vurgu); border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
+.kpi-kisa{ display:none; }
 .kpi-sutun{ background:var(--zemin-3); text-align:left !important; padding:5px 8px !important; font-weight:700;
   font-size:.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* Formül metni uzun olabiliyor ("▼ %6,1 (ilk 5 gün)"); kırpmak yerine sarsın. */
@@ -624,7 +625,42 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
      ve bir öncekini göster. Paneller duruyor, sadece gizleniyor — ekran
      büyüyünce dördü de geri gelir. */
   .tuval-blok[data-panel="haftaOnceki2"],
-  .tuval-blok[data-panel="haftaOnceki3"]{ display:none; }
+  .tuval-blok[data-panel="haftaOnceki3"],
+  .tuval-blok[data-panel="hafta"]{ display:none; }
+
+  /* Satır ve yığın kapsayıcıları ortadan kalkıyor ki bütün bloklar tek bir
+     sütunun kardeşleri olsun; ancak öyle sıralarını değiştirebiliyoruz. */
+  .tuval{ display:flex; flex-direction:column; gap:12px; }
+  .tuval-satir,.tuval-yigin{ display:contents; }
+  .tuval-blok[data-panel="duyuru"]{ order:1; }
+  .tuval-blok[data-panel="haftaSecili"]{ order:2; }
+  .tuval-blok[data-panel="yorum"]{ order:3; }
+  .tuval-blok[data-panel="haftaOnceki"]{ order:4; }
+  .tuval-blok[data-panel="rutin"]{ order:5; }
+  .tuval-blok[data-panel="ozet"]{ order:6; }
+  /* display:contents yüzünden satır araları da sütunun çocuğu oluyor ve
+     ilk bloğun üstünde boş bir şerit bırakıyordu. */
+  .tuval-aralik{ display:none; }
+
+  /* Haftanın tamamı ekrana sığsın: en küçük genişlik kalkıyor, sütunlar
+     daraltılıyor, KPI sütunu "Hedef" yazısı kadar. */
+  .hafta-tablo{ min-width:0; font-size:.62rem; }
+  .hafta-tablo .kpi-sutun{ width:46px; }
+  .hafta-tablo .formul-sutun{ width:52px; }
+  .kpi-sutun{ font-size:.64rem; padding:3px 4px !important; }
+  .formul-sutun{ font-size:.6rem; padding:3px 3px !important; }
+  /* Kısa karşılığı olanlarda uzun ad gizlenir; olmayanlar (Ciro, MDO…)
+     zaten kısa, oldukları gibi kalır. */
+  .kpi-sutun:has(.kpi-kisa) .kpi-uzun{ display:none; }
+  .kpi-kisa{ display:inline; }
+  .hafta-tablo thead th{ padding:3px 1px; }
+  .gun-ad{ font-size:.64rem; }
+  .gun-tarih{ font-size:.55rem; }
+  .izin-btn{ font-size:.52rem; padding:0 2px; }
+  .hucre{ padding:3px 1px; }
+  .hafta-ust{ padding:5px 6px; gap:6px; }
+  .hafta-baslik{ font-size:.76rem; }
+  .hedef-girdi{ width:74px; }
 
   /* Dar ekranda bütün bloklar alt alta. */
   /* Dikey dizilişte bloklar kapsayıcıyı doldursun, içerik genişliğine büyümesin. */
@@ -658,7 +694,6 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 
   .duyuru-satir{ white-space:normal; }
   .hafta-listesi{ gap:6px; }
-  .hafta-tablo{ min-width:640px; font-size:.74rem; }
   .ozet-tablo{ min-width:720px; }
   .yan-panel{ order:3; }
   .pencere{ max-height:92vh; }
