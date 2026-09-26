@@ -1,7 +1,11 @@
 // Renk temaları.
 //
 // Bütün renkler css/app.css içindeki :root değişkenlerinden geliyor; tema
-// seçmek bu değişkenleri kök öğe üzerinde ezmekten ibaret. Seçim cihaza özel
+// seçmek bu değişkenleri kök öğe üzerinde ezmekten ibaret.
+//
+// DİKKAT: buradaki değerler app.css'teki :root'u ezer. Bir rengi app.css'te
+// değiştirmek tek başına yetmez; karşılığını burada da güncelleyin, yoksa
+// değişiklik uygulamada hiç görünmez. Seçim cihaza özel
 // bir tercih olduğu için buluta gitmez, localStorage'da durur.
 
 const ANAHTAR = 'mc2:tema';
@@ -10,7 +14,7 @@ export const TEMALAR = [
   {
     id:'bej', ad:'Bej', ornek:['#cfc7b6','#f6f2e9','#a87c38'],
     renkler:{
-      '--arka':'#cfc7b6','--kagit':'#f6f2e9','--cizgi':'#6f6552','--cizgi-ince':'#9a8e77',
+      '--arka':'#cfc7b6','--kagit':'#f6f2e9','--cizgi':'#a09689','--cizgi-ince':'#bdb4a6',
       '--yazi':'#141417','--soluk':'#55555f','--vurgu':'#a87c38','--acik-vurgu':'#f2e6cf',
       '--artis':'#236437','--dusus':'#96302f','--zemin-2':'#e4dcc9','--zemin-3':'#e6dfcc',
       '--zemin-hover':'#ece4d2','--bugun-zemin':'#efe4c8','--dusus-zemin':'#f0d9d9'
@@ -19,7 +23,7 @@ export const TEMALAR = [
   {
     id:'gri', ad:'Gri-mavi', ornek:['#c8cbd0','#f4f5f7','#2f6f9e'],
     renkler:{
-      '--arka':'#c8cbd0','--kagit':'#f4f5f7','--cizgi':'#5b6068','--cizgi-ince':'#8f959e',
+      '--arka':'#c8cbd0','--kagit':'#f4f5f7','--cizgi':'#939aa4','--cizgi-ince':'#b7bcc3',
       '--yazi':'#14161a','--soluk':'#525861','--vurgu':'#2f6f9e','--acik-vurgu':'#dce9f3',
       '--artis':'#1d6b3f','--dusus':'#a32f2f','--zemin-2':'#dfe2e7','--zemin-3':'#e3e6ea',
       '--zemin-hover':'#e9ecf0','--bugun-zemin':'#dbe8f2','--dusus-zemin':'#f2dcdc'
@@ -28,7 +32,7 @@ export const TEMALAR = [
   {
     id:'yesil', ad:'Yeşil-haki', ornek:['#c3ccc1','#f2f5f0','#2f6b45'],
     renkler:{
-      '--arka':'#c3ccc1','--kagit':'#f2f5f0','--cizgi':'#4f5c4c','--cizgi-ince':'#8a9786',
+      '--arka':'#c3ccc1','--kagit':'#f2f5f0','--cizgi':'#929c8f','--cizgi-ince':'#b2bab0',
       '--yazi':'#141813','--soluk':'#4f5a4d','--vurgu':'#2f6b45','--acik-vurgu':'#dceadf',
       '--artis':'#1d6b3f','--dusus':'#a13230','--zemin-2':'#dbe3d8','--zemin-3':'#e0e7dd',
       '--zemin-hover':'#e7ece4','--bugun-zemin':'#d9e8dd','--dusus-zemin':'#f0dcdb'
@@ -37,7 +41,7 @@ export const TEMALAR = [
   {
     id:'lacivert', ad:'Lacivert', ornek:['#bfc6d4','#f2f4f8','#1f4e8c'],
     renkler:{
-      '--arka':'#bfc6d4','--kagit':'#f2f4f8','--cizgi':'#3f4a63','--cizgi-ince':'#828da4',
+      '--arka':'#bfc6d4','--kagit':'#f2f4f8','--cizgi':'#8b93a6','--cizgi-ince':'#b0b6c2',
       '--yazi':'#11141c','--soluk':'#4b5468','--vurgu':'#1f4e8c','--acik-vurgu':'#d8e3f2',
       '--artis':'#1d6b3f','--dusus':'#a32f2f','--zemin-2':'#d8dee9','--zemin-3':'#dde3ee',
       '--zemin-hover':'#e6eaf2','--bugun-zemin':'#d5e2f4','--dusus-zemin':'#f2dcdc'

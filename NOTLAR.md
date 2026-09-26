@@ -389,3 +389,15 @@ haftalık tablolar da artık kaymıyor — %90 ölçek yer açtı.
   ortalandı.
 - **Haftalık rutin maddeleri** artık her biri kendi kutusunda; önce
   yalnız üzerine gelince çerçeve çıkıyordu.
+
+## 2026-09-26 — tema dosyası CSS'i eziyordu
+
+`js/tema.js` içindeki tema tanımları `css/app.css`'teki `:root`'u ezer;
+açılışta `temaUygula` çalışıp bütün renkleri kök öğeye yazıyor. Çizgileri
+grileştirme değişikliği yalnızca app.css'te yapılmıştı, bej teması eski
+koyu değeri (`#6f6552`) taşımaya devam ettiği için uygulamada hiç
+görünmemişti.
+
+Beş temanın da çizgi renkleri kendi tonlarında açıldı. Bundan sonra
+app.css'te bir renk değiştirirken karşılığını tema.js'te de güncellemek
+gerekiyor; dosyanın başına uyarı kondu.
