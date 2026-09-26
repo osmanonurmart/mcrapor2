@@ -1864,13 +1864,19 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       const k = gunGetir(magaza, yil + "-" + pad(ay) + "-" + pad(g));
       if (k) kayitlar.push(k);
     }
+    const elle = {};
+    kayitlar.forEach((k) => Object.entries(k.kartlar || {}).forEach(([id, v]) => {
+      const n = sayi(v);
+      if (n !== null) elle[id] = (elle[id] || 0) + n;
+    }));
     return {
       ciro: toplam(kayitlar.map((k) => sayi(k.ciro))),
       mgs: toplam(kayitlar.map((k) => sayi(k.mgs))),
       mdo: ortalama(kayitlar.map((k) => sayi(k.mdo))),
       fbu: ortalama(kayitlar.map((k) => sayi(k.fbu))),
       fbs: ortalama(kayitlar.map((k) => sayi(k.fbs))),
-      toplu: toplam(kayitlar.map((k) => sayi(k.toplu)))
+      toplu: toplam(kayitlar.map((k) => sayi(k.toplu))),
+      kartlar: elle
     };
   }
   function kiyasIcerigi(altBaslik, sol, sag, solEtiket, sagEtiket) {
@@ -1895,14 +1901,18 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, gun);
     const simdi = ayToplami(magazaKey, yil, ay, gun);
     const govde = el('<div class="kart-liste"></div>');
-    ["ciro", "mgs", "toplu", "mdo", "fbu", "fbs"].forEach((alan) => {
-      const d = yuzdeDegisim(onceki[alan], simdi[alan]);
+    kartlarGetir(magazaKey).forEach((kart) => {
+      const kaynakMi = kart.tur === "kaynak";
+      const o = kaynakMi ? onceki[kart.alan] : (onceki.kartlar || {})[kart.id];
+      const y = kaynakMi ? simdi[kart.alan] : (simdi.kartlar || {})[kart.id];
+      const d = yuzdeDegisim(o, y);
+      const bicim2 = (v) => kaynakMi ? alanBicimle(kart.alan, v) : v === null || v === void 0 ? "–" : fmtSayi(v, 0);
       govde.appendChild(el(`<div class="kart">
-      <div class="kart-ust"><span class="kart-ad">${ALAN_ADLARI[alan]}</span></div>
-      <div class="kart-satir"><span>1–${gun} ${AY_KISA[oncekiAy - 1]}</span><b>${alanBicimle(alan, onceki[alan])}</b></div>
+      <div class="kart-ust"><span class="kart-ad">${esc(kart.ad)}</span></div>
+      <div class="kart-satir"><span>1–${gun} ${AY_KISA[oncekiAy - 1]}</span><b>${bicim2(o)}</b></div>
       <div class="kart-satir kart-bugun">
         <span>1–${gun} ${AY_KISA[ay - 1]}</span>
-        <b>${alanBicimle(alan, simdi[alan])}</b>
+        <b>${bicim2(y)}</b>
         <span class="kart-degisim ${degisimSinifi(d)}">${fmtDegisim(d)}</span>
       </div>
     </div>`));
@@ -3917,7 +3927,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 19;
+  var SURUM = 20;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

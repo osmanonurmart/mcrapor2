@@ -333,6 +333,10 @@ etmenin tek yolu.
 - **Özet paneli** ikiye bölündü: solda dün/bugün kartları, sağında ay içi
   kıyası, üstte iki başlık. **Ay toplamı** kendi kutusuna alındı
   (`ayToplam` paneli, sağ yığında özet ile yorum arasında).
+  Sağ sütun sabit ölçüt listesi değil, **kullanıcının kartlarını** izliyor:
+  aynı sıra, aynı sayı, satırlar birebir hizalı. Elle girilen kartların ay
+  içi karşılığı için `ayToplami` artık `gun.kartlar` değerlerini de
+  topluyor (`kartlar` alanı).
 
 ### Sürüm otomatiği
 `js/surum.js` artık elle değiştirilmiyor. `olustur.mjs` sürümü

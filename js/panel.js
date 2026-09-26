@@ -28,13 +28,21 @@ function ayToplami(magaza, yil, ay, sonGun){
     const k = V.gunGetir(magaza, yil + '-' + U.pad(ay) + '-' + U.pad(g));
     if(k) kayitlar.push(k);
   }
+  // Elle girilen kartlar da toplansın; sağ sütun kullanıcının kartlarını
+  // takip ediyor, oradaki her kartın ay içi karşılığı lazım.
+  const elle = {};
+  kayitlar.forEach(k => Object.entries(k.kartlar || {}).forEach(([id, v]) => {
+    const n = U.sayi(v);
+    if(n !== null) elle[id] = (elle[id] || 0) + n;
+  }));
   return {
     ciro: U.toplam(kayitlar.map(k => U.sayi(k.ciro))),
     mgs:  U.toplam(kayitlar.map(k => U.sayi(k.mgs))),
     mdo:  U.ortalama(kayitlar.map(k => U.sayi(k.mdo))),
     fbu:  U.ortalama(kayitlar.map(k => U.sayi(k.fbu))),
     fbs:  U.ortalama(kayitlar.map(k => U.sayi(k.fbs))),
-    toplu:U.toplam(kayitlar.map(k => U.sayi(k.toplu)))
+    toplu:U.toplam(kayitlar.map(k => U.sayi(k.toplu))),
+    kartlar: elle
   };
 }
 
@@ -63,14 +71,20 @@ function ayIciIcerigi(magazaKey, oncekiYil, oncekiAy, yil, ay, gun){
   const onceki = ayToplami(magazaKey, oncekiYil, oncekiAy, gun);
   const simdi  = ayToplami(magazaKey, yil, ay, gun);
   const govde = U.el('<div class="kart-liste"></div>');
-  ['ciro','mgs','toplu','mdo','fbu','fbs'].forEach(alan => {
-    const d = U.yuzdeDegisim(onceki[alan], simdi[alan]);
+  // Soldaki kartlarla aynı sırada, aynı sayıda: satırlar hizalı dursun.
+  V.kartlarGetir(magazaKey).forEach(kart => {
+    const kaynakMi = kart.tur === 'kaynak';
+    const o = kaynakMi ? onceki[kart.alan] : (onceki.kartlar || {})[kart.id];
+    const y = kaynakMi ? simdi[kart.alan]  : (simdi.kartlar  || {})[kart.id];
+    const d = U.yuzdeDegisim(o, y);
+    const bicim = v => kaynakMi ? alanBicimle(kart.alan, v)
+      : (v === null || v === undefined ? '–' : U.fmtSayi(v, 0));
     govde.appendChild(U.el(`<div class="kart">
-      <div class="kart-ust"><span class="kart-ad">${ALAN_ADLARI[alan]}</span></div>
-      <div class="kart-satir"><span>1–${gun} ${U.AY_KISA[oncekiAy-1]}</span><b>${alanBicimle(alan, onceki[alan])}</b></div>
+      <div class="kart-ust"><span class="kart-ad">${U.esc(kart.ad)}</span></div>
+      <div class="kart-satir"><span>1–${gun} ${U.AY_KISA[oncekiAy-1]}</span><b>${bicim(o)}</b></div>
       <div class="kart-satir kart-bugun">
         <span>1–${gun} ${U.AY_KISA[ay-1]}</span>
-        <b>${alanBicimle(alan, simdi[alan])}</b>
+        <b>${bicim(y)}</b>
         <span class="kart-degisim ${U.degisimSinifi(d)}">${U.fmtDegisim(d)}</span>
       </div>
     </div>`));
