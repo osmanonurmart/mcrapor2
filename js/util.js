@@ -59,11 +59,12 @@ export function ayinHaftalari(yil, ay){
   }
   return haftalar;
 }
-// Bütün hafta etiketleri aynı biçimde: "7.Eyl - 13.Eyl", ay sınırını aşanlar dahil.
+// Hafta kutusu etiketi: "7.Eyl–13.Eyl". Ayı 5 haftalık olan aylarda kutular
+// daraldığı için boşluksuz kısa çizgi kullanılıyor; ay adı her ikisinde de var.
 export function haftaAraligiEtiketi(pzt){
   const g = haftaGunleri(pzt);
   const yaz = d => d.getDate() + '.' + AY_KISA[d.getMonth()];
-  return yaz(g[0]) + ' - ' + yaz(g[6]);
+  return yaz(g[0]) + '–' + yaz(g[6]);
 }
 
 export const sayi = n => (n === null || n === undefined || n === '' || isNaN(n)) ? null : Number(n);

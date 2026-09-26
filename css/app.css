@@ -254,20 +254,27 @@ table{ border-collapse:collapse; }
   border:var(--cerceve) solid var(--cizgi); border-radius:var(--r);
   padding:6px; background:var(--kagit);
 }
-.hafta-listesi{ display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; }
+/* Ayın haftaları her zaman tamamı görünür ve eşit genişlikte olsun:
+   4 haftalık ayda da 5 haftalık ayda da kaydırma çubuğu çıkmaz, kutular
+   kalan yeri eşit böler. */
+/* Kutular kalan yeri eşit böler. Daralınca okunmaz hale gelmesin diye bir
+   taban genişliği var; o da sığmazsa kırpmak yerine kaydırma çubuğu çıkar. */
+.hafta-listesi{ display:flex; gap:4px; flex:1 1 auto; min-width:0; overflow-x:auto; }
 /* Hafta kutusu: üstte ay içi sıra (büyük) ve yılın haftası (küçük, gri),
    altında tarih aralığı. İki satır — kutu boyu eskisiyle aynı kalsın diye. */
 .hafta{
-  background:var(--zemin-3); border:1px solid var(--cizgi); border-radius:8px; padding:4px 10px;
-  cursor:pointer; text-align:center; white-space:nowrap; flex:0 0 auto; min-width:98px;
+  background:var(--zemin-3); border:1px solid var(--cizgi); border-radius:8px; padding:4px 3px;
+  cursor:pointer; text-align:center; white-space:nowrap;
+  flex:1 1 0; min-width:78px; overflow:hidden;
 }
 .hafta:hover{ border-color:var(--vurgu); }
 .hafta.secili{ background:var(--acik-vurgu); border-color:var(--vurgu); }
-.h-ust{ display:flex; align-items:baseline; justify-content:center; gap:5px; }
+.h-ust{ display:flex; align-items:baseline; justify-content:center; gap:4px; }
 .h-sira{ font-size:.86rem; font-weight:800; line-height:1.1; }
 .h-no{ font-size:.62rem; font-weight:600; color:var(--soluk); }
 .hafta.secili .h-no{ color:var(--vurgu); }
-.h-aralik{ display:block; font-size:.64rem; color:var(--soluk); line-height:1.3; }
+.h-aralik{ display:block; font-size:.62rem; color:var(--soluk); line-height:1.3;
+  overflow:hidden; text-overflow:ellipsis; letter-spacing:-.1px; }
 .ok{ background:none; border:1px solid var(--cizgi); border-radius:8px; width:26px; height:26px; cursor:pointer; flex:0 0 auto; }
 
 /* ---------- Ekran gövdesi ---------- */
