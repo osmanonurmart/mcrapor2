@@ -31,12 +31,19 @@ export const ORTAK       = 'mc2_ortak';
 
 export const bulutVarMi = () => typeof firebase !== 'undefined' && !!firebase.firestore;
 
+// v1 (rapor.html) ile aynı alan adında ve aynı Firebase projesinde çalışıyoruz.
+// Varsayılan uygulama adı kullanılırsa ikisi aynı oturum kaydını paylaşır:
+// v1 sekmesi anonim giriş yapınca v2 sekmesi de o oturumu görür ve sürekli
+// yeniden yüklenir. Kendi uygulama adımızla ayrı bir oturum kaydı tutuyoruz.
+export const UYGULAMA_ADI = 'mc2';
+
 let auth = null, db = null;
 export function baglan(){
   if(!bulutVarMi()) return false;
-  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  auth = firebase.auth();
-  db = firebase.firestore();
+  const uygulama = firebase.apps.find(a => a.name === UYGULAMA_ADI)
+    || firebase.initializeApp(firebaseConfig, UYGULAMA_ADI);
+  auth = uygulama.auth();
+  db = uygulama.firestore();
   return true;
 }
 export const authAl = () => auth;
@@ -69,7 +76,8 @@ export function girisHatasi(err){
 // Yeni kullanıcı, ikincil bir bağlantıyla açılır; yöneticinin oturumu bozulmaz.
 let ikincil = null;
 export async function kullaniciOlustur(eposta, sifre){
-  if(!ikincil) ikincil = firebase.initializeApp(firebaseConfig, 'kullaniciOlusturucu');
+  if(!ikincil) ikincil = firebase.apps.find(a => a.name === 'mc2Olusturucu')
+    || firebase.initializeApp(firebaseConfig, 'mc2Olusturucu');
   const ia = ikincil.auth();
   let cred;
   try{
@@ -95,7 +103,8 @@ export async function kullaniciOlustur(eposta, sifre){
 // Şifre değiştirme. Tarayıcıdan başka birinin şifresi ancak mevcut şifresi
 // bilinerek değiştirilebilir (Admin SDK olmadan başka yolu yok).
 export async function sifreDegistir(eposta, eskiSifre, yeniSifre){
-  if(!ikincil) ikincil = firebase.initializeApp(firebaseConfig, 'kullaniciOlusturucu');
+  if(!ikincil) ikincil = firebase.apps.find(a => a.name === 'mc2Olusturucu')
+    || firebase.initializeApp(firebaseConfig, 'mc2Olusturucu');
   const ia = ikincil.auth();
   let cred;
   try{

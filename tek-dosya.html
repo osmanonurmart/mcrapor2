@@ -850,13 +850,14 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   var MAGAZALAR = "mc2_magazalar";
   var ORTAK = "mc2_ortak";
   var bulutVarMi = () => typeof firebase !== "undefined" && !!firebase.firestore;
+  var UYGULAMA_ADI = "mc2";
   var auth = null;
   var db = null;
   function baglan() {
     if (!bulutVarMi()) return false;
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
+    const uygulama = firebase.apps.find((a) => a.name === UYGULAMA_ADI) || firebase.initializeApp(firebaseConfig, UYGULAMA_ADI);
+    auth = uygulama.auth();
+    db = uygulama.firestore();
     return true;
   }
   var authAl = () => auth;
@@ -879,7 +880,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
   var ikincil = null;
   async function kullaniciOlustur(eposta, sifre) {
-    if (!ikincil) ikincil = firebase.initializeApp(firebaseConfig, "kullaniciOlusturucu");
+    if (!ikincil) ikincil = firebase.apps.find((a) => a.name === "mc2Olusturucu") || firebase.initializeApp(firebaseConfig, "mc2Olusturucu");
     const ia = ikincil.auth();
     let cred;
     try {
@@ -902,7 +903,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     return uid;
   }
   async function sifreDegistir(eposta, eskiSifre, yeniSifre) {
-    if (!ikincil) ikincil = firebase.initializeApp(firebaseConfig, "kullaniciOlusturucu");
+    if (!ikincil) ikincil = firebase.apps.find((a) => a.name === "mc2Olusturucu") || firebase.initializeApp(firebaseConfig, "mc2Olusturucu");
     const ia = ikincil.auth();
     let cred;
     try {

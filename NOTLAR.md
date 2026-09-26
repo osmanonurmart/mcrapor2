@@ -233,3 +233,24 @@ haftası".
 
 Ay şeridi ve yıl seçimi yerinde kaldı. Hafta satırı artık kendi
 çerçevesinin içinde (`--cerceve` kalınlığında).
+
+## 2026-09-26 — v1 ile oturum çakışması (önemli)
+
+Belirti: v2 ekranı birkaç saniyede bir "Veriler yükleniyor…"a düşüyordu,
+v1 de sürekli yenileniyordu.
+
+Sebep: ikisi de aynı alan adında (`osmanonurmart.github.io`), aynı
+Firebase projesinde ve **aynı varsayılan uygulama adıyla** (`[DEFAULT]`)
+çalışıyordu. Firebase Auth oturumu `firebase:authUser:<apiKey>:<appName>`
+anahtarıyla saklıyor ve aynı alan adındaki sekmeler arasında eşitliyor.
+v1 sekmesi anonim giriş yapınca v2'nin oturumunu eziyordu, v2 e-posta
+girişi yapınca v1'inkini. İki sekme birbirini sürekli yeniden
+tetikliyordu.
+
+Çözüm: v2 kendi uygulama adıyla bağlanıyor (`bulut.js` → `UYGULAMA_ADI =
+'mc2'`), kullanıcı açarken kullandığı ikincil uygulama da `mc2Olusturucu`.
+Oturum kayıtları artık ayrı; `rapor.html` değişmedi.
+
+**Not:** Ayrı repo açmak bunu çözmez — aynı kullanıcının bütün GitHub
+Pages siteleri `osmanonurmart.github.io` altında, yani aynı alan adında.
+Çözüm uygulama adının ayrılması; o da yapıldı.
