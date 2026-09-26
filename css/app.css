@@ -673,3 +673,20 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 }
 .k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
 .sifre-goz{ margin-left:auto; }
+
+/* ---------- Bildirim (bkz. util.bildir) ---------- */
+.bildirim{
+  position:fixed; top:16px; right:16px; z-index:400; max-width:340px;
+  color:#fff; border-radius:12px; padding:12px 15px; font-size:.82rem; line-height:1.5;
+  box-shadow:var(--golge-buyuk); cursor:pointer;
+  animation:bildirimGir .18s ease-out;
+}
+.bildirim b{ font-size:.88rem; }
+.bildirim-govde{ margin-top:4px; opacity:.92; }
+.bildirim.iyi  { background:#1f6b3d; }
+.bildirim.uyari{ background:#8d2f2f; }
+.bildirim.hata { background:#8d2f2f; }
+@keyframes bildirimGir{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
+@media (max-width: 560px){
+  .bildirim{ left:12px; right:12px; max-width:none; }
+}

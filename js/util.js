@@ -138,3 +138,18 @@ export function bosUyar(girdi){
   girdi.focus();
   setTimeout(() => girdi.classList.remove('bos-uyari'), 1200);
 }
+
+// Sağ üstte kısa bir bildirim. Tür: 'iyi' | 'uyari' | 'hata'.
+// Tıklanınca kapanır, yoksa kendiliğinden kaybolur.
+export function bildir(tur, baslik, govde){
+  document.querySelectorAll('.bildirim').forEach(x => x.remove());
+  const k = el(`<div class="bildirim ${tur}">
+    <b>${esc(baslik)}</b>
+    ${govde ? `<div class="bildirim-govde">${govde}</div>` : ''}
+  </div>`);
+  document.body.appendChild(k);
+  const kapat = () => k.remove();
+  k.addEventListener('click', kapat);
+  setTimeout(kapat, tur === 'iyi' ? 5000 : 9000);
+  return k;
+}

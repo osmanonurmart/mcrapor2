@@ -155,6 +155,71 @@ const ONIZLEME_ALANLARI = [
   {alan:'toplu',        ad:'Toplu',   basamak:0}
 ];
 
+// Tek tıkla: panoyu oku, çözümle, yalnızca dün ve bugünü yaz, bildir.
+// Pano okunamazsa (izin yok, eski tarayıcı) eski yapıştırma penceresi açılır.
+export async function hizliYapistir(magazaKey, yenile){
+  // readText() izin penceresi açıkken sonuçlanmıyor; süresiz beklememek için
+  // sınır konuldu. Sınır dolarsa ya da reddedilirse yapıştırma penceresi açılır.
+  const PANO_SINIRI = 8000;
+  let metin = null;
+  try{
+    metin = await Promise.race([
+      navigator.clipboard.readText(),
+      new Promise(c => setTimeout(() => c(null), PANO_SINIRI))
+    ]);
+  }catch(e){ metin = null; }
+  if(metin === null){
+    yapistirPenceresi(magazaKey, yenile);
+    return;
+  }
+  // Pano boşsa çıkmaz sokak olmasın: eski yapıştırma penceresi açılır.
+  if(!metin.trim()){
+    yapistirPenceresi(magazaKey, yenile);
+    U.bildir('uyari', 'Pano boş', 'Önce ciro sayfasında "Veri Kopyala" yer imine tıklayın.');
+    return;
+  }
+
+  const c = metniCozumle(metin.trim(), {topluEsik: V.topluEsikGetir()});
+  if(c.hata){
+    U.bildir('uyari', '⚠ Veri işlenemedi', c.hata);
+    return;
+  }
+
+  // Yalnızca rapor tarihi (bugün) ve bir önceki gün (dün) yazılır.
+  // Pazartesi basıldığında dün geçen haftanın pazarı olur; o da yazılır.
+  const bugun = c.tarih;
+  const d = new Date(bugun + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  const dun = U.dateStr(d);
+  const secilenler = c.yazilacak.filter(g => g.tarih === bugun || g.tarih === dun);
+
+  if(!secilenler.length){
+    U.bildir('uyari', '⚠ Veri işlenemedi', 'Dün ve bugüne ait satır bulunamadı.');
+    return;
+  }
+
+  secilenler.forEach(g => {
+    const kayit = V.gunGetir(magazaKey, g.tarih) || {};
+    Object.keys(g.degerler).forEach(a => { kayit[a] = g.degerler[a]; });
+    if(g.kesin) kayit.kesin = true;
+    V.gunYaz(magazaKey, g.tarih, kayit);
+  });
+
+  const ad = t => {
+    const g = new Date(t + 'T12:00:00');
+    return U.GUN_KISA[(g.getDay()+6)%7] + ' ' + U.kisaTarih(g);
+  };
+  const satirlar = secilenler.map(g =>
+    ad(g.tarih) + ' — ciro ' + (g.degerler.ciro === undefined ? '–' : U.fmtSayi(g.degerler.ciro, 0)));
+  if(c.grup && !c.grup.faturaBazli){
+    satirlar.push('Toplu satış gelmedi: kaynak sayfada gruplama "' + c.grup.olcut + '".');
+  }
+
+  haftaSec(U.pazartesi(new Date(bugun + 'T12:00:00')));
+  yenile();
+  U.bildir('iyi', '✓ ' + secilenler.length + ' gün işlendi', satirlar.join('<br>'));
+}
+
 export function yapistirPenceresi(magazaKey, yenile){
   const govde = U.el(`<div class="yapistir">
     <p class="aciklama">Ciro takip sitesinde yer imine tıklayın, çıkan kutudaki metni buraya yapıştırın.

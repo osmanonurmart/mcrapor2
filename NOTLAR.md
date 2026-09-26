@@ -290,3 +290,28 @@ Taviz: şifreler veritabanında düz metin. İç kullanım için kabul edildi.
 Vazgeçilirse `SIFRELER` koleksiyonunu ve kuraldaki `mc2_sifreler`
 bloğunu silmek yeterli; giriş ve şifre değiştirme çalışmaya devam eder
 (mevcut şifre yine sorulur).
+
+## 2026-09-26 — tek tık yapıştırma ve yer imi bildirimi
+
+**Yer imi bildirimi** üç duruma ayrıldı (`yerimi/kaynak.js`):
+- yeşil: tarih + "N büyük fatura · toplam X ₺"
+- kırmızı: kaynak sayfada gruplama "Fatura No" değil, büyük fatura okunamadı
+- turuncu ⚠: KPI tablosu ya da tarih alanı bulunamadı → "Güncelleme gerekli".
+  Kaynak sayfanın yapısı değiştiğinde bu çıkar.
+
+**Yapıştır / Veri Ekle** artık pencere açmıyor: panoyu okuyup doğrudan
+işliyor (`magaza.js` → `hizliYapistir`). Yalnızca **rapor tarihi (bugün)
+ve bir önceki gün (dün)** yazılıyor; haftanın geri kalanına dokunulmuyor.
+Pazartesi basıldığında dün geçen haftanın pazarı olur, o da yazılır.
+
+`navigator.clipboard.readText()` izin penceresi açıkken hiç
+sonuçlanmıyor — süresiz asılı kalmasın diye 8 sn sınır kondu. Sınır
+dolarsa, izin reddedilirse ya da pano boşsa eski yapıştırma penceresi
+açılıyor.
+
+Uygulama içi bildirim: `util.bildir(tur, baslik, govde)`; sağ üstte
+çıkar, tıklanınca kapanır.
+
+**Yer imi adı** `🏪 Veri Kopyala` oldu. Chrome `javascript:` ile başlayan
+yer imlerine site simgesi koymuyor; simgeyi ada yazmak çubukta ayırt
+etmenin tek yolu.

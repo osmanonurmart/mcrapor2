@@ -683,6 +683,23 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 .k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
 .sifre-goz{ margin-left:auto; }
 
+/* ---------- Bildirim (bkz. util.bildir) ---------- */
+.bildirim{
+  position:fixed; top:16px; right:16px; z-index:400; max-width:340px;
+  color:#fff; border-radius:12px; padding:12px 15px; font-size:.82rem; line-height:1.5;
+  box-shadow:var(--golge-buyuk); cursor:pointer;
+  animation:bildirimGir .18s ease-out;
+}
+.bildirim b{ font-size:.88rem; }
+.bildirim-govde{ margin-top:4px; opacity:.92; }
+.bildirim.iyi  { background:#1f6b3d; }
+.bildirim.uyari{ background:#8d2f2f; }
+.bildirim.hata { background:#8d2f2f; }
+@keyframes bildirimGir{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
+@media (max-width: 560px){
+  .bildirim{ left:12px; right:12px; max-width:none; }
+}
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -842,6 +859,18 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     girdi.classList.add("bos-uyari");
     girdi.focus();
     setTimeout(() => girdi.classList.remove("bos-uyari"), 1200);
+  }
+  function bildir(tur, baslik, govde) {
+    document.querySelectorAll(".bildirim").forEach((x) => x.remove());
+    const k = el(`<div class="bildirim ${tur}">
+    <b>${esc(baslik)}</b>
+    ${govde ? `<div class="bildirim-govde">${govde}</div>` : ""}
+  </div>`);
+    document.body.appendChild(k);
+    const kapat2 = () => k.remove();
+    k.addEventListener("click", kapat2);
+    setTimeout(kapat2, tur === "iyi" ? 5e3 : 9e3);
+    return k;
   }
 
   // js/bulut.js
@@ -2655,6 +2684,60 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     { alan: "faturaSayisi", ad: "Fatura", basamak: 0 },
     { alan: "toplu", ad: "Toplu", basamak: 0 }
   ];
+  async function hizliYapistir(magazaKey, yenile) {
+    const PANO_SINIRI = 8e3;
+    let metin = null;
+    try {
+      metin = await Promise.race([
+        navigator.clipboard.readText(),
+        new Promise((c2) => setTimeout(() => c2(null), PANO_SINIRI))
+      ]);
+    } catch (e) {
+      metin = null;
+    }
+    if (metin === null) {
+      yapistirPenceresi(magazaKey, yenile);
+      return;
+    }
+    if (!metin.trim()) {
+      yapistirPenceresi(magazaKey, yenile);
+      bildir("uyari", "Pano boş", 'Önce ciro sayfasında "Veri Kopyala" yer imine tıklayın.');
+      return;
+    }
+    const c = metniCozumle(metin.trim(), { topluEsik: topluEsikGetir() });
+    if (c.hata) {
+      bildir("uyari", "⚠ Veri işlenemedi", c.hata);
+      return;
+    }
+    const bugun2 = c.tarih;
+    const d = /* @__PURE__ */ new Date(bugun2 + "T12:00:00");
+    d.setDate(d.getDate() - 1);
+    const dun = dateStr(d);
+    const secilenler = c.yazilacak.filter((g) => g.tarih === bugun2 || g.tarih === dun);
+    if (!secilenler.length) {
+      bildir("uyari", "⚠ Veri işlenemedi", "Dün ve bugüne ait satır bulunamadı.");
+      return;
+    }
+    secilenler.forEach((g) => {
+      const kayit = gunGetir(magazaKey, g.tarih) || {};
+      Object.keys(g.degerler).forEach((a) => {
+        kayit[a] = g.degerler[a];
+      });
+      if (g.kesin) kayit.kesin = true;
+      gunYaz(magazaKey, g.tarih, kayit);
+    });
+    const ad = (t) => {
+      const g = /* @__PURE__ */ new Date(t + "T12:00:00");
+      return GUN_KISA[(g.getDay() + 6) % 7] + " " + kisaTarih(g);
+    };
+    const satirlar = secilenler.map((g) => ad(g.tarih) + " — ciro " + (g.degerler.ciro === void 0 ? "–" : fmtSayi(g.degerler.ciro, 0)));
+    if (c.grup && !c.grup.faturaBazli) {
+      satirlar.push('Toplu satış gelmedi: kaynak sayfada gruplama "' + c.grup.olcut + '".');
+    }
+    haftaSec(pazartesi(/* @__PURE__ */ new Date(bugun2 + "T12:00:00")));
+    yenile();
+    bildir("iyi", "✓ " + secilenler.length + " gün işlendi", satirlar.join("<br>"));
+  }
   function yapistirPenceresi(magazaKey, yenile) {
     const govde = el(`<div class="yapistir">
     <p class="aciklama">Ciro takip sitesinde yer imine tıklayın, çıkan kutudaki metni buraya yapıştırın.
@@ -4085,7 +4168,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       uygulamaCiz();
     }));
     const yap = kok.querySelector("[data-yapistir]");
-    if (yap) yap.addEventListener("click", () => yapistirPenceresi(aktifMagaza(), uygulamaCiz));
+    if (yap) yap.addEventListener("click", () => hizliYapistir(aktifMagaza(), uygulamaCiz));
     const logo = kok.querySelector(".ust-logo");
     const simge = document.querySelector('link[rel="icon"]');
     if (simge) logo.querySelector("img").src = simge.href;

@@ -87,46 +87,60 @@
   const gruplama = cikti.listeler.find(l => /gruplama/i.test(T(l.etiket)));
   const faturaBazli = gruplama && /fatura/i.test(T((gruplama.secili || [])[0] || ''));
   const grupTablosu = basligaGore(b => /^grup$/i.test(b[0] || ''));
-  let buyukFatura = null, faturaAdedi = null;
+  let buyukFatura = null, faturaAdedi = null, buyukToplam = 0;
   if(faturaBazli && grupTablosu){
     const baslik = grupTablosu.satirlar[0].map(T);
     const toplamSutun = baslik.findIndex(h => /^toplam$/i.test(h));
     if(toplamSutun > -1){
       const tutarlar = grupTablosu.satirlar.slice(1).map(r => sayi(r[toplamSutun])).filter(v => v !== null);
       faturaAdedi = tutarlar.length;
-      buyukFatura = tutarlar.filter(v => v >= BUYUK_FATURA_ESIGI).length;
+      const buyukler = tutarlar.filter(v => v >= BUYUK_FATURA_ESIGI);
+      buyukFatura = buyukler.length;
+      buyukToplam = buyukler.reduce((t,v) => t + v, 0);
     }
   }
+
+  // Kaynak sayfanın yapısı değiştiyse hiçbir şey okunamaz; bunu ayrı bildir.
+  const yapiBozuk = !kpiTablosu || !tarih;
 
   const json = JSON.stringify(cikti, null, 2);
 
   // --- Bildirim ---
-  const bildir = (basarili, ek) => {
+  // Üç durum: yeşil (her şey okundu), kırmızı (gruplama Fatura No değil),
+  // uyarı (kaynak sayfa değişmiş, veri okunamadı).
+  const RENK = {yesil:'#1f6b3d', kirmizi:'#8d2f2f', uyari:'#8a5a12'};
+  const BASLIK = {yesil:'✓ Panoya kopyalandı', kirmizi:'✕ Fatura No seçili değil', uyari:'⚠ Güncelleme gerekli'};
+  const bildir = (durum, ek) => {
     document.querySelectorAll('.__mcKopyaBildirim').forEach(x => x.remove());
     const k = document.createElement('div');
     k.className = '__mcKopyaBildirim';
     k.style.cssText = 'position:fixed;top:18px;right:18px;z-index:2147483647;max-width:340px;' +
-      'background:' + (basarili ? '#1d1d1f' : '#7d2b2b') + ';color:#fff;border-radius:12px;' +
+      'background:' + (RENK[durum] || RENK.uyari) + ';color:#fff;border-radius:12px;' +
       'padding:13px 16px;font:13px/1.5 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35)';
-    k.innerHTML = '<b style="font-size:14px">' + (basarili ? '✓ Panoya kopyalandı' : '⚠ Kopyalanamadı') + '</b>' +
-      '<div style="margin-top:5px;opacity:.85">' + ek + '</div>';
+    k.innerHTML = '<b style="font-size:14px">' + (BASLIK[durum] || BASLIK.uyari) + '</b>' +
+      '<div style="margin-top:5px;opacity:.9">' + ek + '</div>';
     document.body.appendChild(k);
-    setTimeout(() => k.remove(), 6000);
+    setTimeout(() => k.remove(), 7000);
     k.addEventListener('click', () => k.remove());
   };
 
-  const satirlar = [];
-  if(tarih) satirlar.push('Tarih: ' + tarih);
-  const para = v => v.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₺';
-  if(bugunCiro !== null) satirlar.push('Bugün: ' + para(bugunCiro));
-  if(dunCiro !== null) satirlar.push('Dün (kesinleşti): ' + para(dunCiro));
-  if(buyukFatura !== null){
-    satirlar.push(buyukFatura + ' büyük fatura' + (faturaAdedi ? ' / ' + faturaAdedi : '') +
-      ' (' + BUYUK_FATURA_ESIGI.toLocaleString('tr-TR') + ' ₺ üstü)');
-  } else if(gruplama){
-    satirlar.push('Gruplama: ' + T((gruplama.secili || [])[0] || '-') + ' — büyük fatura için "Fatura No" seçin');
+  const para = v => v.toLocaleString('tr-TR', {maximumFractionDigits:0}) + ' ₺';
+  let durum, ozetMetni;
+  if(yapiBozuk){
+    durum = 'uyari';
+    ozetMetni = 'Kaynak sayfada beklenen tablolar bulunamadı.<br>' +
+      'Sayfa değişmiş olabilir; yer iminin güncellenmesi gerekiyor.';
+  } else if(buyukFatura === null){
+    durum = 'kirmizi';
+    ozetMetni = (tarih ? tarih + '<br>' : '') +
+      'Gruplama: ' + T(((gruplama || {}).secili || [])[0] || '-') + '<br>' +
+      'Büyük fatura için kaynak sayfada <b>Fatura No</b> seçin.';
+  } else {
+    durum = 'yesil';
+    ozetMetni = tarih + '<br>' +
+      (buyukFatura ? buyukFatura + ' büyük fatura · toplam ' + para(buyukToplam)
+                   : 'Büyük fatura yok (' + para(BUYUK_FATURA_ESIGI) + ' üstü)');
   }
-  const ozetMetni = satirlar.join('<br>');
 
   const elleKopyala = () => {
     const ta = document.createElement('textarea');
@@ -136,12 +150,12 @@
     ta.select();
     let tamam = false;
     try{ tamam = document.execCommand('copy'); }catch(e){ tamam = false; }
-    if(tamam){ ta.remove(); bildir(true, ozetMetni); }
-    else bildir(false, 'Kutudaki metni Ctrl+A, Ctrl+C ile kopyalayın.<br>Kutuyu kapatmak için bu bildirime tıklayın.');
+    if(tamam){ ta.remove(); bildir(durum, ozetMetni); }
+    else bildir('uyari', 'Kutudaki metni Ctrl+A, Ctrl+C ile kopyalayın.<br>Kutuyu kapatmak için bu bildirime tıklayın.');
   };
 
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(json).then(() => bildir(true, ozetMetni), elleKopyala);
+    navigator.clipboard.writeText(json).then(() => bildir(durum, ozetMetni), elleKopyala);
   } else {
     elleKopyala();
   }

@@ -1,7 +1,7 @@
 // Uygulama iskeleti: profil girişi, üst çubuk, sayfa yönlendirme.
 import * as U from './util.js';
 import * as V from './veri.js';
-import { magazaEkrani, yapistirPenceresi, personelPenceresi, seciliHafta, haftaSec } from './magaza.js';
+import { magazaEkrani, yapistirPenceresi, hizliYapistir, personelPenceresi, seciliHafta, haftaSec } from './magaza.js';
 import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
@@ -287,7 +287,8 @@ function ustCubuk(){
     uygulamaCiz();
   }));
   const yap = kok.querySelector('[data-yapistir]');
-  if(yap) yap.addEventListener('click', () => yapistirPenceresi(aktifMagaza(), uygulamaCiz));
+  // Tek tık: panodan al, dün ve bugünü işle. Pano okunamazsa pencere açılır.
+  if(yap) yap.addEventListener('click', () => hizliYapistir(aktifMagaza(), uygulamaCiz));
   // Logo, tarayıcı sekmesindeki simgenin aynısı; tıklayınca ana sayfaya döner.
   const logo = kok.querySelector('.ust-logo');
   const simge = document.querySelector('link[rel="icon"]');
