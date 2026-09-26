@@ -14,6 +14,10 @@ export const firebaseConfig = {
 };
 
 export const KULLANICILAR = 'mc2_kullanicilar';
+// Kurucu şifreleri görebilsin diye ayrı bir koleksiyonda düz metin tutuluyor.
+// Firebase şifreyi geri okunamaz biçimde sakladığı için başka yolu yok.
+// Kurallar bu koleksiyonu yalnızca kurucuya açar; bölge müdürü bile göremez.
+export const SIFRELER = 'mc2_sifreler';
 
 // Firebase Auth e-posta ister; kullanıcılar ise yalnızca kullanıcı adı yazar.
 // İçeride "2307" → "2307@mcrapor.local" olur. İçinde @ varsa dokunulmaz,

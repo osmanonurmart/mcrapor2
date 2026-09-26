@@ -270,3 +270,23 @@ yolları (settings, stores, entries, weekgoals, tools, ghbhr*) buradan
 apiKey demek olduğu için oturum çakışması artık mümkün değil, ama iki
 uygulama aynı alan adında yayınlandığı sürece bu ad ayrımı ucuz bir
 güvence.
+
+## 2026-09-26 — kurucu şifreleri görebiliyor
+
+Firebase şifreyi geri okunamaz biçimde saklıyor; "şifreyi göster" için
+başka yol yok, şifrenin bir kopyasını biz tutuyoruz. Kopya
+`mc2_sifreler/{magazaKey}` belgesinde düz metin duruyor ve kurallar bu
+koleksiyonu **yalnızca kurucuya** açıyor — bölge müdürü de göremez.
+
+Kurucu → Ayarlar → Kullanıcılar:
+- Her satırda kayıtlı şifre `••••••••` olarak duruyor, "👁 Şifreleri
+  göster" ile açılıyor.
+- Şifre değiştirme tek alana indi: mevcut şifre kayıttan okunuyor.
+  Kayıt yoksa (bu özellikten önce açılmış hesap) bir kez soruluyor,
+  sonrasında kayıtlı kalıyor.
+- Kullanıcı ayrılınca ve mağaza silinince şifre kaydı da siliniyor.
+
+Taviz: şifreler veritabanında düz metin. İç kullanım için kabul edildi.
+Vazgeçilirse `SIFRELER` koleksiyonunu ve kuraldaki `mc2_sifreler`
+bloğunu silmek yeterli; giriş ve şifre değiştirme çalışmaya devam eder
+(mevcut şifre yine sorulur).

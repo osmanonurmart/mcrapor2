@@ -667,6 +667,15 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   50%    { box-shadow:0 0 0 4px rgba(168,124,56,.28); }
 }
 
+/* Kurucu panelinde kayıtlı şifre gösterimi */
+.k-sifre-goster{
+  flex:0 1 120px; min-width:0; font-size:.74rem; font-family:ui-monospace,Menlo,Consolas,monospace;
+  background:var(--zemin-2); border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 7px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
+.sifre-goz{ margin-left:auto; }
+
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -838,6 +847,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     appId: "1:608298271391:web:9a7af43547fb2f795a58aa"
   };
   var KULLANICILAR = "mc2_kullanicilar";
+  var SIFRELER = "mc2_sifreler";
   var KULLANICI_ALANI = "mcrapor.local";
   function epostaYap(kullaniciAdi) {
     const k = String(kullaniciAdi || "").trim().toLowerCase();
@@ -3286,6 +3296,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         <div class="satir-ekle magaza-ekle-satir">
           <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
           <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
+          <button class="mini sifre-goz">👁 Şifreleri göster</button>
         </div>
         <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
@@ -3399,6 +3410,23 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       }
     };
     kulNotEl.textContent = sonNot || (bulutta ? "Her mağazanın tek kullanıcısı olur. Kullanıcı adı ve şifreyi siz belirlersiniz; mağaza bunlarla girer ve yalnızca kendi verisini görür." : "Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.");
+    const sifreler = {};
+    let sifreGorunur = false;
+    async function sifreleriYukle() {
+      if (!bulutta) return;
+      try {
+        const snap = await dbAl().collection(SIFRELER).get();
+        snap.forEach((d) => {
+          sifreler[d.id] = (d.data() || {}).sifre || "";
+        });
+        kulCiz();
+      } catch (e) {
+      }
+    }
+    const sifreYaz = (magazaKey, sifre) => {
+      sifreler[magazaKey] = sifre;
+      dbAl().collection(SIFRELER).doc(magazaKey).set({ sifre }).catch((e) => console.warn("Şifre kopyası yazılamadı:", e.message));
+    };
     const kulCiz = () => {
       kulKutu.innerHTML = "";
       profilleriGetir().forEach((p) => {
@@ -3408,9 +3436,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         <input class="k-ad" type="text" value="${esc(p.ad)}" title="Mağaza adı">
         <span class="k-rol">${p.rol}</span>
         ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="Kullanıcı adı">${esc(kAdi)}</span>
-                 <input class="k-eski-sifre" type="text" placeholder="mevcut şifre">
+                 <span class="k-sifre-goster" title="Kayıtlı şifre">${sifreler[p.key] === void 0 ? '<i class="k-yok">kayıtlı değil</i>' : sifreGorunur ? esc(sifreler[p.key]) : "••••••••"}</span>
                  <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
-                 <button class="mini birincil k-degistir">Şifreyi değiştir</button>
+                 <button class="mini birincil k-degistir">Değiştir</button>
                  <button class="mini k-coz">Kullanıcıyı ayır</button>` : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
                         autocapitalize="off" spellcheck="false">
                  <input class="k-yeni-sifre" type="text" placeholder="şifre (6+)">
@@ -3462,6 +3490,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
               magazaKey: p.rol === ROLLER.MAGAZA ? p.key : null
             });
             profilGuncelle(p.key, { kullaniciMaili: epostaYap(ad) });
+            sifreYaz(p.key, sifre);
             kulNot.textContent = p.ad + ' → kullanıcı adı "' + ad + '", şifre "' + sifre + '". Bu bilgiyi mağazaya verin.';
             kulCiz();
           } catch (e) {
@@ -3472,28 +3501,28 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         });
         const degistirBtn = satir.querySelector(".k-degistir");
         if (degistirBtn) degistirBtn.addEventListener("click", async () => {
-          const eskiAlan = satir.querySelector(".k-eski-sifre");
           const yeniAlan = satir.querySelector(".k-yeni-sifre2");
-          if (!eskiAlan.value) {
-            bosUyar(eskiAlan);
-            kulNot.textContent = "Mevcut şifre gerekli.";
-            return;
-          }
           if (yeniAlan.value.length < 6) {
             bosUyar(yeniAlan);
             kulNot.textContent = "Yeni şifre en az 6 karakter olmalı.";
             return;
           }
+          let eski = sifreler[p.key];
+          if (eski === void 0 || eski === "") {
+            eski = prompt(p.ad + " için MEVCUT şifre nedir?\n\nBu hesap şifre kaydı tutulmadan önce açılmış. Bir kez yazarsanız bundan sonra kayıtlı kalır.");
+            if (!eski) return;
+          }
           degistirBtn.disabled = true;
-          degistirBtn.textContent = "Değiştiriliyor...";
+          degistirBtn.textContent = "...";
           try {
-            await sifreDegistir(p.kullaniciMaili, eskiAlan.value, yeniAlan.value);
+            await sifreDegistir(p.kullaniciMaili, eski, yeniAlan.value);
+            sifreYaz(p.key, yeniAlan.value);
             kulNot.textContent = p.ad + " şifresi değiştirildi. Yeni şifre: " + yeniAlan.value;
             kulCiz();
           } catch (e) {
             kulNot.textContent = girisHatasi(e);
             degistirBtn.disabled = false;
-            degistirBtn.textContent = "Şifreyi değiştir";
+            degistirBtn.textContent = "Değiştir";
           }
         });
         const cozBtn = satir.querySelector(".k-coz");
@@ -3507,6 +3536,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
             snap.forEach((d) => yigin.delete(dbAl().collection(KULLANICILAR).doc(d.id)));
             await yigin.commit();
             profilGuncelle(p.key, { kullaniciMaili: null });
+            delete sifreler[p.key];
+            dbAl().collection(SIFRELER).doc(p.key).delete().catch(() => {
+            });
             kulNot.textContent = adYedek + " ayrıldı. Aynı kullanıcı adını yeniden kullanmak isterseniz önce Firebase Console → Authentication → Users bölümünden " + mailYedek + " hesabını silin.";
             kulCiz();
           } catch (e) {
@@ -3517,6 +3549,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         if (magSilBtn) magSilBtn.addEventListener("click", () => {
           if (!confirm(p.ad + " silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve rutin listesi kalıcı olarak gidecek. Geri alınamaz.\n\nDevam edilsin mi?")) return;
           magazaSil(p.key);
+          delete sifreler[p.key];
+          if (bulutta) dbAl().collection(SIFRELER).doc(p.key).delete().catch(() => {
+          });
           kulNot.textContent = p.ad + " ve verisi silindi." + (p.kullaniciMaili ? " Kullanıcı hesabını Firebase Console → Authentication → Users bölümünden silin." : "");
           kulCiz();
           yenile && yenile();
@@ -3525,6 +3560,13 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       });
     };
     kulCiz();
+    sifreleriYukle();
+    const gozBtn = kok.querySelector(".sifre-goz");
+    if (gozBtn) gozBtn.addEventListener("click", () => {
+      sifreGorunur = !sifreGorunur;
+      gozBtn.textContent = sifreGorunur ? "🙈 Şifreleri gizle" : "👁 Şifreleri göster";
+      kulCiz();
+    });
     const magazaAlan = kok.querySelector(".yeni-magaza");
     kok.querySelector(".magaza-ekle").addEventListener("click", () => {
       const ad = magazaAlan.value.trim();

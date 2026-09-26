@@ -657,3 +657,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   0%,100%{ box-shadow:0 0 0 0 rgba(0,0,0,0); }
   50%    { box-shadow:0 0 0 4px rgba(168,124,56,.28); }
 }
+
+/* Kurucu panelinde kayıtlı şifre gösterimi */
+.k-sifre-goster{
+  flex:0 1 120px; min-width:0; font-size:.74rem; font-family:ui-monospace,Menlo,Consolas,monospace;
+  background:var(--zemin-2); border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 7px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
+.sifre-goz{ margin-left:auto; }

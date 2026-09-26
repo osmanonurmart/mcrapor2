@@ -5,7 +5,7 @@ import * as U from './util.js';
 let sonNot = '';
 import * as V from './veri.js';
 import { KPI_TANIM } from './hafta.js';
-import { kullaniciOlustur, sifreDegistir, dbAl, authAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR } from './bulut.js';
+import { kullaniciOlustur, sifreDegistir, dbAl, authAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, SIFRELER } from './bulut.js';
 
 export function kurucuPaneli(yenile){
   const kok = U.el(`<div class="kurucu-panel">
@@ -16,6 +16,7 @@ export function kurucuPaneli(yenile){
         <div class="satir-ekle magaza-ekle-satir">
           <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
           <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
+          <button class="mini sifre-goz">👁 Şifreleri göster</button>
         </div>
         <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
@@ -114,6 +115,24 @@ export function kurucuPaneli(yenile){
     ? 'Her mağazanın tek kullanıcısı olur. Kullanıcı adı ve şifreyi siz belirlersiniz; mağaza bunlarla girer ve yalnızca kendi verisini görür.'
     : 'Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.');
 
+  // Kurucunun görebildiği şifre kopyaları; kurallar yalnızca ona açıyor.
+  // Okunamazsa (kurucu değilsin, kural eski) sessizce boş kalır.
+  const sifreler = {};
+  let sifreGorunur = false;
+  async function sifreleriYukle(){
+    if(!bulutta) return;
+    try{
+      const snap = await dbAl().collection(SIFRELER).get();
+      snap.forEach(d => { sifreler[d.id] = (d.data() || {}).sifre || ''; });
+      kulCiz();
+    }catch(e){ /* kurucu değil ya da kural yüklü değil */ }
+  }
+  const sifreYaz = (magazaKey, sifre) => {
+    sifreler[magazaKey] = sifre;
+    dbAl().collection(SIFRELER).doc(magazaKey).set({sifre})
+      .catch(e => console.warn('Şifre kopyası yazılamadı:', e.message));
+  };
+
   const kulCiz = () => {
     kulKutu.innerHTML = '';
     V.profilleriGetir().forEach(p => {
@@ -125,9 +144,11 @@ export function kurucuPaneli(yenile){
         ${bulutta
           ? (p.kullaniciMaili
               ? `<span class="k-mail" title="Kullanıcı adı">${U.esc(kAdi)}</span>
-                 <input class="k-eski-sifre" type="text" placeholder="mevcut şifre">
+                 <span class="k-sifre-goster" title="Kayıtlı şifre">${
+                   sifreler[p.key] === undefined ? '<i class="k-yok">kayıtlı değil</i>'
+                   : sifreGorunur ? U.esc(sifreler[p.key]) : '••••••••'}</span>
                  <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
-                 <button class="mini birincil k-degistir">Şifreyi değiştir</button>
+                 <button class="mini birincil k-degistir">Değiştir</button>
                  <button class="mini k-coz">Kullanıcıyı ayır</button>`
               : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
                         autocapitalize="off" spellcheck="false">
@@ -167,6 +188,7 @@ export function kurucuPaneli(yenile){
             eposta: epostaYap(ad), rol: p.rol, magazaKey: p.rol === V.ROLLER.MAGAZA ? p.key : null
           });
           V.profilGuncelle(p.key, {kullaniciMaili: epostaYap(ad)});
+          sifreYaz(p.key, sifre);
           kulNot.textContent = p.ad + ' → kullanıcı adı "' + ad + '", şifre "' + sifre + '". Bu bilgiyi mağazaya verin.';
           kulCiz();
         }catch(e){
@@ -176,20 +198,26 @@ export function kurucuPaneli(yenile){
       });
 
       // Tarayıcıdan başkasının şifresi ancak mevcut şifresi bilinerek değişir.
+      // Mevcut şifre kayıtlıysa elle yazmaya gerek yok; yoksa sorulur.
       const degistirBtn = satir.querySelector('.k-degistir');
       if(degistirBtn) degistirBtn.addEventListener('click', async () => {
-        const eskiAlan = satir.querySelector('.k-eski-sifre');
         const yeniAlan = satir.querySelector('.k-yeni-sifre2');
-        if(!eskiAlan.value){ U.bosUyar(eskiAlan); kulNot.textContent = 'Mevcut şifre gerekli.'; return; }
         if(yeniAlan.value.length < 6){ U.bosUyar(yeniAlan); kulNot.textContent = 'Yeni şifre en az 6 karakter olmalı.'; return; }
-        degistirBtn.disabled = true; degistirBtn.textContent = 'Değiştiriliyor...';
+        let eski = sifreler[p.key];
+        if(eski === undefined || eski === ''){
+          eski = prompt(p.ad + ' için MEVCUT şifre nedir?\n\n' +
+            'Bu hesap şifre kaydı tutulmadan önce açılmış. Bir kez yazarsanız bundan sonra kayıtlı kalır.');
+          if(!eski) return;
+        }
+        degistirBtn.disabled = true; degistirBtn.textContent = '...';
         try{
-          await sifreDegistir(p.kullaniciMaili, eskiAlan.value, yeniAlan.value);
+          await sifreDegistir(p.kullaniciMaili, eski, yeniAlan.value);
+          sifreYaz(p.key, yeniAlan.value);
           kulNot.textContent = p.ad + ' şifresi değiştirildi. Yeni şifre: ' + yeniAlan.value;
           kulCiz();
         }catch(e){
           kulNot.textContent = girisHatasi(e);
-          degistirBtn.disabled = false; degistirBtn.textContent = 'Şifreyi değiştir';
+          degistirBtn.disabled = false; degistirBtn.textContent = 'Değiştir';
         }
       });
 
@@ -208,6 +236,8 @@ export function kurucuPaneli(yenile){
           snap.forEach(d => yigin.delete(dbAl().collection(KULLANICILAR).doc(d.id)));
           await yigin.commit();
           V.profilGuncelle(p.key, {kullaniciMaili: null});
+          delete sifreler[p.key];
+          dbAl().collection(SIFRELER).doc(p.key).delete().catch(()=>{});
           kulNot.textContent = adYedek + ' ayrıldı. Aynı kullanıcı adını yeniden kullanmak isterseniz önce ' +
             'Firebase Console → Authentication → Users bölümünden ' + mailYedek + ' hesabını silin.';
           kulCiz();
@@ -220,6 +250,8 @@ export function kurucuPaneli(yenile){
         if(!confirm(p.ad + ' silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve ' +
           'rutin listesi kalıcı olarak gidecek. Geri alınamaz.\n\nDevam edilsin mi?')) return;
         V.magazaSil(p.key);
+        delete sifreler[p.key];
+        if(bulutta) dbAl().collection(SIFRELER).doc(p.key).delete().catch(()=>{});
         kulNot.textContent = p.ad + ' ve verisi silindi.' +
           (p.kullaniciMaili ? ' Kullanıcı hesabını Firebase Console → Authentication → Users bölümünden silin.' : '');
         kulCiz(); yenile && yenile();
@@ -228,6 +260,14 @@ export function kurucuPaneli(yenile){
     });
   };
   kulCiz();
+  sifreleriYukle();
+
+  const gozBtn = kok.querySelector('.sifre-goz');
+  if(gozBtn) gozBtn.addEventListener('click', () => {
+    sifreGorunur = !sifreGorunur;
+    gozBtn.textContent = sifreGorunur ? '🙈 Şifreleri gizle' : '👁 Şifreleri göster';
+    kulCiz();
+  });
 
   const magazaAlan = kok.querySelector('.yeni-magaza');
   kok.querySelector('.magaza-ekle').addEventListener('click', () => {

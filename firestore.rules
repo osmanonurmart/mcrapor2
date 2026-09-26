@@ -40,6 +40,11 @@ service cloud.firestore {
       allow write: if kurucuMu();
     }
 
+    // Kurucunun görebildiği şifre kopyaları. Başka hiç kimseye açık değil.
+    match /mc2_sifreler/{magaza} {
+      allow read, write: if kurucuMu();
+    }
+
     // Ortak veriler: profiller, kategoriler, duyurular, talepler, ayarlar
     match /mc2_ortak/{belge} {
       allow read: if v2Uye();
