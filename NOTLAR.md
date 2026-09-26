@@ -442,3 +442,46 @@ satır alta taşmıyor. Yükseklik masaüstüyle aynı (43–44px).
 
 Masaüstüne dokunulmadı; bütün değişiklikler 900px medya sorgusunun
 içinde.
+
+## 2026-09-26 — dışa/içe aktarma ve örnek verilerin temizlenmesi
+
+**Dışa aktar** (üst çubuk, seçili mağaza): iki dosya iner.
+`…-<mağaza>-<tarih>.json` bütün veriyi taşır (günler, haftalık hedefler,
+ürün Excel'leri, rutin işaretleri, personel, kartlar). `.csv` yalnızca
+günlük satırlardır; Excel Türkçe yerelde noktalı virgülle ayırdığı ve
+BOM'suz Türkçe karakteri bozduğu için ikisi de veriliyor. v1'deki gibi
+XLSX üretmedik: tek bir dışa aktarma için CDN'den kütüphane çekmeye
+değmiyor, CSV'yi Excel doğrudan açıyor.
+
+**İçe aktar** iki biçimi tanıyor:
+
+- **v2 yedeği** — bu ekranın kendi dosyası, `uygulama:"mcrapor"` alanından
+  anlaşılıyor.
+- **v1 yedeği** — eski raporun "⬇ Dışa Aktar" çıktısı. Orada her gün
+  `entry:YYYY-AA-GG` anahtarında **JSON metni** olarak duruyor.
+
+v1 → v2 eşlemesinde dikkat edilenler:
+
+| v1 | v2 | not |
+|---|---|---|
+| `toplu_satis` | `toplu` | ikisi de bin (K) cinsinden, doğrudan geçiyor |
+| `mdo` (`"% 28,50"` metni) | `mdo` (sayı) | metin sayıya çevriliyor |
+| `final` | `kesin` | |
+| `izinli` (personel **adı**) | `izinler:[{personelId,tur}]` | ad, mağazanın personel listesiyle eşleşiyor; listede yoksa listeye ekleniyor. v1'de izin **türü** yok, `Haftalık` yazılıyor. |
+| `weekgoal:YYYY-Www` | `hedef:<mağaza>:<hafta>` | yoksa o haftanın günlük `hedef` değerleri toplanıyor |
+
+Dosya **seçili mağazaya** yükleniyor (v1 yedeği zaten tek profilin
+verisi). Aynı güne ait mevcut kayıt korunup üzerine biniyor, diğer
+günlere dokunulmuyor. Yüzlerce kayıt tek tek yazılmasın diye
+`topluAnahtarYaz` 400'lük Firestore yığınlarıyla gönderiyor.
+
+**Örnek verileri temizle** (Kurucu ayarları → Veri): kurulumda üretilen
+sahte kayıtları siler — bütün mağazaların `gunler`, `hedefler`,
+`urunHafta`, `rutinDurum` koleksiyonları, `ayarlar/personel` ve
+`ayarlar/kartlar` belgeleri, ayrıca ortak `talepler` ve `duyurular`.
+**Silmediği:** mağaza profilleri, kullanıcı hesapları, şifreler,
+kategoriler, etiketler, KPI satır ayarı, toplu satış eşiği.
+
+Firestore'da koleksiyon tek istekle silinemiyor; 300'lük sayfalarla
+listeleyip yığın halinde siliniyor. Test kurulumunda 20 mağazada 1822
+kayıt sildi, arkasından bütün ekranlar hatasız açıldı.

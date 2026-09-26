@@ -62,6 +62,8 @@ table{ border-collapse:collapse; }
 .mini.birincil:hover{ filter:brightness(1.06); }
 .mini.secili{ background:var(--acik-vurgu); border-color:var(--vurgu); color:#8a6a2f; font-weight:600; }
 .mini:disabled{ opacity:.45; cursor:default; }
+.mini.tehlike{ border-color:var(--dusus); color:var(--dusus); }
+.mini.tehlike:hover{ background:var(--dusus); border-color:var(--dusus); color:#fff; }
 .artis{ color:var(--artis); }
 .dusus{ color:var(--dusus); }
 .sabit{ color:var(--soluk); }
@@ -611,6 +613,17 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .urun-rapor b{ display:block; margin-bottom:5px; }
 .urun-yukle{ margin-top:14px; display:flex; flex-direction:column; gap:7px; }
 .urun-yukle label{ font-size:.75rem; color:var(--soluk); }
+/* ---------- Dışa / içe aktarma ---------- */
+.aktarim{ display:flex; flex-direction:column; gap:12px; min-width:min(520px, 80vw); }
+.dosya-sec{ display:block; }
+.dosya-sec input{ display:none; }
+.dosya-etiket{
+  display:block; padding:16px; text-align:center; cursor:pointer;
+  border:1px dashed var(--cizgi); border-radius:10px; background:var(--zemin-2);
+  font-size:.82rem; color:var(--soluk);
+}
+.dosya-etiket:hover{ border-color:var(--vurgu); color:var(--yazi); }
+
 .urun-alan{ width:100%; height:92px; padding:8px; border:1px solid var(--cizgi); border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:.75rem; }
 
 /* ---------- Mobil: üst gezinme / orta tablo / alt kartlar ---------- */
@@ -700,7 +713,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
   .ust-logo{ flex:0 0 auto; }
 
   /* Telefonda veri yapıştırılmıyor; düğme yalnızca yer kaplıyordu. */
-  .ust-sag [data-yapistir]{ display:none; }
+  .ust-sag [data-yapistir],
+  .ust-sag [data-disaaktar],
+  .ust-sag [data-iceaktar]{ display:none; }
   .hafta-gezinti{ flex-direction:column; gap:10px; }
 
   .duyuru-satir{ white-space:normal; }
@@ -1546,6 +1561,18 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       return { tur: "magazaBelge", magaza: p[1], koleksiyon: MAGAZA_KOLEKSIYON[p[0]], belge: p[2] };
     return null;
   }
+  function yiginaEkle(yigin, db2, anahtar, deger) {
+    const yol = anahtarYolu(anahtar);
+    if (!yol) return;
+    if (yol.tur === "ortakListe") yigin.set(db2.collection(ORTAK).doc(yol.belge), { liste: deger });
+    else if (yol.tur === "ortakAyar") yigin.set(db2.collection(ORTAK).doc("ayarlar"), { [yol.alan]: deger }, { merge: true });
+    else if (yol.tur === "magazaAyar")
+      yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection("ayarlar").doc(yol.belge), { liste: deger });
+    else if (yol.tur === "magazaBelge") {
+      const govde = deger && typeof deger === "object" && !Array.isArray(deger) ? { ...deger, magaza: yol.magaza, anahtar: yol.belge } : { deger, magaza: yol.magaza, anahtar: yol.belge };
+      yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
+    }
+  }
   function buluta_gonder(anahtar, deger) {
     if (topluMod) return;
     const yol = anahtarYolu(anahtar);
@@ -1652,17 +1679,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       const girdiler = [...bellek.entries()].filter(([a]) => anahtarYolu(a));
       for (let i = 0; i < girdiler.length; i += 400) {
         const yigin = db2.batch();
-        girdiler.slice(i, i + 400).forEach(([anahtar, deger]) => {
-          const yol = anahtarYolu(anahtar);
-          if (yol.tur === "ortakListe") yigin.set(db2.collection(ORTAK).doc(yol.belge), { liste: deger });
-          else if (yol.tur === "ortakAyar") yigin.set(db2.collection(ORTAK).doc("ayarlar"), { [yol.alan]: deger }, { merge: true });
-          else if (yol.tur === "magazaAyar")
-            yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection("ayarlar").doc(yol.belge), { liste: deger });
-          else if (yol.tur === "magazaBelge") {
-            const govde = deger && typeof deger === "object" && !Array.isArray(deger) ? { ...deger, magaza: yol.magaza, anahtar: yol.belge } : { deger, magaza: yol.magaza, anahtar: yol.belge };
-            yigin.set(db2.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
-          }
-        });
+        girdiler.slice(i, i + 400).forEach(([anahtar, deger]) => yiginaEkle(yigin, db2, anahtar, deger));
         await yigin.commit();
       }
       const profiller = bellek.get("profiller") || [];
@@ -1684,6 +1701,104 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       bulutAcik = eskiAcik;
       throw e;
     }
+  }
+  var PAKET_ONEKLERI = { gun: "gunler", hedef: "hedefler", urun: "urunHafta", rutinDurum: "rutinDurum" };
+  function magazaVerisiniTopla(magaza) {
+    const paket = {
+      gunler: {},
+      hedefler: {},
+      urunHafta: {},
+      rutinDurum: {},
+      personel: personelGetir(magaza),
+      kartlar: kartlarGetir(magaza),
+      rutin: rutinGetir(magaza)
+    };
+    anahtarlar().forEach((a) => {
+      const p = a.split(":");
+      if (p.length !== 3 || p[1] !== magaza) return;
+      const kutu = PAKET_ONEKLERI[p[0]];
+      if (kutu) paket[kutu][p[2]] = oku(a, null);
+    });
+    return paket;
+  }
+  function paketiAnahtarlaraCevir(magaza, paket) {
+    const girdiler = [];
+    Object.entries(PAKET_ONEKLERI).forEach(([on, kutu]) => {
+      Object.entries(paket[kutu] || {}).forEach(([belge, deger]) => {
+        if (deger !== null && deger !== void 0) girdiler.push([on + ":" + magaza + ":" + belge, deger]);
+      });
+    });
+    ["personel", "kartlar", "rutin"].forEach((a) => {
+      if (Array.isArray(paket[a]) && paket[a].length) girdiler.push([a + ":" + magaza, paket[a]]);
+    });
+    return girdiler;
+  }
+  async function topluAnahtarYaz(girdiler) {
+    girdiler.forEach(([a, d]) => {
+      if (yerelMi(a) || !bulutAcik) yerelYaz(a, d);
+      else bellek.set(a, d);
+    });
+    const db2 = dbAl();
+    if (bulutAcik && db2) {
+      const bulutlu = girdiler.filter(([a]) => anahtarYolu(a));
+      for (let i = 0; i < bulutlu.length; i += 400) {
+        const yigin = db2.batch();
+        bulutlu.slice(i, i + 400).forEach(([a, d]) => yiginaEkle(yigin, db2, a, d));
+        await yigin.commit();
+      }
+    }
+    olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar: "*" } }));
+    return girdiler.length;
+  }
+  var TEMIZLENEN_KOLEKSIYONLAR = ["gunler", "hedefler", "urunHafta", "rutinDurum"];
+  var TEMIZLENEN_AYARLAR = ["personel", "kartlar"];
+  async function koleksiyonuBosalt(db2, ref) {
+    let toplam2 = 0;
+    for (; ; ) {
+      const snap = await ref.limit(300).get();
+      if (snap.empty) break;
+      const yigin = db2.batch();
+      snap.forEach((d) => yigin.delete(d.ref));
+      await yigin.commit();
+      toplam2 += snap.size;
+      if (snap.size < 300) break;
+    }
+    return toplam2;
+  }
+  async function ornekVerileriTemizle(ilerleme) {
+    const db2 = dbAl();
+    if (!db2 || !bulutAcik) throw new Error("Firebase bağlantısı yok.");
+    const liste = magazalar();
+    let silinen = 0;
+    for (let i = 0; i < liste.length; i++) {
+      const m = liste[i];
+      const kok = db2.collection(MAGAZALAR).doc(m.key);
+      for (const k of TEMIZLENEN_KOLEKSIYONLAR) silinen += await koleksiyonuBosalt(db2, kok.collection(k));
+      for (const a of TEMIZLENEN_AYARLAR) {
+        try {
+          await kok.collection("ayarlar").doc(a).delete();
+          silinen++;
+        } catch (e) {
+        }
+      }
+      if (ilerleme) ilerleme(i + 1, liste.length, m.ad);
+    }
+    for (const belge of ["talepler", "duyurular"]) {
+      try {
+        await db2.collection(ORTAK).doc(belge).delete();
+        silinen++;
+      } catch (e) {
+      }
+    }
+    [...bellek.keys()].forEach((a) => {
+      const p = a.split(":");
+      if (p.length === 3 && PAKET_ONEKLERI[p[0]]) bellek.delete(a);
+      if (p.length === 2 && TEMIZLENEN_AYARLAR.includes(p[0])) bellek.delete(a);
+    });
+    bellek.set("talepler", []);
+    bellek.set("duyurular", []);
+    olaylar.dispatchEvent(new CustomEvent("degisti", { detail: { anahtar: "*" } }));
+    return silinen;
   }
   function hepsiniSil() {
     const silinecek = [];
@@ -3095,6 +3210,269 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     pencere("Haftalık ürün verisi", govde, [{ ad: "Kapat", sinif: "birincil", tik: kapat }]);
   }
 
+  // js/aktarim.js
+  var PAKET_SURUMU = 2;
+  function indir(ad, icerik, tur) {
+    const blob = new Blob([icerik], { type: tur });
+    const url = URL.createObjectURL(blob);
+    const bag = document.createElement("a");
+    bag.href = url;
+    bag.download = ad;
+    document.body.appendChild(bag);
+    bag.click();
+    bag.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1e3);
+  }
+  function csvYap(basliklar, satirlar) {
+    const hucre = (v) => {
+      const s = v === null || v === void 0 ? "" : String(v);
+      return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    return "\uFEFF" + [basliklar, ...satirlar].map((r) => r.map(hucre).join(";")).join("\r\n");
+  }
+  var CSV_ALANLARI = [
+    ["Tarih", (k) => k.tarih],
+    ["Ciro", (k) => k.ciro],
+    ["MDO", (k) => k.mdo],
+    ["FBÜ", (k) => k.fbu],
+    ["MGS", (k) => k.mgs],
+    ["FBS", (k) => k.fbs],
+    ["Toplu", (k) => k.toplu],
+    ["Ürün adedi", (k) => k.urunAdedi],
+    ["Fatura sayısı", (k) => k.faturaSayisi],
+    ["İzinli", (k, m) => (k.izinler || []).map((z) => personelAdi(m, z.personelId) + " · " + z.tur).join(", ")],
+    ["Yorum", (k) => k.yorum],
+    ["Kesin", (k) => k.kesin ? "Evet" : "Hayır"]
+  ];
+  function disaAktar(magazaKey) {
+    const profil = profilGetir(magazaKey);
+    if (!profil) {
+      bildir("uyari", "Mağaza seçili değil", "Önce üstteki listeden bir mağaza seçin.");
+      return;
+    }
+    const paket = magazaVerisiniTopla(magazaKey);
+    const gunSayisi = Object.keys(paket.gunler).length;
+    const yedek = {
+      uygulama: "mcrapor",
+      surum: PAKET_SURUMU,
+      magaza: magazaKey,
+      magazaAd: profil.ad,
+      tarih: (/* @__PURE__ */ new Date()).toISOString(),
+      ...paket
+    };
+    const damga = bugunStr();
+    const dosyaAdi = "mcrapor2-" + normalizeAd(profil.ad) + "-" + damga;
+    indir(dosyaAdi + ".json", JSON.stringify(yedek, null, 2), "application/json");
+    const satirlar = Object.keys(paket.gunler).sort().map((tarih) => {
+      const k = { ...paket.gunler[tarih] || {}, tarih };
+      return CSV_ALANLARI.map(([, al]) => al(k, magazaKey));
+    });
+    indir(dosyaAdi + ".csv", csvYap(CSV_ALANLARI.map(([ad]) => ad), satirlar), "text/csv;charset=utf-8");
+    bildir(
+      "iyi",
+      "✓ Dışa aktarıldı",
+      profil.ad + " — " + gunSayisi + " gün, " + Object.keys(paket.hedefler).length + " haftalık hedef.<br>" + esc(dosyaAdi) + ".json ve .csv indirildi."
+    );
+  }
+  var V1_ALAN = { ciro: "ciro", mdo: "mdo", fbu: "fbu", mgs: "mgs", fbs: "fbs", toplu: "toplu_satis" };
+  function v1KaydiCevir(ham) {
+    const kayit = {};
+    Object.entries(V1_ALAN).forEach(([yeni, eski]) => {
+      const s = metniSayiyaCevir(ham[eski]);
+      if (s !== null) kayit[yeni] = s;
+    });
+    if (ham.final) kayit.kesin = true;
+    return kayit;
+  }
+  function yedegiCozumle(metin) {
+    let ham;
+    try {
+      ham = JSON.parse(metin);
+    } catch (e) {
+      return { hata: "Dosya okunamadı: geçerli bir JSON değil." };
+    }
+    if (!ham || typeof ham !== "object") return { hata: "Dosya beklenen biçimde değil." };
+    if (ham.uygulama === "mcrapor" && ham.gunler) {
+      return {
+        tur: "v2",
+        magazaAd: ham.magazaAd || "",
+        gunler: ham.gunler || {},
+        hedefler: ham.hedefler || {},
+        izinliler: {},
+        paket: {
+          gunler: ham.gunler || {},
+          hedefler: ham.hedefler || {},
+          urunHafta: ham.urunHafta || {},
+          rutinDurum: ham.rutinDurum || {},
+          personel: ham.personel || [],
+          kartlar: ham.kartlar || [],
+          rutin: ham.rutin || []
+        }
+      };
+    }
+    const girisler = Object.keys(ham).filter((k) => k.startsWith("entry:"));
+    if (!girisler.length) return { hata: 'Dosyada gün kaydı bulunamadı (v1 için "entry:" anahtarları bekleniyordu).' };
+    const gunler = {}, izinliler = {}, gunlukHedef2 = {};
+    girisler.forEach((k) => {
+      const tarih = k.slice(6);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(tarih)) return;
+      let rec;
+      try {
+        rec = typeof ham[k] === "string" ? JSON.parse(ham[k]) : ham[k];
+      } catch (e) {
+        return;
+      }
+      if (!rec || typeof rec !== "object") return;
+      const kayit = v1KaydiCevir(rec);
+      const hedef = metniSayiyaCevir(rec.hedef);
+      if (hedef !== null) gunlukHedef2[tarih] = hedef;
+      if (rec.izinli) izinliler[tarih] = String(rec.izinli).trim();
+      if (Object.keys(kayit).length) gunler[tarih] = kayit;
+    });
+    const hedefler = {};
+    Object.keys(ham).filter((k) => k.startsWith("weekgoal:")).forEach((k) => {
+      const s = metniSayiyaCevir(ham[k]);
+      if (s !== null) hedefler[k.slice(9)] = s;
+    });
+    const haftaToplami = {};
+    Object.entries(gunlukHedef2).forEach(([tarih, v]) => {
+      const h = haftaKey(pazartesi(/* @__PURE__ */ new Date(tarih + "T12:00:00")));
+      haftaToplami[h] = (haftaToplami[h] || 0) + v;
+    });
+    Object.entries(haftaToplami).forEach(([h, v]) => {
+      if (hedefler[h] === void 0) hedefler[h] = v;
+    });
+    return { tur: "v1", magazaAd: "", gunler, hedefler, izinliler };
+  }
+  function izinleriBagla(magazaKey, izinliler, gunler) {
+    const liste = personelGetir(magazaKey).map((p) => ({ ...p }));
+    const bul = (ad) => liste.find((p) => normalizeAd(p.ad) === normalizeAd(ad));
+    const eklenen = [];
+    Object.entries(izinliler).forEach(([tarih, ad]) => {
+      if (!ad) return;
+      let kisi = bul(ad);
+      if (!kisi) {
+        kisi = { id: "p_v1_" + normalizeAd(ad), ad, aktif: true };
+        liste.push(kisi);
+        eklenen.push(ad);
+      }
+      gunler[tarih] = gunler[tarih] || {};
+      gunler[tarih].izinler = [{ personelId: kisi.id, tur: IZIN_TURLERI[0] }];
+    });
+    return { personel: liste, eklenen };
+  }
+  function iceAktarPenceresi(magazaKey, yenile) {
+    const profil = profilGetir(magazaKey);
+    if (!profil) {
+      bildir("uyari", "Mağaza seçili değil", "Önce üstteki listeden bir mağaza seçin.");
+      return;
+    }
+    const govde = el(`<div class="aktarim">
+    <p class="aciklama">Yedek dosyası <b>${esc(profil.ad)}</b> mağazasına yüklenecek.
+      Eski raporun (v1) "⬇ Dışa Aktar" düğmesinden inen <b>.json</b> dosyasını ya da bu ekranın
+      kendi yedeğini seçin. Aynı güne ait mevcut kayıtlar üzerine yazılır, diğer günlere dokunulmaz.</p>
+    <label class="dosya-sec">
+      <input type="file" accept=".json,application/json" class="yedek-dosya">
+      <span class="dosya-etiket">📁 Yedek dosyasını seçin</span>
+    </label>
+    <div class="aktarim-sonuc"></div>
+  </div>`);
+    const dosya = govde.querySelector(".yedek-dosya");
+    const etiket = govde.querySelector(".dosya-etiket");
+    const sonuc = govde.querySelector(".aktarim-sonuc");
+    let cozum = null;
+    const kok = pencere("Veri içe aktar", govde, [
+      { ad: "Vazgeç", tik: kapat },
+      { ad: "İçe aktar", sinif: "birincil", tik: () => uygula() }
+    ]);
+    const uygulaDugmesi = kok.querySelectorAll(".pencere-alt .mini")[1];
+    uygulaDugmesi.disabled = true;
+    dosya.addEventListener("change", () => {
+      const f = dosya.files && dosya.files[0];
+      if (!f) return;
+      etiket.textContent = "📄 " + f.name;
+      const okuyucu = new FileReader();
+      okuyucu.onload = () => {
+        cozum = yedegiCozumle(String(okuyucu.result));
+        onizle();
+      };
+      okuyucu.onerror = () => {
+        sonuc.innerHTML = '<div class="uyari">Dosya okunamadı.</div>';
+      };
+      okuyucu.readAsText(f);
+    });
+    function onizle() {
+      uygulaDugmesi.disabled = true;
+      if (!cozum) return;
+      if (cozum.hata) {
+        sonuc.innerHTML = `<div class="uyari">${esc(cozum.hata)}</div>`;
+        return;
+      }
+      const tarihler = Object.keys(cozum.gunler).sort();
+      if (!tarihler.length) {
+        sonuc.innerHTML = '<div class="uyari">Dosyada yazılacak gün kaydı yok.</div>';
+        return;
+      }
+      const uzerine = tarihler.filter((t) => {
+        const m = gunGetir(magazaKey, t);
+        return m && Object.keys(m).length;
+      }).length;
+      const izinSayisi = Object.keys(cozum.izinliler || {}).length;
+      const ornek = tarihler.slice(-7).map((t) => {
+        const k = cozum.gunler[t];
+        const d = /* @__PURE__ */ new Date(t + "T12:00:00");
+        return `<tr><td class="on-gun">${GUN_KISA[(d.getDay() + 6) % 7]} ${kisaTarih(d)}</td>
+        <td>${k.ciro === void 0 ? "–" : fmtSayi(k.ciro, 0)}</td>
+        <td>${k.mdo === void 0 ? "–" : fmtSayi(k.mdo, 2)}</td>
+        <td>${k.mgs === void 0 ? "–" : fmtSayi(k.mgs, 0)}</td>
+        <td>${k.toplu === void 0 ? "–" : fmtSayi(k.toplu, 0)}</td></tr>`;
+      }).join("");
+      sonuc.innerHTML = `<div class="bulgu-kutu">
+      <div class="bulgu-ust">${cozum.tur === "v1" ? "Eski rapor (v1) yedeği" : "MC Rapor v2 yedeği"}
+        ${cozum.magazaAd ? " · " + esc(cozum.magazaAd) : ""}</div>
+      <div class="bulgu-not"><b>${tarihler.length}</b> gün (${esc(tarihler[0])} → ${esc(tarihler[tarihler.length - 1])}),
+        <b>${Object.keys(cozum.hedefler || {}).length}</b> haftalık hedef${izinSayisi ? `, <b>${izinSayisi}</b> izin kaydı` : ""}.
+        ${uzerine ? `<b>${uzerine}</b> günde mevcut veri var, üzerine yazılacak.` : "Mevcut kayıtların üzerine yazılmıyor."}</div>
+      <table class="onizleme">
+        <thead><tr><th>Son günler</th><th>Ciro</th><th>MDO</th><th>MGS</th><th>Toplu</th></tr></thead>
+        <tbody>${ornek}</tbody>
+      </table>
+    </div>`;
+      uygulaDugmesi.disabled = false;
+    }
+    async function uygula() {
+      if (!cozum || cozum.hata) return;
+      uygulaDugmesi.disabled = true;
+      uygulaDugmesi.textContent = "Yazılıyor…";
+      try {
+        const gunler = {};
+        Object.entries(cozum.gunler).forEach(([t, k]) => {
+          gunler[t] = { ...gunGetir(magazaKey, t) || {}, ...k };
+        });
+        const paket = cozum.paket ? { ...cozum.paket, gunler } : { gunler, hedefler: cozum.hedefler, urunHafta: {}, rutinDurum: {} };
+        let eklenenPersonel = [];
+        if (cozum.tur === "v1" && Object.keys(cozum.izinliler || {}).length) {
+          const bagli = izinleriBagla(magazaKey, cozum.izinliler, gunler);
+          paket.personel = bagli.personel;
+          eklenenPersonel = bagli.eklenen;
+        }
+        const girdiler = paketiAnahtarlaraCevir(magazaKey, paket);
+        await topluAnahtarYaz(girdiler);
+        kapat();
+        yenile();
+        bildir(
+          "iyi",
+          "✓ İçe aktarıldı",
+          Object.keys(gunler).length + " gün, " + Object.keys(paket.hedefler || {}).length + " haftalık hedef " + esc(profil.ad) + " mağazasına yazıldı." + (eklenenPersonel.length ? "<br>Personel listesine eklenenler: " + esc(eklenenPersonel.join(", ")) : "")
+        );
+      } catch (e) {
+        uygulaDugmesi.disabled = false;
+        uygulaDugmesi.textContent = "İçe aktar";
+        sonuc.innerHTML = `<div class="uyari">Yazılamadı: ${esc(e.message)}</div>`;
+      }
+    }
+  }
+
   // js/talep.js
   var sepetler = {};
   function haftaninTalebi(magazaKey, pzt) {
@@ -3529,6 +3907,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 
   // js/kurucu.js
   var sonNot = "";
+  var sonTemizlik = "";
   function kurucuPaneli(yenile) {
     const kok = el(`<div class="kurucu-panel">
     <div class="bolum-ust"><h2>Kurucu ayarları</h2>
@@ -3551,6 +3930,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           <input type="text" inputmode="numeric" class="toplu-esik" value="${topluEsikGetir()}"> ₺</label>
         <p class="aciklama">Yapıştırma sırasında kaynak sayfadaki fatura listesi bu eşiğe göre toplanır.</p>
       </div>
+      <div class="panel-kutu"><h3>Veri</h3>
+        <p class="aciklama">Kurulumda üretilen örnek kayıtları siler: bütün mağazaların ciro/MDO/MGS gibi
+          günlük verileri, haftalık hedefleri, ürün Excel'leri, rutin işaretleri, örnek personel ve kartlar,
+          ayrıca ürün talepleri ve duyurular. <b>Mağazalar, kullanıcı hesapları, şifreler ve kategoriler kalır.</b></p>
+        <button class="mini tehlike ornek-temizle">🗑 Örnek verileri temizle</button>
+        <p class="aciklama temizle-durum"></p></div>
       <div class="panel-kutu"><h3>Etiketler</h3><div class="etiket-yonet"></div>
         <div class="satir-ekle"><input class="e-anahtar" type="text" placeholder="halı"><input class="e-kart" type="text" placeholder="Halı satışı"><button class="mini birincil etiket-ekle">+ Ekle</button></div>
         <p class="aciklama">Ürün satırlarında anahtar kelime geçen kayıtlar bu kartta toplanır.</p></div>
@@ -3880,6 +4265,29 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       kok.querySelector(".e-kart").value = "";
       etCiz();
     });
+    const temizleBtn = kok.querySelector(".ornek-temizle");
+    const temizleDurum = kok.querySelector(".temizle-durum");
+    temizleDurum.textContent = sonTemizlik;
+    temizleBtn.addEventListener("click", async () => {
+      const magazaSayisi = magazalar().length;
+      if (!confirm(magazaSayisi + " mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\nMağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.\n\nDevam edilsin mi?")) return;
+      if (!confirm('Son onay: silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.')) return;
+      temizleBtn.disabled = true;
+      temizleDurum.textContent = "Siliniyor…";
+      try {
+        const silinen = await ornekVerileriTemizle((i, toplam2, ad) => {
+          temizleDurum.textContent = "Siliniyor… " + i + "/" + toplam2 + " — " + ad;
+        });
+        sonTemizlik = "✓ " + silinen + " kayıt silindi.";
+        temizleDurum.textContent = sonTemizlik;
+        bildir("iyi", "✓ Örnek veriler temizlendi", silinen + " kayıt silindi.");
+        yenile();
+      } catch (e) {
+        sonTemizlik = "Silinemedi: " + e.message;
+        temizleDurum.textContent = sonTemizlik;
+        temizleBtn.disabled = false;
+      }
+    });
     return kok;
   }
 
@@ -4024,7 +4432,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 30;
+  var SURUM = 31;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
@@ -4308,7 +4716,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     <nav class="menu">${menu.map(([k, a]) => `<button class="menu-btn ${sayfa === k ? "secili" : ""}" data-sayfa="${k}">${a}</button>`).join("")}</nav>
     <div class="ust-orta"></div>
     <div class="ust-sag">
-      ${magazaGibi ? '<button class="mini birincil" data-yapistir="1">⬇ Yapıştır / Veri Ekle</button>' : ""}
+      ${magazaGibi ? `<button class="mini birincil" data-yapistir="1">⬇ Yapıştır / Veri Ekle</button>
+      <button class="mini" data-disaaktar="1" title="Bu mağazanın verisini JSON ve CSV olarak indir">⬇ Dışa aktar</button>
+      <button class="mini" data-iceaktar="1" title="v1 yedeğini ya da v2 dosyasını bu mağazaya yükle">⬆ İçe aktar</button>` : ""}
       <button class="profil-rozet" title="Profil">
         <span class="p-simge kucuk" style="background:${aktif.renk}">${aktif.simge}</span>
         <span>${esc(kurucuMagaza ? profilGetir(kurucuMagaza).ad : aktif.ad)}</span>
@@ -4333,6 +4743,10 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     }));
     const yap = kok.querySelector("[data-yapistir]");
     if (yap) yap.addEventListener("click", () => hizliYapistir(aktifMagaza(), uygulamaCiz));
+    const disa = kok.querySelector("[data-disaaktar]");
+    if (disa) disa.addEventListener("click", () => disaAktar(aktifMagaza()));
+    const ice = kok.querySelector("[data-iceaktar]");
+    if (ice) ice.addEventListener("click", () => iceAktarPenceresi(aktifMagaza(), uygulamaCiz));
     const logo = kok.querySelector(".ust-logo");
     const simge = document.querySelector('link[rel="icon"]');
     if (simge) logo.querySelector("img").src = simge.href;

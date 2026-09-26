@@ -437,6 +437,23 @@ function anahtarYolu(anahtar){
   return null;
 }
 
+// Tek bir anahtarı hazır bir Firestore yığınına ekler. Hem tohumlama hem de
+// içe aktarma aynı eşlemeyi kullansın diye ayrı duruyor.
+function yiginaEkle(yigin, db, anahtar, deger){
+  const yol = anahtarYolu(anahtar);
+  if(!yol) return;
+  if(yol.tur === 'ortakListe') yigin.set(db.collection(ORTAK).doc(yol.belge), {liste: deger});
+  else if(yol.tur === 'ortakAyar') yigin.set(db.collection(ORTAK).doc('ayarlar'), {[yol.alan]: deger}, {merge:true});
+  else if(yol.tur === 'magazaAyar')
+    yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection('ayarlar').doc(yol.belge), {liste: deger});
+  else if(yol.tur === 'magazaBelge'){
+    const govde = (deger && typeof deger === 'object' && !Array.isArray(deger))
+      ? {...deger, magaza: yol.magaza, anahtar: yol.belge}
+      : {deger, magaza: yol.magaza, anahtar: yol.belge};
+    yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
+  }
+}
+
 // Yazmalar anahtar bazında geciktirilir; hızlı yazmalarda tek istek gider.
 function buluta_gonder(anahtar, deger){
   if(topluMod) return;
@@ -570,19 +587,7 @@ export async function bulutaTohumla(){
     const girdiler = [...bellek.entries()].filter(([a]) => anahtarYolu(a));
     for(let i=0;i<girdiler.length;i+=400){
       const yigin = db.batch();
-      girdiler.slice(i, i+400).forEach(([anahtar, deger]) => {
-        const yol = anahtarYolu(anahtar);
-        if(yol.tur === 'ortakListe') yigin.set(db.collection(ORTAK).doc(yol.belge), {liste: deger});
-        else if(yol.tur === 'ortakAyar') yigin.set(db.collection(ORTAK).doc('ayarlar'), {[yol.alan]: deger}, {merge:true});
-        else if(yol.tur === 'magazaAyar')
-          yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection('ayarlar').doc(yol.belge), {liste: deger});
-        else if(yol.tur === 'magazaBelge'){
-          const govde = (deger && typeof deger === 'object' && !Array.isArray(deger))
-            ? {...deger, magaza: yol.magaza, anahtar: yol.belge}
-            : {deger, magaza: yol.magaza, anahtar: yol.belge};
-          yigin.set(db.collection(MAGAZALAR).doc(yol.magaza).collection(yol.koleksiyon).doc(yol.belge), govde);
-        }
-      });
+      girdiler.slice(i, i+400).forEach(([anahtar, deger]) => yiginaEkle(yigin, db, anahtar, deger));
       await yigin.commit();
     }
     // Mağaza kartları ayrı belgelerde de dursun (kurallar bunlara bakıyor).
@@ -602,6 +607,110 @@ export async function bulutaTohumla(){
     bulutAcik = eskiAcik;
     throw e;
   }
+}
+
+// ==================== Dışa / içe aktarma ====================
+// Bir mağazanın bütün verisi tek pakette toplanır. Anahtarlar hafıza
+// sözlüğünden okunur; bulut kapalıyken localStorage'dan gelir.
+const PAKET_ONEKLERI = {gun:'gunler', hedef:'hedefler', urun:'urunHafta', rutinDurum:'rutinDurum'};
+
+export function magazaVerisiniTopla(magaza){
+  const paket = {
+    gunler:{}, hedefler:{}, urunHafta:{}, rutinDurum:{},
+    personel: personelGetir(magaza),
+    kartlar:  kartlarGetir(magaza),
+    rutin:    rutinGetir(magaza)
+  };
+  anahtarlar().forEach(a => {
+    const p = a.split(':');
+    if(p.length !== 3 || p[1] !== magaza) return;
+    const kutu = PAKET_ONEKLERI[p[0]];
+    if(kutu) paket[kutu][p[2]] = oku(a, null);
+  });
+  return paket;
+}
+
+// Paketi düz anahtar listesine çevirir; topluAnahtarYaz bunu tek seferde yazar.
+export function paketiAnahtarlaraCevir(magaza, paket){
+  const girdiler = [];
+  Object.entries(PAKET_ONEKLERI).forEach(([on, kutu]) => {
+    Object.entries(paket[kutu] || {}).forEach(([belge, deger]) => {
+      if(deger !== null && deger !== undefined) girdiler.push([on + ':' + magaza + ':' + belge, deger]);
+    });
+  });
+  ['personel','kartlar','rutin'].forEach(a => {
+    if(Array.isArray(paket[a]) && paket[a].length) girdiler.push([a + ':' + magaza, paket[a]]);
+  });
+  return girdiler;
+}
+
+// Çok sayıda anahtarı tek seferde yazar. Tek tek yazmak her anahtar için ayrı
+// bir Firestore isteği demek; içe aktarmada yüzlerce kayıt olabiliyor.
+export async function topluAnahtarYaz(girdiler){
+  girdiler.forEach(([a, d]) => {
+    if(yerelMi(a) || !bulutAcik) yerelYaz(a, d); else bellek.set(a, d);
+  });
+  const db = dbAl();
+  if(bulutAcik && db){
+    const bulutlu = girdiler.filter(([a]) => anahtarYolu(a));
+    for(let i=0;i<bulutlu.length;i+=400){
+      const yigin = db.batch();
+      bulutlu.slice(i, i+400).forEach(([a, d]) => yiginaEkle(yigin, db, a, d));
+      await yigin.commit();
+    }
+  }
+  olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar:'*'}}));
+  return girdiler.length;
+}
+
+// ---------------- Örnek verileri temizleme ----------------
+// Kurulumda üretilen sahte ciro/hedef/izin/talep kayıtlarını siler.
+// Mağaza profilleri, kullanıcı hesapları ve kategoriler korunur.
+const TEMIZLENEN_KOLEKSIYONLAR = ['gunler','hedefler','urunHafta','rutinDurum'];
+const TEMIZLENEN_AYARLAR = ['personel','kartlar'];
+
+async function koleksiyonuBosalt(db, ref){
+  let toplam = 0;
+  for(;;){
+    const snap = await ref.limit(300).get();
+    if(snap.empty) break;
+    const yigin = db.batch();
+    snap.forEach(d => yigin.delete(d.ref));
+    await yigin.commit();
+    toplam += snap.size;
+    if(snap.size < 300) break;
+  }
+  return toplam;
+}
+
+export async function ornekVerileriTemizle(ilerleme){
+  const db = dbAl();
+  if(!db || !bulutAcik) throw new Error('Firebase bağlantısı yok.');
+  const liste = magazalar();
+  let silinen = 0;
+  for(let i=0;i<liste.length;i++){
+    const m = liste[i];
+    const kok = db.collection(MAGAZALAR).doc(m.key);
+    for(const k of TEMIZLENEN_KOLEKSIYONLAR) silinen += await koleksiyonuBosalt(db, kok.collection(k));
+    for(const a of TEMIZLENEN_AYARLAR){
+      try{ await kok.collection('ayarlar').doc(a).delete(); silinen++; }catch(e){}
+    }
+    if(ilerleme) ilerleme(i + 1, liste.length, m.ad);
+  }
+  // Ortak örnekler: talepler ve duyurular.
+  for(const belge of ['talepler','duyurular']){
+    try{ await db.collection(ORTAK).doc(belge).delete(); silinen++; }catch(e){}
+  }
+  // Bellekteki karşılıkları da düşür ki ekranlar hemen boş açılsın.
+  [...bellek.keys()].forEach(a => {
+    const p = a.split(':');
+    if(p.length === 3 && PAKET_ONEKLERI[p[0]]) bellek.delete(a);
+    if(p.length === 2 && TEMIZLENEN_AYARLAR.includes(p[0])) bellek.delete(a);
+  });
+  bellek.set('talepler', []);
+  bellek.set('duyurular', []);
+  olaylar.dispatchEvent(new CustomEvent('degisti', {detail:{anahtar:'*'}}));
+  return silinen;
 }
 
 export function hepsiniSil(){

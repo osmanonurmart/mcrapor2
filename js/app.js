@@ -2,6 +2,7 @@
 import * as U from './util.js';
 import * as V from './veri.js';
 import { magazaEkrani, yapistirPenceresi, hizliYapistir, personelPenceresi, seciliHafta, haftaSec } from './magaza.js';
+import { disaAktar, iceAktarPenceresi } from './aktarim.js';
 import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
@@ -261,7 +262,9 @@ function ustCubuk(){
     <nav class="menu">${menu.map(([k,a]) => `<button class="menu-btn ${sayfa===k?'secili':''}" data-sayfa="${k}">${a}</button>`).join('')}</nav>
     <div class="ust-orta"></div>
     <div class="ust-sag">
-      ${magazaGibi ? '<button class="mini birincil" data-yapistir="1">⬇ Yapıştır / Veri Ekle</button>' : ''}
+      ${magazaGibi ? `<button class="mini birincil" data-yapistir="1">⬇ Yapıştır / Veri Ekle</button>
+      <button class="mini" data-disaaktar="1" title="Bu mağazanın verisini JSON ve CSV olarak indir">⬇ Dışa aktar</button>
+      <button class="mini" data-iceaktar="1" title="v1 yedeğini ya da v2 dosyasını bu mağazaya yükle">⬆ İçe aktar</button>` : ''}
       <button class="profil-rozet" title="Profil">
         <span class="p-simge kucuk" style="background:${aktif.renk}">${aktif.simge}</span>
         <span>${U.esc(kurucuMagaza ? V.profilGetir(kurucuMagaza).ad : aktif.ad)}</span>
@@ -289,6 +292,10 @@ function ustCubuk(){
   const yap = kok.querySelector('[data-yapistir]');
   // Tek tık: panodan al, dün ve bugünü işle. Pano okunamazsa pencere açılır.
   if(yap) yap.addEventListener('click', () => hizliYapistir(aktifMagaza(), uygulamaCiz));
+  const disa = kok.querySelector('[data-disaaktar]');
+  if(disa) disa.addEventListener('click', () => disaAktar(aktifMagaza()));
+  const ice = kok.querySelector('[data-iceaktar]');
+  if(ice) ice.addEventListener('click', () => iceAktarPenceresi(aktifMagaza(), uygulamaCiz));
   // Logo, tarayıcı sekmesindeki simgenin aynısı; tıklayınca ana sayfaya döner.
   const logo = kok.querySelector('.ust-logo');
   const simge = document.querySelector('link[rel="icon"]');

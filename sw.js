@@ -1,13 +1,14 @@
 // Çevrimdışı kabuk. Sürüm değişince eski önbellek silinir.
 // Sürüm numarası js/surum.js ile birlikte artırılır.
-const SURUM = 'mc2-v30';
+const SURUM = 'mc2-v31';
 const DOSYALAR = [
   './', './index.html', './manifest.webmanifest', './icon.svg', './yer-imi.html',
   './css/app.css',
   './js/app.js', './js/util.js', './js/veri.js', './js/hafta.js',
   './js/panel.js', './js/magaza.js', './js/bolge.js', './js/kurucu.js',
   './js/talep.js', './js/yapistir.js', './js/pencere.js', './js/rutin.js',
-  './js/yerlesim.js', './js/bulut.js', './js/tema.js', './js/surum.js'
+  './js/yerlesim.js', './js/bulut.js', './js/tema.js', './js/surum.js',
+  './js/aktarim.js'
 ];
 
 self.addEventListener('install', e => {

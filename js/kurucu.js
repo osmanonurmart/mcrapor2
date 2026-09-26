@@ -3,6 +3,8 @@ import * as U from './util.js';
 
 // Kullanıcı bölümünün son bildirimi; panel yeniden çizilince korunur.
 let sonNot = '';
+// Temizlik sonucu da panel yeniden çizilince kaybolmasın.
+let sonTemizlik = '';
 import * as V from './veri.js';
 import { KPI_TANIM } from './hafta.js';
 import { kullaniciOlustur, sifreDegistir, dbAl, authAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, SIFRELER } from './bulut.js';
@@ -29,6 +31,12 @@ export function kurucuPaneli(yenile){
           <input type="text" inputmode="numeric" class="toplu-esik" value="${V.topluEsikGetir()}"> ₺</label>
         <p class="aciklama">Yapıştırma sırasında kaynak sayfadaki fatura listesi bu eşiğe göre toplanır.</p>
       </div>
+      <div class="panel-kutu"><h3>Veri</h3>
+        <p class="aciklama">Kurulumda üretilen örnek kayıtları siler: bütün mağazaların ciro/MDO/MGS gibi
+          günlük verileri, haftalık hedefleri, ürün Excel'leri, rutin işaretleri, örnek personel ve kartlar,
+          ayrıca ürün talepleri ve duyurular. <b>Mağazalar, kullanıcı hesapları, şifreler ve kategoriler kalır.</b></p>
+        <button class="mini tehlike ornek-temizle">🗑 Örnek verileri temizle</button>
+        <p class="aciklama temizle-durum"></p></div>
       <div class="panel-kutu"><h3>Etiketler</h3><div class="etiket-yonet"></div>
         <div class="satir-ekle"><input class="e-anahtar" type="text" placeholder="halı"><input class="e-kart" type="text" placeholder="Halı satışı"><button class="mini birincil etiket-ekle">+ Ekle</button></div>
         <p class="aciklama">Ürün satırlarında anahtar kelime geçen kayıtlar bu kartta toplanır.</p></div>
@@ -330,6 +338,32 @@ export function kurucuPaneli(yenile){
     kok.querySelector('.e-anahtar').value = '';
     kok.querySelector('.e-kart').value = '';
     etCiz();
+  });
+
+  // --- Örnek verileri temizle ---
+  const temizleBtn = kok.querySelector('.ornek-temizle');
+  const temizleDurum = kok.querySelector('.temizle-durum');
+  temizleDurum.textContent = sonTemizlik;
+  temizleBtn.addEventListener('click', async () => {
+    const magazaSayisi = V.magazalar().length;
+    if(!confirm(magazaSayisi + ' mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\n' +
+                'Mağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.\n\nDevam edilsin mi?')) return;
+    if(!confirm('Son onay: silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.')) return;
+    temizleBtn.disabled = true;
+    temizleDurum.textContent = 'Siliniyor…';
+    try{
+      const silinen = await V.ornekVerileriTemizle((i, toplam, ad) => {
+        temizleDurum.textContent = 'Siliniyor… ' + i + '/' + toplam + ' — ' + ad;
+      });
+      sonTemizlik = '✓ ' + silinen + ' kayıt silindi.';
+      temizleDurum.textContent = sonTemizlik;
+      U.bildir('iyi', '✓ Örnek veriler temizlendi', silinen + ' kayıt silindi.');
+      yenile();
+    }catch(e){
+      sonTemizlik = 'Silinemedi: ' + e.message;
+      temizleDurum.textContent = sonTemizlik;
+      temizleBtn.disabled = false;
+    }
   });
 
   return kok;
