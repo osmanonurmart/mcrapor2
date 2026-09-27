@@ -2,6 +2,7 @@
 // Liste her hafta aynı kalır (mağazanın rutini), işaretlemeler haftalıktır.
 import * as U from './util.js';
 import * as V from './veri.js';
+import { soru } from './pencere.js';
 
 export function rutinBlogu(magazaKey, pzt, secenekler = {}){
   const duzenlenebilir = secenekler.duzenlenebilir !== false;
@@ -93,8 +94,8 @@ function yeniMadde(magazaKey, gun, hucre, yenile){
   girdi.addEventListener('blur', () => bitir(true));
 }
 
-function maddeyiDuzenle(magazaKey, madde, yenile){
-  const yeni = prompt('Rutin adı:', madde.metin);
+async function maddeyiDuzenle(magazaKey, madde, yenile){
+  const yeni = await soru('Rutini düzenle', '', {varsayilan: madde.metin, onayAd:'Kaydet'});
   if(yeni === null) return;
   const liste = V.rutinGetir(magazaKey);
   const k = liste.find(x => x.id === madde.id);

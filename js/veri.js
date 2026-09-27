@@ -162,6 +162,9 @@ export function duyuruSil(id){ yaz('duyurular', duyurularGetir().filter(d => d.i
 
 // ---------------- Haftalık rutin ----------------
 // Liste mağazanın sabit rutinidir; işaretlemeler hafta hafta tutulur.
+// Yeni açılan mağazada liste BOŞ gelir: hazır madde, mağazanın kendi rutini
+// gibi görünüp kafa karıştırıyordu. Aşağıdaki liste yalnızca örnek veri
+// üretilirken (tohumla) kullanılıyor.
 export const VARSAYILAN_RUTIN = [
   {id:'r_pzt1', gun:0, metin:'Örneklem'},
   {id:'r_pzt2', gun:0, metin:'Ürün talebi gönder'},
@@ -171,7 +174,7 @@ export const VARSAYILAN_RUTIN = [
   {id:'r_paz1', gun:6, metin:'Ürün Excel yükle'},
   {id:'r_paz2', gun:6, metin:'Haftalık rapor'}
 ];
-export function rutinGetir(magaza){ return oku('rutin:' + magaza, VARSAYILAN_RUTIN.map(r => ({...r}))); }
+export function rutinGetir(magaza){ return oku('rutin:' + magaza, []); }
 export function rutinYaz(magaza, liste){ yaz('rutin:' + magaza, liste); }
 export function rutinDurumGetir(magaza, haftaAnahtari){ return oku('rutinDurum:' + magaza + ':' + haftaAnahtari, {}); }
 export function rutinDurumDegistir(magaza, haftaAnahtari, maddeId){
@@ -306,6 +309,7 @@ function magazalarIcinTohum(magazaListesi, buPzt, bugunD){
       aktif: i < 4
     }));
     personelYaz(m.key, personel);
+    rutinYaz(m.key, VARSAYILAN_RUTIN.map(r => ({...r})));
 
     // Üç kaynak kartı + iki elle girilen kart.
     kartlarYaz(m.key, [

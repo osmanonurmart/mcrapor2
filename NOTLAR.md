@@ -501,3 +501,34 @@ madde sayısına göre yazı küçülüyor (`--rutin-olcek`, js'te hesaplanıyor
 
 1920px'de satırdaki hafta ve duyuru blokları zaten 179px olduğu için
 sabit boy hiçbir şey büyütmedi.
+
+## 2026-09-27 — kendi onay pencereleri, şifre görünürlüğü, boş rutin
+
+**Tarayıcı kutuları kalktı.** `confirm` ve `prompt` yerine `pencere.js`
+içinde söz (Promise) döndüren `onay()` ve `soru()` var; siteyle aynı
+görünüyorlar. Escape ve pencerenin dışına tıklama iptal sayılıyor
+(`kapat()` artık `pencere-kapandi` olayı yayıyor, yoksa söz asılı
+kalırdı). Sekiz çağrının hepsi değişti; kodda `confirm/prompt/alert`
+kalmadı.
+
+**Şifreler baştan açık.** Kurucu panelini yalnızca kurucu görebiliyor,
+o yüzden `sifreGorunur` varsayılanı `true`. Göz düğmesi "Kullanıcılar"
+kutusunun başlığına taşındı (altta, mağaza ekleme satırında kayboluyordu).
+Şifreye tıklayınca panoya kopyalanıyor.
+
+Şifre kutusunun neden var olduğu: Firebase kayıtlı şifreyi **hiçbir
+şekilde geri vermiyor**. Kurucunun şifreyi görebilmesi için ayrı bir düz
+metin kopyası (`mc2_sifreler`) tutmak şart. Kurallar bu koleksiyonu
+yalnızca kurucuya açıyor.
+
+Tarayıcıdan başkasının şifresini değiştirmenin tek yolu o hesaba
+mevcut şifresiyle girip `updatePassword` çağırmak — bu yüzden mevcut
+şifre gerekiyor. Panelden açılan her hesabın şifresi kayıtlı olduğu için
+soru çıkmıyor; yalnızca bu özellikten önce açılmış hesaplarda bir kez
+soruluyor. Admin SDK (Cloud Functions) ile mevcut şifre gerekmeden
+değiştirilebilir ama Blaze (faturalı) plan istiyor.
+
+**Yeni mağaza boş açılıyor.** `rutinGetir` varsayılanı artık `[]`;
+hazır rutin listesi (Örneklem, Stok sayımı…) yalnızca örnek veri
+üretilirken yazılıyor. Yeni mağazada gün tablosu, personel, rutin ve
+hedefler boş.

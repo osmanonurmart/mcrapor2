@@ -589,6 +589,16 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .pencere-kapat{ background:none; border:none; font-size:1rem; cursor:pointer; color:var(--soluk); }
 .pencere-govde{ padding:16px; overflow:auto; }
 .pencere-alt{ display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid var(--cizgi); }
+/* Tarayıcının confirm/prompt kutularının yerini alan pencereler. */
+.onay-govde{ min-width:min(420px, 78vw); font-size:.82rem; line-height:1.5; }
+.onay-govde p{ margin:0 0 9px; }
+.onay-govde p:last-of-type{ margin-bottom:0; }
+.onay-girdi{
+  width:100%; margin-top:12px; padding:9px 10px; font-size:.86rem;
+  border:1px solid var(--cizgi); border-radius:8px; background:var(--kagit);
+}
+.onay-girdi:focus{ outline:none; border-color:var(--vurgu); box-shadow:0 0 0 3px var(--acik-vurgu); }
+.pencere-alt .mini{ padding:7px 14px; font-size:.8rem; }
 .yapistir-alan{ width:100%; height:150px; padding:9px; border:1px solid var(--cizgi); border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 .bulgu-kutu{ margin-top:12px; background:var(--zemin-3); border:1px solid var(--cizgi); border-radius:9px; padding:11px; }
 .bulgu-ust{ font-size:.72rem; color:var(--soluk); margin-bottom:8px; }
@@ -814,10 +824,13 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 .k-sifre-goster{
   flex:0 1 120px; min-width:0; font-size:.74rem; font-family:ui-monospace,Menlo,Consolas,monospace;
   background:var(--zemin-2); border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 7px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;
 }
+.k-sifre-goster:hover{ border-color:var(--vurgu); }
 .k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
-.sifre-goz{ margin-left:auto; }
+/* Kutu başlığı + sağdaki düğme (Kullanıcılar kutusunda şifre göz düğmesi). */
+.kutu-ust{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
+.kutu-ust h3{ margin-bottom:0; }
 
 /* ---------- Bildirim (bkz. util.bildir) ---------- */
 .bildirim{
@@ -1301,7 +1314,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     { id: "r_paz2", gun: 6, metin: "Haftalık rapor" }
   ];
   function rutinGetir(magaza) {
-    return oku("rutin:" + magaza, VARSAYILAN_RUTIN.map((r) => ({ ...r })));
+    return oku("rutin:" + magaza, []);
   }
   function rutinYaz(magaza, liste) {
     yaz("rutin:" + magaza, liste);
@@ -1465,6 +1478,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         aktif: i < 4
       }));
       personelYaz(m.key, personel);
+      rutinYaz(m.key, VARSAYILAN_RUTIN.map((r) => ({ ...r })));
       kartlarYaz(m.key, [
         { id: "ciro", ad: "Ciro", alan: "ciro", tur: "kaynak" },
         { id: "mgs", ad: "MGS", alan: "mgs", tur: "kaynak" },
@@ -2447,13 +2461,77 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
   function kapat() {
     if (acik) {
-      acik.remove();
+      const k = acik;
       acik = null;
+      k.dispatchEvent(new CustomEvent("pencere-kapandi"));
+      k.remove();
     }
   }
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") kapat();
   });
+  function onay(baslik, mesaj, secenekler = {}) {
+    return new Promise((coz) => {
+      let verildi = false;
+      const bitir = (deger) => {
+        if (verildi) return;
+        verildi = true;
+        kapat();
+        coz(deger);
+      };
+      const govde = el(`<div class="onay-govde">${String(mesaj).split("\n\n").map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("")}</div>`);
+      const kok = pencere(baslik, govde, [
+        { ad: secenekler.iptalAd || "Vazgeç", tik: () => bitir(false) },
+        {
+          ad: secenekler.onayAd || "Devam",
+          sinif: secenekler.tehlike ? "tehlike" : "birincil",
+          tik: () => bitir(true)
+        }
+      ]);
+      kok.querySelector(".pencere-kapat").addEventListener("click", () => bitir(false));
+      kok.addEventListener("click", (e) => {
+        if (e.target === kok) bitir(false);
+      });
+      kok.addEventListener("pencere-kapandi", () => bitir(false));
+      kok.querySelectorAll(".pencere-alt .mini")[1].focus();
+    });
+  }
+  function soru(baslik, mesaj, secenekler = {}) {
+    return new Promise((coz) => {
+      let verildi = false;
+      const bitir = (deger) => {
+        if (verildi) return;
+        verildi = true;
+        kapat();
+        coz(deger);
+      };
+      const govde = el(`<div class="onay-govde">
+      ${String(mesaj || "").split("\n\n").map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("")}
+      <input class="onay-girdi" type="${secenekler.tur || "text"}"
+             placeholder="${secenekler.yerTutucu || ""}" value="${secenekler.varsayilan || ""}">
+    </div>`);
+      const girdi = govde.querySelector(".onay-girdi");
+      const kok = pencere(baslik, govde, [
+        { ad: "Vazgeç", tik: () => bitir(null) },
+        { ad: secenekler.onayAd || "Tamam", sinif: "birincil", tik: () => bitir(girdi.value) }
+      ]);
+      girdi.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          bitir(girdi.value);
+        }
+      });
+      kok.querySelector(".pencere-kapat").addEventListener("click", () => bitir(null));
+      kok.addEventListener("click", (e) => {
+        if (e.target === kok) bitir(null);
+      });
+      kok.addEventListener("pencere-kapandi", () => bitir(null));
+      setTimeout(() => {
+        girdi.focus();
+        girdi.select();
+      }, 30);
+    });
+  }
 
   // js/rutin.js
   function rutinBlogu(magazaKey, pzt, secenekler = {}) {
@@ -2541,8 +2619,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     });
     girdi.addEventListener("blur", () => bitir(true));
   }
-  function maddeyiDuzenle(magazaKey, madde, yenile) {
-    const yeni = prompt("Rutin adı:", madde.metin);
+  async function maddeyiDuzenle(magazaKey, madde, yenile) {
+    const yeni = await soru("Rutini düzenle", "", { varsayilan: madde.metin, onayAd: "Kaydet" });
     if (yeni === null) return;
     const liste = rutinGetir(magazaKey);
     const k = liste.find((x) => x.id === madde.id);
@@ -3925,11 +4003,13 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     <div class="bolum-ust"><h2>Kurucu ayarları</h2>
       <span class="alt">Mağaza ve bölge ekranlarını üst menüden açabilirsiniz</span></div>
     <div class="kurucu-izgara">
-      <div class="panel-kutu genis"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+      <div class="panel-kutu genis">
+        <div class="kutu-ust"><h3>Kullanıcılar</h3>
+          <button class="mini sifre-goz">🙈 Şifreleri gizle</button></div>
+        <div class="kullanici-yonet"></div>
         <div class="satir-ekle magaza-ekle-satir">
           <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
           <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
-          <button class="mini sifre-goz">👁 Şifreleri göster</button>
         </div>
         <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
@@ -3993,8 +4073,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           kategorilerYaz(l);
           katCiz();
         });
-        blok.querySelector(".kat-sil").addEventListener("click", () => {
-          if (!confirm(kat.ad + " kategorisi ve ürünleri silinecek. Devam?")) return;
+        blok.querySelector(".kat-sil").addEventListener("click", async () => {
+          if (!await onay(
+            "Kategoriyi sil",
+            kat.ad + " kategorisi ve içindeki ürünler silinecek.",
+            { onayAd: "Sil", tehlike: true }
+          )) return;
           kategorilerYaz(kategorilerGetir().filter((x) => x.id !== kat.id));
           katCiz();
         });
@@ -4050,7 +4134,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     };
     kulNotEl.textContent = sonNot || (bulutta ? "Her mağazanın tek kullanıcısı olur. Kullanıcı adı ve şifreyi siz belirlersiniz; mağaza bunlarla girer ve yalnızca kendi verisini görür." : "Yerel deneme modundasınız; şifreler yalnızca bu tarayıcıda tutulur.");
     const sifreler = {};
-    let sifreGorunur = false;
+    let sifreGorunur = true;
     async function sifreleriYukle() {
       if (!bulutta) return;
       try {
@@ -4075,7 +4159,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         <input class="k-ad" type="text" value="${esc(p.ad)}" title="Mağaza adı">
         <span class="k-rol">${p.rol}</span>
         ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="Kullanıcı adı">${esc(kAdi)}</span>
-                 <span class="k-sifre-goster" title="Kayıtlı şifre">${sifreler[p.key] === void 0 ? '<i class="k-yok">kayıtlı değil</i>' : sifreGorunur ? esc(sifreler[p.key]) : "••••••••"}</span>
+                 <span class="k-sifre-goster" title="Kayıtlı şifre — tıklayınca panoya kopyalanır"
+                       data-sifre="${esc(sifreler[p.key] ?? "")}">${sifreler[p.key] === void 0 ? '<i class="k-yok">kayıtlı değil</i>' : sifreGorunur ? esc(sifreler[p.key]) : "••••••••"}</span>
                  <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
                  <button class="mini birincil k-degistir">Değiştir</button>
                  <button class="mini k-coz">Kullanıcıyı ayır</button>` : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
@@ -4088,6 +4173,13 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           profilGuncelle(p.key, { ad: this.value.trim() || p.ad });
           kulCiz();
           yenile && yenile();
+        });
+        const sifreHucre = satir.querySelector(".k-sifre-goster");
+        if (sifreHucre) sifreHucre.addEventListener("click", () => {
+          const s = sifreHucre.dataset.sifre;
+          if (!s) return;
+          navigator.clipboard.writeText(s).then(() => bildir("iyi", "✓ Kopyalandı", p.ad + " şifresi panoya kopyalandı.")).catch(() => {
+          });
         });
         const yerelSifre = satir.querySelector(".k-sifre-yerel");
         if (yerelSifre) yerelSifre.addEventListener("change", function() {
@@ -4148,7 +4240,11 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           }
           let eski = sifreler[p.key];
           if (eski === void 0 || eski === "") {
-            eski = prompt(p.ad + " için MEVCUT şifre nedir?\n\nBu hesap şifre kaydı tutulmadan önce açılmış. Bir kez yazarsanız bundan sonra kayıtlı kalır.");
+            eski = await soru(
+              p.ad + " — mevcut şifre",
+              'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ve bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+              { yerTutucu: "şu anki şifre", onayAd: "Devam" }
+            );
             if (!eski) return;
           }
           degistirBtn.disabled = true;
@@ -4168,7 +4264,11 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         if (cozBtn) cozBtn.addEventListener("click", async () => {
           const adYedek = kullaniciAdiYap(p.kullaniciMaili);
           const mailYedek = p.kullaniciMaili;
-          if (!confirm(p.ad + ' ile "' + adYedek + '" kullanıcısının bağlantısı kaldırılacak.\n\nMağazanın verisi silinmez. Ardından buradan yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.\n\nDevam edilsin mi?')) return;
+          if (!await onay(
+            "Kullanıcıyı ayır",
+            p.ad + ' ile "' + adYedek + '" kullanıcısının bağlantısı kaldırılacak.\n\nMağazanın verisi silinmez. Ardından buradan yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+            { onayAd: "Ayır", tehlike: true }
+          )) return;
           try {
             const snap = await dbAl().collection(KULLANICILAR).where("magazaKey", "==", p.key).get();
             const yigin = dbAl().batch();
@@ -4185,8 +4285,12 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           }
         });
         const magSilBtn = satir.querySelector(".k-magaza-sil");
-        if (magSilBtn) magSilBtn.addEventListener("click", () => {
-          if (!confirm(p.ad + " silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve rutin listesi kalıcı olarak gidecek. Geri alınamaz.\n\nDevam edilsin mi?")) return;
+        if (magSilBtn) magSilBtn.addEventListener("click", async () => {
+          if (!await onay(
+            "Mağazayı sil",
+            p.ad + " silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve rutin listesi kalıcı olarak gidecek. Geri alınamaz.",
+            { onayAd: "Sil", tehlike: true }
+          )) return;
           magazaSil(p.key);
           delete sifreler[p.key];
           if (bulutta) dbAl().collection(SIFRELER).doc(p.key).delete().catch(() => {
@@ -4282,8 +4386,16 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     temizleDurum.textContent = sonTemizlik;
     temizleBtn.addEventListener("click", async () => {
       const magazaSayisi = magazalar().length;
-      if (!confirm(magazaSayisi + " mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\nMağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.\n\nDevam edilsin mi?")) return;
-      if (!confirm('Son onay: silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.')) return;
+      if (!await onay(
+        "Örnek verileri temizle",
+        magazaSayisi + " mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\nMağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.",
+        { onayAd: "Devam", tehlike: true }
+      )) return;
+      if (!await onay(
+        "Son onay",
+        'Silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.',
+        { onayAd: "Sil", tehlike: true }
+      )) return;
       temizleBtn.disabled = true;
       temizleDurum.textContent = "Siliniyor…";
       try {
@@ -4444,7 +4556,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 32;
+  var SURUM = 33;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
@@ -4877,12 +4989,18 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         }
       }
       if (b.dataset.act === "sifirla") {
-        if (!confirm("Bütün yerel veri silinip örnek veri yeniden üretilecek. Devam?")) return;
-        hepsiniSil();
-        tohumla(true);
-        oturumSil();
-        aktif = null;
-        ciz(girisEkrani(null));
+        onay(
+          "Verileri sıfırla",
+          "Bütün yerel veri silinip örnek veri yeniden üretilecek.",
+          { onayAd: "Sıfırla", tehlike: true }
+        ).then((evet) => {
+          if (!evet) return;
+          hepsiniSil();
+          tohumla(true);
+          oturumSil();
+          aktif = null;
+          ciz(girisEkrani(null));
+        });
       }
     }));
     document.body.appendChild(menu);

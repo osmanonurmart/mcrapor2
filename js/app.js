@@ -6,7 +6,7 @@ import { disaAktar, iceAktarPenceresi } from './aktarim.js';
 import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
-import { pencere, kapat } from './pencere.js';
+import { pencere, kapat, onay } from './pencere.js';
 import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, KULLANICI_ALANI } from './bulut.js';
 import { yerlesimSifirla, TASINABILIR } from './yerlesim.js';
 import { TEMALAR, temaGetir, temaYaz, temaUygula } from './tema.js';
@@ -417,8 +417,12 @@ function profilMenusu(e){
       else { V.oturumSil(); aktif = null; kurucuMagaza = null; ciz(girisEkrani(null)); }
     }
     if(b.dataset.act === 'sifirla'){
-      if(!confirm('Bütün yerel veri silinip örnek veri yeniden üretilecek. Devam?')) return;
-      V.hepsiniSil(); V.tohumla(true); V.oturumSil(); aktif = null; ciz(girisEkrani(null));
+      onay('Verileri sıfırla',
+        'Bütün yerel veri silinip örnek veri yeniden üretilecek.',
+        {onayAd:'Sıfırla', tehlike:true}).then(evet => {
+          if(!evet) return;
+          V.hepsiniSil(); V.tohumla(true); V.oturumSil(); aktif = null; ciz(girisEkrani(null));
+        });
     }
   }));
   document.body.appendChild(menu);

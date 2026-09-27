@@ -7,6 +7,7 @@ let sonNot = '';
 let sonTemizlik = '';
 import * as V from './veri.js';
 import { KPI_TANIM } from './hafta.js';
+import { onay, soru } from './pencere.js';
 import { kullaniciOlustur, sifreDegistir, dbAl, authAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, SIFRELER } from './bulut.js';
 
 export function kurucuPaneli(yenile){
@@ -14,11 +15,13 @@ export function kurucuPaneli(yenile){
     <div class="bolum-ust"><h2>Kurucu ayarları</h2>
       <span class="alt">Mağaza ve bölge ekranlarını üst menüden açabilirsiniz</span></div>
     <div class="kurucu-izgara">
-      <div class="panel-kutu genis"><h3>Kullanıcılar</h3><div class="kullanici-yonet"></div>
+      <div class="panel-kutu genis">
+        <div class="kutu-ust"><h3>Kullanıcılar</h3>
+          <button class="mini sifre-goz">🙈 Şifreleri gizle</button></div>
+        <div class="kullanici-yonet"></div>
         <div class="satir-ekle magaza-ekle-satir">
           <input class="yeni-magaza" type="text" placeholder="Yeni mağaza adı">
           <button class="mini birincil magaza-ekle">+ Mağaza ekle</button>
-          <button class="mini sifre-goz">👁 Şifreleri göster</button>
         </div>
         <p class="aciklama kullanici-not"></p></div>
       <div class="panel-kutu"><h3>Ürün / kategori</h3><div class="kategori-yonet"></div>
@@ -81,8 +84,9 @@ export function kurucuPaneli(yenile){
         k.ad = this.value.trim() || k.ad;
         V.kategorilerYaz(l); katCiz();
       });
-      blok.querySelector('.kat-sil').addEventListener('click', () => {
-        if(!confirm(kat.ad + ' kategorisi ve ürünleri silinecek. Devam?')) return;
+      blok.querySelector('.kat-sil').addEventListener('click', async () => {
+        if(!await onay('Kategoriyi sil', kat.ad + ' kategorisi ve içindeki ürünler silinecek.',
+                       {onayAd:'Sil', tehlike:true})) return;
         V.kategorilerYaz(V.kategorilerGetir().filter(x => x.id !== kat.id)); katCiz();
       });
       const yeni = blok.querySelector('.yeni-urun');
@@ -126,7 +130,8 @@ export function kurucuPaneli(yenile){
   // Kurucunun görebildiği şifre kopyaları; kurallar yalnızca ona açıyor.
   // Okunamazsa (kurucu değilsin, kural eski) sessizce boş kalır.
   const sifreler = {};
-  let sifreGorunur = false;
+  // Bu paneli yalnızca kurucu görebiliyor; şifreler baştan açık geliyor.
+  let sifreGorunur = true;
   async function sifreleriYukle(){
     if(!bulutta) return;
     try{
@@ -152,7 +157,8 @@ export function kurucuPaneli(yenile){
         ${bulutta
           ? (p.kullaniciMaili
               ? `<span class="k-mail" title="Kullanıcı adı">${U.esc(kAdi)}</span>
-                 <span class="k-sifre-goster" title="Kayıtlı şifre">${
+                 <span class="k-sifre-goster" title="Kayıtlı şifre — tıklayınca panoya kopyalanır"
+                       data-sifre="${U.esc(sifreler[p.key] ?? '')}">${
                    sifreler[p.key] === undefined ? '<i class="k-yok">kayıtlı değil</i>'
                    : sifreGorunur ? U.esc(sifreler[p.key]) : '••••••••'}</span>
                  <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
@@ -167,6 +173,14 @@ export function kurucuPaneli(yenile){
       </div>`);
       satir.querySelector('.k-ad').addEventListener('change', function(){
         V.profilGuncelle(p.key, {ad: this.value.trim() || p.ad}); kulCiz(); yenile && yenile();
+      });
+      const sifreHucre = satir.querySelector('.k-sifre-goster');
+      if(sifreHucre) sifreHucre.addEventListener('click', () => {
+        const s = sifreHucre.dataset.sifre;
+        if(!s) return;
+        navigator.clipboard.writeText(s)
+          .then(() => U.bildir('iyi', '✓ Kopyalandı', p.ad + ' şifresi panoya kopyalandı.'))
+          .catch(() => {});
       });
       const yerelSifre = satir.querySelector('.k-sifre-yerel');
       if(yerelSifre) yerelSifre.addEventListener('change', function(){ V.profilGuncelle(p.key, {sifre: this.value}); });
@@ -213,8 +227,12 @@ export function kurucuPaneli(yenile){
         if(yeniAlan.value.length < 6){ U.bosUyar(yeniAlan); kulNot.textContent = 'Yeni şifre en az 6 karakter olmalı.'; return; }
         let eski = sifreler[p.key];
         if(eski === undefined || eski === ''){
-          eski = prompt(p.ad + ' için MEVCUT şifre nedir?\n\n' +
-            'Bu hesap şifre kaydı tutulmadan önce açılmış. Bir kez yazarsanız bundan sonra kayıtlı kalır.');
+          eski = await soru(p.ad + ' — mevcut şifre',
+            'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın ' +
+            'şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ' +
+            've bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp ' +
+            'yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+            {yerTutucu:'şu anki şifre', onayAd:'Devam'});
           if(!eski) return;
         }
         degistirBtn.disabled = true; degistirBtn.textContent = '...';
@@ -235,9 +253,10 @@ export function kurucuPaneli(yenile){
       if(cozBtn) cozBtn.addEventListener('click', async () => {
         const adYedek = kullaniciAdiYap(p.kullaniciMaili);
         const mailYedek = p.kullaniciMaili;
-        if(!confirm(p.ad + ' ile "' + adYedek + '" kullanıcısının bağlantısı kaldırılacak.\n\n' +
-          'Mağazanın verisi silinmez. Ardından buradan yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.\n\n' +
-          'Devam edilsin mi?')) return;
+        if(!await onay('Kullanıcıyı ayır',
+          p.ad + ' ile "' + adYedek + '" kullanıcısının bağlantısı kaldırılacak.\n\n' +
+          'Mağazanın verisi silinmez. Ardından buradan yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+          {onayAd:'Ayır', tehlike:true})) return;
         try{
           const snap = await dbAl().collection(KULLANICILAR).where('magazaKey','==',p.key).get();
           const yigin = dbAl().batch();
@@ -254,9 +273,11 @@ export function kurucuPaneli(yenile){
 
       // Mağazayı tamamen silme: bütün günlük veri, hedef, personel ve rutin gider.
       const magSilBtn = satir.querySelector('.k-magaza-sil');
-      if(magSilBtn) magSilBtn.addEventListener('click', () => {
-        if(!confirm(p.ad + ' silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve ' +
-          'rutin listesi kalıcı olarak gidecek. Geri alınamaz.\n\nDevam edilsin mi?')) return;
+      if(magSilBtn) magSilBtn.addEventListener('click', async () => {
+        if(!await onay('Mağazayı sil',
+          p.ad + ' silinecek.\n\nBu mağazanın bütün günlük verisi, hedefleri, personeli ve ' +
+          'rutin listesi kalıcı olarak gidecek. Geri alınamaz.',
+          {onayAd:'Sil', tehlike:true})) return;
         V.magazaSil(p.key);
         delete sifreler[p.key];
         if(bulutta) dbAl().collection(SIFRELER).doc(p.key).delete().catch(()=>{});
@@ -346,9 +367,13 @@ export function kurucuPaneli(yenile){
   temizleDurum.textContent = sonTemizlik;
   temizleBtn.addEventListener('click', async () => {
     const magazaSayisi = V.magazalar().length;
-    if(!confirm(magazaSayisi + ' mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\n' +
-                'Mağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.\n\nDevam edilsin mi?')) return;
-    if(!confirm('Son onay: silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.')) return;
+    if(!await onay('Örnek verileri temizle',
+      magazaSayisi + ' mağazanın günlük verileri, hedefleri, örnek personeli, talepler ve duyurular silinecek.\n\n' +
+      'Mağazalar, kullanıcı hesapları ve kategoriler kalır. Bu işlem geri alınamaz.',
+      {onayAd:'Devam', tehlike:true})) return;
+    if(!await onay('Son onay',
+      'Silmeden önce "⬇ Dışa aktar" ile yedek aldıysanız devam edin.',
+      {onayAd:'Sil', tehlike:true})) return;
     temizleBtn.disabled = true;
     temizleDurum.textContent = 'Siliniyor…';
     try{
