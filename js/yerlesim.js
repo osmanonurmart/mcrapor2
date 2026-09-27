@@ -14,7 +14,7 @@ import { el } from './util.js';
 export const TASINABILIR = false;
 
 // Başlığını kendi içinde taşıyan paneller; tuval ayrıca başlık çizmez.
-const BASLIKSIZ = ['haftaSecili','haftaOnceki','haftaOnceki2','haftaOnceki3'];
+const BASLIKSIZ = ['haftaSecili','haftaOnceki','haftaOnceki2','haftaOnceki3','rutin'];
 
 const EN_KUCUK_YUZDE = 12;
 const EN_KUCUK_YUKSEKLIK = 80;

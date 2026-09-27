@@ -181,16 +181,22 @@ table{ border-collapse:collapse; }
 .duyuru-bos{ color:var(--soluk); font-size:.74rem; }
 
 /* ---------- Haftalık rutin ---------- */
-.rutin-blok{ min-width:0; display:flex; flex-direction:column; }
-.rutin-ust{ display:flex; align-items:center; justify-content:flex-end; margin-bottom:3px; }
-.rutin-sayac{ font-size:.68rem; font-weight:700; color:var(--soluk); background:var(--zemin-2); border-radius:20px; padding:1px 8px; }
+/* Blok başlığı yok (tuval "rutin"i başlıksız çiziyor); gün adları en üstte.
+   Sayaç, yer kaplayan ayrı bir satır açmasın diye sağ üst köşede duruyor;
+   altına denk gelen "Paz" başlığına o kadar sağ boşluk bırakılıyor. */
+.rutin-blok{ min-width:0; display:flex; flex-direction:column; position:relative; --rutin-olcek:1; }
+.rutin-ust{ position:absolute; top:-1px; right:0; z-index:1; }
+.rutin-sayac{ font-size:.66rem; font-weight:700; color:var(--soluk); background:var(--zemin-2); border-radius:20px; padding:0 7px; }
 .rutin-sayac.tamam{ background:#e6f2ea; color:var(--artis); }
-.rutin-blok .tablo-sar{ flex:1; min-height:0; overflow:auto; }
+/* Sabit yükseklik: madde eklendikçe kutu uzayıp alttaki satırı itmiyor.
+   Yazı boyutu js'te en kalabalık güne göre küçültülüyor (--rutin-olcek). */
+.rutin-blok .tablo-sar{ flex:0 0 auto; height:180px; overflow:auto; }
 .rutin-tablo{ width:100%; min-width:300px; table-layout:fixed; }
 .rutin-tablo th{
   font-size:.64rem; font-weight:700; color:var(--soluk); padding:1px 2px;
   border-bottom:2px solid var(--cizgi); text-align:center;
 }
+.rutin-tablo th:last-child{ padding-right:34px; }
 .rutin-tablo th.bugun{ color:var(--vurgu); }
 .rutin-tablo td{ vertical-align:top; padding:3px 2px; border-right:var(--hucre-cizgi) solid var(--cizgi-ince); }
 .rutin-tablo td:last-child{ border-right:none; }
@@ -198,8 +204,11 @@ table{ border-collapse:collapse; }
 /* Sade yazı; üzerine gelince kutuya döner, tıklanınca yeşile. */
 /* Her madde kendi kutusunda dursun; hangi günde ne olduğu bir bakışta belli. */
 .rutin-madde{
-  display:flex; align-items:center; gap:2px; font-size:.68rem; line-height:1.3;
-  border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 5px; margin-bottom:3px;
+  display:flex; align-items:center; gap:2px; line-height:1.3;
+  font-size:calc(.68rem * var(--rutin-olcek));
+  padding:calc(3px * var(--rutin-olcek)) 5px;
+  margin-bottom:calc(3px * var(--rutin-olcek));
+  border:1px solid var(--cizgi-ince); border-radius:6px;
   background:var(--kagit);
 }
 .rutin-madde:hover{ border-color:var(--cizgi); }
@@ -216,13 +225,14 @@ table{ border-collapse:collapse; }
 .rutin-madde .r-sil:hover{ color:var(--dusus); }
 .rutin-ekle{
   width:100%; border:1px dashed var(--cizgi); background:none; color:#c3c3c9; border-radius:6px;
-  cursor:pointer; font-size:.66rem; padding:0 2px; line-height:1.5; opacity:0; transition:opacity .12s;
+  cursor:pointer; font-size:calc(.66rem * var(--rutin-olcek)); padding:0 2px; line-height:1.4;
+  opacity:0; transition:opacity .12s;
 }
 .rutin-tablo td:hover .rutin-ekle{ opacity:1; }
 .rutin-ekle:hover{ border-color:var(--vurgu); color:var(--vurgu); }
 .rutin-girdi{
-  width:100%; font-size:.66rem; padding:2px 4px; border:1px solid var(--vurgu);
-  border-radius:6px; margin-bottom:2px;
+  width:100%; font-size:calc(.66rem * var(--rutin-olcek)); padding:1px 4px;
+  border:1px solid var(--vurgu); border-radius:6px; margin-bottom:2px;
 }
 
 /* ---------- Notion tarzı tuval ---------- */
@@ -2457,7 +2467,9 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     const bugunStr2 = bugunStr();
     const toplam2 = maddeler.length;
     const biten = maddeler.filter((m) => durum[m.id]).length;
-    const kok = el(`<section class="rutin-blok" data-panel="rutin">
+    const enCok = Math.max(0, ...[0, 1, 2, 3, 4, 5, 6].map((g) => maddeler.filter((m) => m.gun === g).length));
+    const olcek = enCok <= 5 ? 1 : enCok === 6 ? 0.9 : enCok === 7 ? 0.8 : 0.72;
+    const kok = el(`<section class="rutin-blok" data-panel="rutin" style="--rutin-olcek:${olcek.toFixed(3)}">
     <header class="rutin-ust">
       <span class="rutin-sayac ${toplam2 && biten === toplam2 ? "tamam" : ""}">${biten}/${toplam2}</span>
     </header>
@@ -2542,7 +2554,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 
   // js/yerlesim.js
   var TASINABILIR = false;
-  var BASLIKSIZ = ["haftaSecili", "haftaOnceki", "haftaOnceki2", "haftaOnceki3"];
+  var BASLIKSIZ = ["haftaSecili", "haftaOnceki", "haftaOnceki2", "haftaOnceki3", "rutin"];
   var EN_KUCUK_YUZDE = 12;
   var EN_KUCUK_YUKSEKLIK = 80;
   var VARSAYILAN_DUZEN = [
@@ -4432,7 +4444,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 31;
+  var SURUM = 32;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });

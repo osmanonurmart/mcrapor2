@@ -15,7 +15,13 @@ export function rutinBlogu(magazaKey, pzt, secenekler = {}){
   const toplam = maddeler.length;
   const biten = maddeler.filter(m => durum[m.id]).length;
 
-  const kok = U.el(`<section class="rutin-blok" data-panel="rutin">
+  // Kutunun boyu sabit (css'te height). Madde eklendikçe aşağı uzamasın diye
+  // en kalabalık gündeki madde sayısına göre yazı küçülüyor; ölçekler kutuya
+  // kaç maddenin sığdığı ölçülerek seçildi.
+  const enCok = Math.max(0, ...[0,1,2,3,4,5,6].map(g => maddeler.filter(m => m.gun === g).length));
+  const olcek = enCok <= 5 ? 1 : enCok === 6 ? 0.9 : enCok === 7 ? 0.8 : 0.72;
+
+  const kok = U.el(`<section class="rutin-blok" data-panel="rutin" style="--rutin-olcek:${olcek.toFixed(3)}">
     <header class="rutin-ust">
       <span class="rutin-sayac ${toplam && biten === toplam ? 'tamam' : ''}">${biten}/${toplam}</span>
     </header>

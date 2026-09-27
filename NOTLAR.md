@@ -485,3 +485,19 @@ kategoriler, etiketler, KPI satır ayarı, toplu satış eşiği.
 Firestore'da koleksiyon tek istekle silinemiyor; 300'lük sayfalarla
 listeleyip yığın halinde siliniyor. Test kurulumunda 20 mağazada 1822
 kayıt sildi, arkasından bütün ekranlar hatasız açıldı.
+
+## 2026-09-27 — rutin kutusu
+
+Panel başlığı ("✓ Haftalık rutin") kaldırıldı; `rutin` artık `BASLIKSIZ`
+listesinde, gün adları en üstte. `0/8` sayacı sağ üst köşeye mutlak
+konumlandı, kendine satır açmıyor; altına denk gelen `Paz` başlığına
+sağ boşluk verildi.
+
+Kutu sabit boyda (`.tablo-sar{height:180px}`). Bir güne madde eklenince
+kutu uzayıp altındaki satırı itmiyor; bunun yerine en kalabalık gündeki
+madde sayısına göre yazı küçülüyor (`--rutin-olcek`, js'te hesaplanıyor).
+Ölçekler ölçülerek seçildi: 5'e kadar tam boy, 6 → 0.9, 7 → 0.8,
+8+ → 0.72. Sekizden sonrası kutunun içinde kayıyor, düzen yine oynamıyor.
+
+1920px'de satırdaki hafta ve duyuru blokları zaten 179px olduğu için
+sabit boy hiçbir şey büyütmedi.
