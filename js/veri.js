@@ -204,6 +204,10 @@ export function denetimDegistir(magaza, maddeId){
   return d;
 }
 
+// ---------------- Kurumsal hafıza: mağaza not defteri ----------------
+export function notDefteriGetir(magaza){ return oku('notlar:' + magaza, ''); }
+export function notDefteriYaz(magaza, metin){ yaz('notlar:' + magaza, metin); }
+
 // ---------------- Panel yerleşimi ----------------
 // Her mağaza panellerin sırasını ve boyutunu kendi ayarlar.
 export function yerlesimGetir(magaza){ return oku('yerlesim:' + magaza, {sira:{}, boyut:{}}); }
@@ -444,7 +448,7 @@ const ORTAK_AYAR = {
   'gorunum:bolge':    'gorunumBolge',
   'gorunum:satirlar': 'gorunumSatirlar'
 };
-const MAGAZA_AYAR = {personel:'personel', kartlar:'kartlar', rutin:'rutin', denetim:'denetim'};
+const MAGAZA_AYAR = {personel:'personel', kartlar:'kartlar', rutin:'rutin', denetim:'denetim', notlar:'notlar'};
 const MAGAZA_KOLEKSIYON = {gun:'gunler', hedef:'hedefler', urun:'urunHafta', rutinDurum:'rutinDurum'};
 
 function anahtarYolu(anahtar){
@@ -640,7 +644,8 @@ export function magazaVerisiniTopla(magaza){
     personel: personelGetir(magaza),
     kartlar:  kartlarGetir(magaza),
     rutin:    rutinGetir(magaza),
-    denetim:  denetimGetir(magaza)
+    denetim:  denetimGetir(magaza),
+    notlar:   notDefteriGetir(magaza)
   };
   anahtarlar().forEach(a => {
     const p = a.split(':');
@@ -664,6 +669,7 @@ export function paketiAnahtarlaraCevir(magaza, paket){
   });
   if(paket.denetim && Object.keys(paket.denetim.isaretli || {}).length)
     girdiler.push(['denetim:' + magaza, paket.denetim]);
+  if(paket.notlar) girdiler.push(['notlar:' + magaza, paket.notlar]);
   return girdiler;
 }
 
@@ -766,7 +772,7 @@ export function magazaSil(key){
   profilleriYaz(profilleriGetir().filter(p => p.key !== key));
   const db = dbAl();
   if(bulutAcik && db) db.collection(MAGAZALAR).doc(key).delete().catch(e => console.warn(e.message));
-  ['personel','kartlar','rutin','denetim'].forEach(a => sil(a + ':' + key));
+  ['personel','kartlar','rutin','denetim','notlar'].forEach(a => sil(a + ':' + key));
   ['gun','hedef','urun','rutinDurum'].forEach(on => {
     anahtarlar().filter(a => a.startsWith(on + ':' + key + ':')).forEach(sil);
   });

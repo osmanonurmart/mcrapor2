@@ -552,3 +552,18 @@ toplamı — kaybedilebilecek puanın üst sınırı) ve eksiği olan başlık
 sayısı. "Yeni denetim" düğmesi işaretleri sıfırlıyor.
 
 Dışa/içe aktarmaya da girdi: yedek dosyası denetim işaretlerini taşıyor.
+
+## 2026-09-28 — kurumsal hafıza ve araçlar
+
+Menüye "Hafıza & Araçlar" sayfası eklendi. Şimdilik iskelet: altı bölüm
+kartı (süreçler, form/şablonlar, eğitim notları, SSS, kime sorulur,
+araçlar) "yakında" rozetiyle duruyor, içerikleri sonra doldurulacak.
+Bölüm eklemek için `js/hafiza.js` içindeki `BOLUMLER` listesine bir satır
+yetiyor.
+
+Sayfa tamamen boş kalmasın diye **mağaza not defteri** çalışır durumda:
+yazı durunca (600 ms) kaydediliyor, `notlar:<magaza>` → `ayarlar/notlar`
+olarak buluta gidiyor, bölge müdürü okuyor ama yazamıyor. Yedek
+dosyalarına da giriyor.
+
+Eski v1 araç kutuları taşınınca "Araçlar" kartının yerine gelecek.

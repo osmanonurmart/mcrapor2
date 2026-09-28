@@ -622,6 +622,32 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .urun-rapor b{ display:block; margin-bottom:5px; }
 .urun-yukle{ margin-top:14px; display:flex; flex-direction:column; gap:7px; }
 .urun-yukle label{ font-size:.75rem; color:var(--soluk); }
+/* ---------- Kurumsal hafıza ve araçlar ---------- */
+.hafiza-ekran{
+  display:flex; flex-direction:column; gap:14px; height:100%; min-height:0;
+  overflow:auto; padding-bottom:12px; width:100%; max-width:1080px; margin:0 auto;
+}
+.hafiza-izgara{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+.hafiza-kart{
+  position:relative; border:var(--cerceve) solid var(--cizgi); border-radius:10px;
+  background:var(--kagit); padding:12px 13px 13px; display:flex; flex-direction:column; gap:5px;
+}
+.h-simge{ font-size:1.3rem; line-height:1; }
+.hafiza-kart h3{ font-size:.84rem; }
+.hafiza-kart p{ font-size:.73rem; line-height:1.5; color:var(--soluk); }
+.h-rozet{
+  position:absolute; top:10px; right:11px; font-size:.62rem; font-weight:700;
+  color:var(--soluk); background:var(--zemin-2); border-radius:20px; padding:1px 8px;
+}
+.hafiza-not{ display:flex; flex-direction:column; gap:7px; }
+.hafiza-alan{
+  width:100%; min-height:170px; resize:vertical; padding:10px;
+  border:1px solid var(--cizgi); border-radius:9px; font-size:.78rem; line-height:1.55;
+  background:var(--kagit); font-family:inherit;
+}
+.hafiza-alan:focus{ outline:none; border-color:var(--vurgu); }
+.hafiza-durum{ font-size:.68rem; color:var(--soluk); min-height:14px; }
+
 /* ---------- Denetim checklist'i ---------- */
 /* Satırlar ekran boyunca uzayıp okunmaz olmasın diye genişlik sınırlı. */
 .denetim-ekran{

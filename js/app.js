@@ -4,6 +4,7 @@ import * as V from './veri.js';
 import { magazaEkrani, yapistirPenceresi, hizliYapistir, personelPenceresi, seciliHafta, haftaSec } from './magaza.js';
 import { disaAktar, iceAktarPenceresi } from './aktarim.js';
 import { denetimEkrani } from './denetim.js';
+import { hafizaEkrani } from './hafiza.js';
 import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
@@ -250,12 +251,12 @@ function ustCubuk(){
   const magazaGibi = aktif.rol === V.ROLLER.MAGAZA || (aktif.rol === V.ROLLER.KURUCU && kurucuMagaza);
   const menu = [];
   if(aktif.rol === V.ROLLER.MAGAZA){
-    menu.push(['ana','Ana Sayfa'], ['talep','Ürün Talepleri'], ['denetim','Denetim']);
+    menu.push(['ana','Ana Sayfa'], ['talep','Ürün Talepleri'], ['denetim','Denetim'], ['hafiza','Hafıza & Araçlar']);
   } else if(aktif.rol === V.ROLLER.BOLGE){
-    menu.push(['bolge','Özet'], ['talep-rapor','Ürün Talepleri'], ['denetim','Denetim']);
+    menu.push(['bolge','Özet'], ['talep-rapor','Ürün Talepleri'], ['denetim','Denetim'], ['hafiza','Hafıza & Araçlar']);
   } else {
     menu.push(['kurucu','Ayarlar'], ['bolge','Bölge Görünümü'], ['ana','Mağaza Ekranı'],
-              ['talep-rapor','Ürün Talepleri'], ['denetim','Denetim']);
+              ['talep-rapor','Ürün Talepleri'], ['denetim','Denetim'], ['hafiza','Hafıza & Araçlar']);
   }
 
   const kok = U.el(`<header class="ust-cubuk">
@@ -455,6 +456,7 @@ function sayfaIcerigi(){
   if(!magaza) return U.el('<div class="bos-sayfa"><h2>Mağaza seçilmedi</h2><p>Üstteki listeden bir mağaza seçin.</p></div>');
   // Denetim listesini bölge müdürü görür ama işaretleyemez: işaretleme mağazanın işi.
   if(sayfa === 'denetim') return denetimEkrani(magaza, {duzenlenebilir: aktif.rol !== V.ROLLER.BOLGE});
+  if(sayfa === 'hafiza')  return hafizaEkrani(magaza, {duzenlenebilir: aktif.rol !== V.ROLLER.BOLGE});
   const duzenlenebilir = aktif.rol !== V.ROLLER.BOLGE;
   return magazaEkrani(magaza, {duzenlenebilir, yenile: uygulamaCiz});
 }

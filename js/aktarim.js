@@ -114,7 +114,7 @@ export function yedegiCozumle(metin){
         gunler: ham.gunler || {}, hedefler: ham.hedefler || {},
         urunHafta: ham.urunHafta || {}, rutinDurum: ham.rutinDurum || {},
         personel: ham.personel || [], kartlar: ham.kartlar || [], rutin: ham.rutin || [],
-        denetim: ham.denetim || null
+        denetim: ham.denetim || null, notlar: ham.notlar || ''
       }
     };
   }
