@@ -532,3 +532,23 @@ değiştirilebilir ama Blaze (faturalı) plan istiyor.
 hazır rutin listesi (Örneklem, Stok sayımı…) yalnızca örnek veri
 üretilirken yazılıyor. Yeni mağazada gün tablosu, personel, rutin ve
 hedefler boş.
+
+## 2026-09-28 — denetim checklist'i
+
+Menüye "Denetim" sayfası eklendi. 2026 Mağaza Denetim Kitapçığından
+üretilmiş liste: 7 grup (A–G), 46 başlık, 168 madde, toplam 100 puan.
+
+Metin `js/denetim-veri.js` içinde ve **elle yazılmadı** — kaynak markdown
+bir betikle bu dosyaya çevrildi. Kitapçık güncellenince dosya yeniden
+üretilir, elle düzenlenmez.
+
+İşaretler mağaza bazında (`denetim:<magaza>` → `ayarlar/denetim`) tutuluyor
+ve buluta gidiyor; bölge müdürü ve kurucu aynı durumu görüyor. Bölge
+müdürü işaretleyemiyor (işaretleme mağazanın işi).
+
+Üstteki özet dört sayı gösteriyor: işaretli madde, tamamlanma yüzdesi,
+**risk altındaki puan** (en az bir maddesi eksik olan başlıkların puan
+toplamı — kaybedilebilecek puanın üst sınırı) ve eksiği olan başlık
+sayısı. "Yeni denetim" düğmesi işaretleri sıfırlıyor.
+
+Dışa/içe aktarmaya da girdi: yedek dosyası denetim işaretlerini taşıyor.

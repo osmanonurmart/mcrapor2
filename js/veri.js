@@ -188,6 +188,22 @@ export function rutinDurumDegistir(magaza, haftaAnahtari, maddeId){
 export function ozetSekmesiGetir(magaza){ return oku('ozetSekme:' + magaza, 'gunluk'); }
 export function ozetSekmesiYaz(magaza, sekme){ yaz('ozetSekme:' + magaza, sekme); }
 
+// ---------------- Denetim checklist'i ----------------
+// {isaretli:{maddeId:true}, tarih}
+export function denetimGetir(magaza){
+  const d = oku('denetim:' + magaza, null);
+  return (d && typeof d === 'object') ? {isaretli: d.isaretli || {}, tarih: d.tarih || null}
+                                      : {isaretli:{}, tarih:null};
+}
+export function denetimYaz(magaza, d){ yaz('denetim:' + magaza, d); }
+export function denetimDegistir(magaza, maddeId){
+  const d = denetimGetir(magaza);
+  if(d.isaretli[maddeId]) delete d.isaretli[maddeId]; else d.isaretli[maddeId] = true;
+  d.tarih = new Date().toISOString();
+  denetimYaz(magaza, d);
+  return d;
+}
+
 // ---------------- Panel yerleşimi ----------------
 // Her mağaza panellerin sırasını ve boyutunu kendi ayarlar.
 export function yerlesimGetir(magaza){ return oku('yerlesim:' + magaza, {sira:{}, boyut:{}}); }
@@ -428,7 +444,7 @@ const ORTAK_AYAR = {
   'gorunum:bolge':    'gorunumBolge',
   'gorunum:satirlar': 'gorunumSatirlar'
 };
-const MAGAZA_AYAR = {personel:'personel', kartlar:'kartlar', rutin:'rutin'};
+const MAGAZA_AYAR = {personel:'personel', kartlar:'kartlar', rutin:'rutin', denetim:'denetim'};
 const MAGAZA_KOLEKSIYON = {gun:'gunler', hedef:'hedefler', urun:'urunHafta', rutinDurum:'rutinDurum'};
 
 function anahtarYolu(anahtar){
@@ -623,7 +639,8 @@ export function magazaVerisiniTopla(magaza){
     gunler:{}, hedefler:{}, urunHafta:{}, rutinDurum:{},
     personel: personelGetir(magaza),
     kartlar:  kartlarGetir(magaza),
-    rutin:    rutinGetir(magaza)
+    rutin:    rutinGetir(magaza),
+    denetim:  denetimGetir(magaza)
   };
   anahtarlar().forEach(a => {
     const p = a.split(':');
@@ -645,6 +662,8 @@ export function paketiAnahtarlaraCevir(magaza, paket){
   ['personel','kartlar','rutin'].forEach(a => {
     if(Array.isArray(paket[a]) && paket[a].length) girdiler.push([a + ':' + magaza, paket[a]]);
   });
+  if(paket.denetim && Object.keys(paket.denetim.isaretli || {}).length)
+    girdiler.push(['denetim:' + magaza, paket.denetim]);
   return girdiler;
 }
 
@@ -747,7 +766,7 @@ export function magazaSil(key){
   profilleriYaz(profilleriGetir().filter(p => p.key !== key));
   const db = dbAl();
   if(bulutAcik && db) db.collection(MAGAZALAR).doc(key).delete().catch(e => console.warn(e.message));
-  ['personel','kartlar','rutin'].forEach(a => sil(a + ':' + key));
+  ['personel','kartlar','rutin','denetim'].forEach(a => sil(a + ':' + key));
   ['gun','hedef','urun','rutinDurum'].forEach(on => {
     anahtarlar().filter(a => a.startsWith(on + ':' + key + ':')).forEach(sil);
   });

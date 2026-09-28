@@ -633,6 +633,71 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 .urun-rapor b{ display:block; margin-bottom:5px; }
 .urun-yukle{ margin-top:14px; display:flex; flex-direction:column; gap:7px; }
 .urun-yukle label{ font-size:.75rem; color:var(--soluk); }
+/* ---------- Denetim checklist'i ---------- */
+/* Satırlar ekran boyunca uzayıp okunmaz olmasın diye genişlik sınırlı. */
+.denetim-ekran{
+  display:flex; flex-direction:column; gap:12px; height:100%; min-height:0;
+  overflow:auto; padding-bottom:12px; width:100%; max-width:1080px; margin:0 auto;
+}
+.denetim-ozet{ display:flex; flex-wrap:wrap; gap:8px; }
+.d-kutu{
+  flex:1 1 130px; display:flex; flex-direction:column; gap:1px;
+  border:var(--cerceve) solid var(--cizgi); border-radius:9px; padding:7px 10px; background:var(--kagit);
+}
+.d-kutu.genis{ flex:1 1 100%; flex-direction:row; align-items:center; justify-content:space-between; gap:10px; }
+.d-buyuk{ font-size:1.1rem; font-weight:700; }
+.d-alt{ font-size:.68rem; color:var(--soluk); }
+.d-kutu.riskli .d-buyuk{ color:var(--dusus); }
+.d-kutu.tamam .d-buyuk{ color:var(--artis); }
+
+.denetim-genel{ border:var(--cerceve) solid var(--cizgi); border-radius:9px; background:var(--zemin-3); padding:8px 11px; }
+.denetim-genel summary{ cursor:pointer; font-size:.78rem; font-weight:700; }
+.denetim-genel ul{ margin:8px 0 0 16px; font-size:.75rem; line-height:1.55; color:var(--yazi); }
+.denetim-genel li{ margin-bottom:4px; }
+
+.denetim-liste{ display:flex; flex-direction:column; gap:9px; }
+.d-grup{ border:var(--cerceve) solid var(--cizgi); border-radius:9px; background:var(--kagit); overflow:hidden; }
+.d-grup > summary{
+  display:flex; align-items:center; gap:9px; cursor:pointer; padding:8px 11px;
+  background:var(--baslik-zemin); color:var(--baslik-yazi); font-size:.8rem; font-weight:700;
+}
+.d-harf{
+  flex:0 0 auto; width:20px; height:20px; display:grid; place-items:center; border-radius:6px;
+  background:var(--vurgu); color:#fff; font-size:.7rem;
+}
+.d-grup-ad{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.d-grup-sayac{ font-size:.7rem; font-weight:700; color:var(--dusus); background:var(--dusus-zemin); border-radius:20px; padding:1px 8px; }
+.d-grup-sayac.tamam{ color:var(--artis); background:#e6f2ea; }
+.d-grup-puan{ font-size:.68rem; font-weight:600; color:var(--soluk); }
+.d-sorular{ display:flex; flex-direction:column; }
+
+.d-soru{ border-top:1px solid var(--cizgi-ince); padding:9px 11px 10px; }
+.d-soru.tamam{ background:#f4faf6; }
+.d-soru-ust{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.d-no{
+  flex:0 0 auto; min-width:20px; height:19px; padding:0 5px; display:grid; place-items:center;
+  border-radius:6px; background:var(--zemin-2); color:var(--soluk); font-size:.68rem; font-weight:700;
+}
+.d-soru-metin{ flex:1; min-width:0; font-size:.79rem; font-weight:600; }
+.d-soru-puan{ flex:0 0 auto; font-size:.68rem; font-weight:700; color:var(--vurgu); }
+.d-soru-sayac{ flex:0 0 auto; font-size:.66rem; color:var(--soluk); }
+.d-maddeler{ display:flex; flex-direction:column; gap:3px; }
+.d-madde{
+  display:flex; align-items:flex-start; gap:7px; cursor:pointer;
+  border:1px solid var(--cizgi-ince); border-radius:7px; padding:4px 7px; background:var(--kagit);
+}
+.d-madde:hover{ border-color:var(--vurgu); }
+.d-madde.kilitli{ cursor:default; }
+.d-madde.kilitli:hover{ border-color:var(--cizgi-ince); }
+.d-kutucuk{
+  flex:0 0 auto; width:14px; height:14px; margin-top:1px; display:grid; place-items:center;
+  border:1px solid var(--cizgi); border-radius:4px; font-size:.6rem; color:#fff; line-height:1;
+}
+.d-madde.bitti .d-kutucuk{ background:var(--artis); border-color:var(--artis); }
+.d-madde-metin{ flex:1; min-width:0; font-size:.74rem; line-height:1.45; }
+.d-madde.bitti .d-madde-metin{ color:var(--soluk); }
+.d-puanlama{ margin-top:6px; font-size:.68rem; line-height:1.5; color:var(--soluk); }
+
 /* ---------- Dışa / içe aktarma ---------- */
 .aktarim{ display:flex; flex-direction:column; gap:12px; min-width:min(520px, 80vw); }
 .dosya-sec{ display:block; }
@@ -738,6 +803,9 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
   .ust-sag [data-iceaktar]{ display:none; }
   .hafta-gezinti{ flex-direction:column; gap:10px; }
 
+  .d-kutu{ flex:1 1 calc(50% - 4px); }
+  .d-soru-metin{ font-size:.75rem; }
+  .d-madde-metin{ font-size:.71rem; }
   .duyuru-satir{ white-space:normal; }
   .hafta-listesi{ gap:6px; }
   .ozet-tablo{ min-width:720px; }
@@ -1322,10 +1390,10 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   function rutinDurumGetir(magaza, haftaAnahtari) {
     return oku("rutinDurum:" + magaza + ":" + haftaAnahtari, {});
   }
-  function rutinDurumDegistir(magaza, haftaAnahtari, maddeId) {
+  function rutinDurumDegistir(magaza, haftaAnahtari, maddeId2) {
     const d = rutinDurumGetir(magaza, haftaAnahtari);
-    if (d[maddeId]) delete d[maddeId];
-    else d[maddeId] = true;
+    if (d[maddeId2]) delete d[maddeId2];
+    else d[maddeId2] = true;
     yaz("rutinDurum:" + magaza + ":" + haftaAnahtari, d);
     return d;
   }
@@ -1334,6 +1402,21 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
   function ozetSekmesiYaz(magaza, sekme) {
     yaz("ozetSekme:" + magaza, sekme);
+  }
+  function denetimGetir(magaza) {
+    const d = oku("denetim:" + magaza, null);
+    return d && typeof d === "object" ? { isaretli: d.isaretli || {}, tarih: d.tarih || null } : { isaretli: {}, tarih: null };
+  }
+  function denetimYaz(magaza, d) {
+    yaz("denetim:" + magaza, d);
+  }
+  function denetimDegistir(magaza, maddeId2) {
+    const d = denetimGetir(magaza);
+    if (d.isaretli[maddeId2]) delete d.isaretli[maddeId2];
+    else d.isaretli[maddeId2] = true;
+    d.tarih = (/* @__PURE__ */ new Date()).toISOString();
+    denetimYaz(magaza, d);
+    return d;
   }
   function yerlesimGetir(magaza) {
     return oku("yerlesim:" + magaza, { sira: {}, boyut: {} });
@@ -1574,7 +1657,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     "gorunum:bolge": "gorunumBolge",
     "gorunum:satirlar": "gorunumSatirlar"
   };
-  var MAGAZA_AYAR = { personel: "personel", kartlar: "kartlar", rutin: "rutin" };
+  var MAGAZA_AYAR = { personel: "personel", kartlar: "kartlar", rutin: "rutin", denetim: "denetim" };
   var MAGAZA_KOLEKSIYON = { gun: "gunler", hedef: "hedefler", urun: "urunHafta", rutinDurum: "rutinDurum" };
   function anahtarYolu(anahtar) {
     if (ORTAK_LISTE[anahtar]) return { tur: "ortakListe", belge: ORTAK_LISTE[anahtar] };
@@ -1735,7 +1818,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       rutinDurum: {},
       personel: personelGetir(magaza),
       kartlar: kartlarGetir(magaza),
-      rutin: rutinGetir(magaza)
+      rutin: rutinGetir(magaza),
+      denetim: denetimGetir(magaza)
     };
     anahtarlar().forEach((a) => {
       const p = a.split(":");
@@ -1755,6 +1839,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     ["personel", "kartlar", "rutin"].forEach((a) => {
       if (Array.isArray(paket[a]) && paket[a].length) girdiler.push([a + ":" + magaza, paket[a]]);
     });
+    if (paket.denetim && Object.keys(paket.denetim.isaretli || {}).length)
+      girdiler.push(["denetim:" + magaza, paket.denetim]);
     return girdiler;
   }
   async function topluAnahtarYaz(girdiler) {
@@ -1852,7 +1938,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     profilleriYaz(profilleriGetir().filter((p) => p.key !== key));
     const db2 = dbAl();
     if (bulutAcik && db2) db2.collection(MAGAZALAR).doc(key).delete().catch((e) => console.warn(e.message));
-    ["personel", "kartlar", "rutin"].forEach((a) => sil(a + ":" + key));
+    ["personel", "kartlar", "rutin", "denetim"].forEach((a) => sil(a + ":" + key));
     ["gun", "hedef", "urun", "rutinDurum"].forEach((on) => {
       anahtarlar().filter((a) => a.startsWith(on + ":" + key + ":")).forEach(sil);
     });
@@ -3396,7 +3482,8 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           rutinDurum: ham.rutinDurum || {},
           personel: ham.personel || [],
           kartlar: ham.kartlar || [],
-          rutin: ham.rutin || []
+          rutin: ham.rutin || [],
+          denetim: ham.denetim || null
         }
       };
     }
@@ -3561,6 +3648,691 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         sonuc.innerHTML = `<div class="uyari">Yazılamadı: ${esc(e.message)}</div>`;
       }
     }
+  }
+
+  // js/denetim-veri.js
+  var DENETIM = {
+    baslik: "Mağaza Denetim Checklist 2026",
+    giris: "2026 Mağaza Denetim Kitapçığına göre hazırlanmıştır. Kurum içi bilgidir, dışarıyla paylaşılmamalıdır.",
+    genel: [
+      "Sorunlar ilk 5 gün içinde ilgili departmana bildirilmeli (mail + EBA). 5 günden sonra atılan mail puan kaybettirir (risk analizi geçerliliği, yangın tüpü bakımı, ilk yardım SKT vb.).",
+      "Problem/talep mailleri ilgili departmanlara aylık periyotta iletilmeli.",
+      "30.000 TL ve üzeri tahsilat/ödeme banka aracılığıyla yapılmalı, muhasebe ile iletişime geçilmeli.",
+      "Mağazadan toplu satış üst limiti 40.000 TL. Üzeri kurumsal satış olarak merkezden yapılır.",
+      "Denetim sonrası aksiyonlar 3 gün içinde girilmeli, 5 gün içinde tamamlanmalı. Aksi halde 2 puan kesilir.",
+      "Önceki denetimdeki bulgu tekrar ederse o maddeden tam puan kesilir.",
+      "İki denetim arası evraklar kasa alanında veya depoda klasörlü ve kolay ulaşılır şekilde saklanmalı."
+    ],
+    gruplar: [
+      { harf: "A", ad: "Kasa alanı ve düzeni", sorular: [
+        {
+          no: 1,
+          puan: 6,
+          metin: "Kasa nakdi ile kasa raporları uygun mu?",
+          maddeler: [
+            "IBM kasadan aktarım yapıldı, Nebim bakiyesi ile fiili tutar karşılaştırıldı (±50 TL tolerans)",
+            "Günlük kasa sayım tutanağı her gün dolduruldu ve klase edildi",
+            "50 TL üzeri farklarda tutanağa açıklama notu yazıldı",
+            "Farklar için muhasebeye nedeni detaylı yazılmış mail atıldı (her fark için, sadece bir kez değil)",
+            "Sistemsel farklar için muhasebeden yazılı dönüş alındı",
+            "Kasadan nakit alışveriş yapılmadı, yeterli bozuk para bırakıldı",
+            "Kasaya acil para konulduysa tediye/tutanak/not var ve mağaza yöneticisinin bilgisi var"
+          ],
+          puanlama: "Günlük kasa farkı: 50-100 TL → 1, 100-150 TL → 2, 150-200 TL → 3 puan (max 3). Geçmiş fark/tutanak/kasadan para kullanımı: 3 puan. Mağaza kaynaklı farklarda (fiyat farkı, yanlış para üstü) mail atılsa da puan kırılır."
+        },
+        {
+          no: 2,
+          puan: 2,
+          metin: "Kasada belirtilen miktarda devir tutarı bulunuyor mu?",
+          maddeler: [
+            "Gün sonu kasada kalan tutar 500 TL'yi geçmiyor",
+            "500 TL aşıldıysa muhasebeye sebebiyle birlikte mail atıldı",
+            'Maile portal ekran görüntüsü eklendi, bankalar ve "devir" ibaresi yazıldı',
+            "Kasadan para alındıysa bilgilendirme yapıldı"
+          ],
+          puanlama: "1 bulgu → 1 puan, daha fazlası → tam puan (2). Kasadan para alınıp bilgi verilmemişse tam puan kırılır."
+        },
+        {
+          no: 3,
+          puan: 3,
+          metin: "Bankaya para yatırma zamanında ve uygun yapılıyor mu?",
+          maddeler: [
+            "500 TL üstü nakit bankaya günlük yatırıldı",
+            "Yatırılamadıysa kapanışta muhasebeye neden bildirildi",
+            "Yatırılamayan nakit ertesi gün 13:00'e kadar yatırıldı (olmadıysa mail atıldı)",
+            "Banka dekontlarının kopyası mağazada saklanıyor",
+            "ATM arızası/para sıkışması için yazışma var, fotoğraf eklendi, takip no muhasebeye iletildi",
+            "Kasa devrinde döviz (USD, EUR) bırakılmadı; bırakıldıysa günlük muhasebeye bildirildi"
+          ],
+          puanlama: "1 bulgu → 1, 2 bulgu → 2, 2'den fazla → tam puan (3)."
+        },
+        {
+          no: 4,
+          puan: 2,
+          metin: "Ödeme/ÖKC işlemleri doğru yapılıyor mu?",
+          maddeler: [
+            'Portalda her bankada Nebim ve V3 tutarları aynı, yanında yeşil "Evet" var',
+            "Ödeme geçişmeleri için muhasebeye mail atıldı"
+          ],
+          puanlama: "2 bulgu olursa puan kesilir (2)."
+        },
+        {
+          no: 5,
+          puan: 3,
+          metin: "Tediye makbuzu kullanılıyor mu, kullanımı uygun mu?",
+          maddeler: [
+            "Kasadan çıkan her nakit (banka yatırma dahil) için tediye makbuzu önceden düzenlendi",
+            "Seri-sıra no düzenli, karışık değil",
+            "En az 2 imza var (shift kontrolüne göre)",
+            "Açıklama kısmı dolduruldu (ATM'nin almadığı tutar, nakit iade vb.)"
+          ],
+          puanlama: "1 bulgu → 1, 2 bulgu → 2, fazlası → tam puan (3). Makbuz yoksa, imza eksikse, seri-sıra karışıksa puan kaybı."
+        },
+        {
+          no: 6,
+          puan: 3,
+          metin: "İptal işlemleri prosedüre uygun yapılıyor mu?",
+          maddeler: [
+            "İptal fişleri mağaza yöneticisince günlük kontrol edildi",
+            'Arka nüshada "Kontrol Edildi" kaşesi, personel ad-soyad, görev, imza ve iptal nedeni var',
+            "İptal fiş tutanağı tarih ve seri sırasına uygun, mağaza müdürü imzası var",
+            "Bölge müdürü, son ziyaretinden önceki tamamlanmış tutanakları imzaladı (güncel tutanak imzasız)",
+            "Müdür yokken kaşe basan personel için vekalet tutanağı var",
+            "Kayıp iptal fişi varsa Kayıp Önleme'ye tarih-saat, bölge müdürüne mail ve örnekleme sayım bilgisi iletildi",
+            "Askıya alınan fişler kasa kapanışından önce geri çağrılıp iptal edildi"
+          ],
+          puanlama: "İptal fişi/tutanak: 1, iptal nedeni/kaşe/imza: 1, kayıp fiş ve askı fişi: 1 puan. 3 ve üzeri kayıp fişte tam puan."
+        },
+        {
+          no: 7,
+          puan: 6,
+          metin: "İade işlemleri prosedüre uygun yapılıyor mu?",
+          maddeler: [
+            "Nakit iade öncesi bölge müdürüne mail atıldı, operasyon müdüründen onay alındı (iade onaydan sonra yapıldı)",
+            "30 gün üstü iadelerde bölge müdürü yazılı onayı var",
+            "Satış ve iade ödeme yöntemi aynı",
+            "İkinci kalite, set-boz ve outlet ürünlerde iade/değişim yapılmadı",
+            "Kurumsal satış fatura iadeleri sürece uygun"
+          ],
+          puanlama: "İade süreci: 5 puan. Kurumsal satış fatura iadesi: 1 puan. Kural: 30 gün içinde, fiş/fatura/e-arşiv/slip ile iade veya değişim."
+        },
+        {
+          no: 8,
+          puan: 1,
+          metin: "Personel indirim işlemleri prosedüre uygun mu?",
+          maddeler: [
+            "Personel indirimi cuma günü veya bölgeye tanımlı indirim günlerinde yapıldı",
+            "Aylık 2.500 TL limit aşılmadı",
+            "Farklı günde yapıldıysa bölge/operasyon müdürü onay maili var"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 9,
+          puan: 1,
+          metin: "Kasa alanı düzeni ve temizliği uygun mu?",
+          maddeler: [
+            "Kasa alanı ve çevresi temiz",
+            "Görseller ve ürünler düzenli"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 10,
+          puan: 1,
+          metin: "Mağaza ve kasalar zamanında açılıyor mu?",
+          maddeler: [
+            "Mağaza açılış saatinde açıldı",
+            "Kasa sistemi açılış saatinde hizmete hazır"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 11,
+          puan: 2,
+          metin: "Her personelin kendi kullanıcı kodu var mı, yetkiler doğru mu?",
+          maddeler: [
+            "Her personelin kendi kullanıcı kodu var, işlemler kendi koduyla yapılıyor",
+            "İptal, iade gibi kritik yetkiler sadece yetkili personelde",
+            "Kullanıcı kodları kasa çevresinde yazılı veya görünür değil"
+          ],
+          puanlama: "2 puan."
+        },
+        {
+          no: 12,
+          puan: 2,
+          metin: "Müşteri kayıtları ve Prestige programı prosedüre uygun mu?",
+          maddeler: [
+            "Prestige kayıtta isim, soyisim, doğum tarihi, adres, telefon eksiksiz alınıyor",
+            '"Müşteri bağla" günlük max 3, aylık max 5 kullanımı aşılmadı, usulsüz kullanılmadı',
+            "OTP ile verilen izinler hakkında müşteri bilgilendiriliyor",
+            'Telefon vermek istemeyen müşteri için "Telefon Numarasız Satış" kullanılıyor',
+            "Puanlar eş, dost, akraba üzerinden tek hesapta toplanmıyor",
+            "Kurumsal fatura isteyene Prestige puanı verilmiyor",
+            "İş ortaklığı kodları müşteriden alınıyor, personel kod temin etmiyor",
+            "SMS iptali isteyen müşteri Prestige App / Madame Coco App / web sitesine yönlendiriliyor",
+            "Son tamamlanan ayın Prestige kayıt oranı %80 ve üzeri"
+          ],
+          puanlama: "Müşteri kayıt ve müşteri bağla: 1 puan. Prestige kayıt oranı: %80 altı → minimum kesinti, %60 altı → tam puan. Puanlar 31 Aralık'ta silinir."
+        }
+      ] },
+      { harf: "B", ad: "Yasal evrak düzeni", sorular: [
+        {
+          no: 13,
+          puan: 3,
+          metin: "Resmi evraklar usulüne uygun bulunduruluyor mu?",
+          maddeler: [
+            "Asılı: İşyeri Açma ve Çalışma Belgesi",
+            "Asılı: Sigara İçilmez görseli, Müşteri Bilgilendirme Levhası",
+            "Asılı: İade ve Değişim Levhası, Kamera İzleme Bilgilendirme Yazısı",
+            "Vergi Levhası klase edilmiş (asma zorunlu değil)",
+            "ÖKC Ruhsatnamesi var, seri numarası cihazla eşleşiyor",
+            "İlan Reklam ve Çevre Temizlik Vergisi makbuzu ve Faaliyet Belgesi var",
+            'KVKK görseli, Personel Harici Bilgilendirme, "Bizimle çalışmak ister misiniz?", Prestige görseli, Kozmetik Taksitlendirme Levhası var',
+            "Cadde mağazasıysa çalışma saatleri asılı",
+            '"Sizin için ne yapabiliriz?" hizmet kartları kasada temiz ve düzgün',
+            "Banka kampanya POP'ları güncel ve doğru kullanılmış"
+          ],
+          puanlama: "1'den fazla bulguda tam puan (3)."
+        },
+        {
+          no: 14,
+          puan: 4,
+          metin: "Gider pusulaları mevzuata uygun düzenleniyor mu?",
+          maddeler: [
+            "İşlemi yapan personel ve mağaza yöneticisinin ad-soyad ve imzası var",
+            "Müşteri ad-soyad, adres, telefon, imza ve iade nedeni var",
+            '"Kontrol edildi" kaşesi var, firma kaşesi güncel',
+            "Seri-sıra numarası takip ediliyor, klase edilmiş",
+            "Fişsiz değişim ve 30 gün üstü iadede bölge müdürü onay maili arkasına eklendi",
+            "Yabancı müşteride bilgi alınamadıysa not düşüldü",
+            "Tam iadede fişin aslı, parçalı iadede fotokopisi arkasına eklendi, ürünler fişte işaretlendi"
+          ],
+          puanlama: "Her başlık 1 puan, kontrol edilen pusula sayısına göre değerlendirilir (max 4)."
+        },
+        {
+          no: 15,
+          puan: 1,
+          metin: "Sevk irsaliyeleri mevzuata uygun düzenleniyor mu?",
+          maddeler: [
+            "Tüm nüshalarda teslim eden/alan ad-soyad, mağaza kaşesi ve imza var",
+            "Tarih sırası izleniyor, VD ve vergi no tam",
+            "Gönderen ve alıcı bilgileri eksiksiz",
+            "Önceden hazırlanmış irsaliye yok, firma kaşesi güncel",
+            "İptal irsaliyeler seri sırasıyla klasörde"
+          ],
+          puanlama: "5 ve üzeri bulguda puan kaybı (1)."
+        },
+        {
+          no: 16,
+          puan: 1,
+          metin: "Muhasebe evrakları ayda bir gönderiliyor mu?",
+          maddeler: [
+            "GP 2. nüshaları, nakit iade formu, gün sonu, slipler, IBM Z raporu ayda bir gönderildi",
+            "Gönderime ait kargo tutanağı arşivlendi (Sendeo'dan teyit edilebilir)",
+            "Masraf formları ve fiş-faturalar muhasebe evrakından ayrı gönderildi"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 17,
+          puan: 1,
+          metin: "Gelen resmi evraklar merkeze gönderildi mi, unutulan eşya süreci uygun mu?",
+          maddeler: [
+            "Su faturası, ticaret odası, belediye, tüketici hakem heyeti, icra/haciz evrakları Muhasebe'ye gönderildi",
+            "Unutulan eşya için iki kişiyle tutanak tutuldu",
+            "Bölge müdürüne bilgi verildi, iletişim bilgisi varsa müşteriye dönüldü"
+          ],
+          puanlama: "İki seçenekten biri eksikse puan kesilir (1)."
+        }
+      ] },
+      { harf: "C", ad: "Vitrin ve satış alanı", sorular: [
+        {
+          no: 18,
+          puan: 1,
+          metin: "Dış cephe ve vitrin düzeni/temizliği uygun mu?",
+          maddeler: [
+            "Mağaza önü, vitrin ve camlar temiz",
+            "Vitrindeki ürün ve görseller düzenli",
+            "Giriş aydınlatması ve tabela sağlam",
+            "Karşılama masası sezona uygun"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 19,
+          puan: 2,
+          metin: "Mağaza içi düzen ve temizlik uygun mu?",
+          maddeler: [
+            "Tozlu/deforme raf veya ürün yok, çekmeceler düzenli",
+            "Sevkiyat kolileri müşteri yolunu ve ürünlerin önünü kapatmıyor",
+            "Zemin, tavan, aydınlatma, elektrik kullanımı ve stantlar sağlam"
+          ],
+          puanlama: "İç düzen/temizlik: 1, zemin-tavan-aydınlatma-stant: 1 puan."
+        },
+        {
+          no: 20,
+          puan: 1,
+          metin: "Raflarda ürün sayısı yeterli mi?",
+          maddeler: [
+            "Raflarda ve orta ünitelerde aşırı doluluk veya boşluk yok",
+            "Eksik ürünler için ilgili departmana bilgi verildi"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 21,
+          puan: 6,
+          metin: "Ürünlerde barkod ve fiyat etiketi var mı, güncel mi?",
+          maddeler: [
+            "Satıştaki tüm ürünlerde barkod ve fiyat etiketi var",
+            "El terminaliyle örnek ürünlerde fiyatlar sistemle aynı",
+            "Haftalık hedef fiyat çalışmasındaki fiyatlar termin süresinde değiştirildi"
+          ],
+          puanlama: "50 üründe 2-4-6-8-10 farklılık → 1-2-3-4-5 puan, 15'ten fazla → 6 puan."
+        },
+        {
+          no: 22,
+          puan: 1,
+          metin: "Kampanya vitrin ve masa sunumları floorset rehberine uygun mu?",
+          maddeler: [
+            "Karşılama masası, floorset sunumu, vitrin poster ve sticker'ları güncel ve doğru",
+            "Kapı önü forex ve kampanya görselleri güncel, hasarlılar için talep açıldı",
+            "Kasa önü/arkası pop'lar ve tavan A3 pleksiler rehbere uygun"
+          ],
+          puanlama: "1 puan."
+        }
+      ] },
+      { harf: "D", ad: "Depo düzeni ve stok", sorular: [
+        {
+          no: 23,
+          puan: 2,
+          metin: "Depo ve raf alanı düzeni uygun mu?",
+          maddeler: [
+            "Depo temiz, rafların üstünde ağır malzeme yok, koliler gelişigüzel değil",
+            "Koliler adreslenmiş, üzerinde içindeki ürün bilgisi yazılı"
+          ],
+          puanlama: "Depo düzen/güvenlik: 1, koli açıklaması: 1 puan. Depo yoksa kapsam dışı."
+        },
+        {
+          no: 24,
+          puan: 1,
+          metin: "Depoda satışa çıkmamış ürün var mı, hareketsiz ürünler reyonda mı?",
+          maddeler: [
+            "Depodaki ürünler reyonda da mevcut",
+            "6 aydır satılmayan ve envanteri olan ürünler reyonda sergileniyor"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 25,
+          puan: 5,
+          metin: "Ürün sevk süreçlerine uyuluyor mu? (A02-A44)",
+          maddeler: [
+            "A02 (set-boz/2. kalite): bölge müdürü eşliğinde tutanak, MM ve BM imzası; sarı nüsha irsaliye kontrolü",
+            "A04/A14 (sevkiyat farkı): irsaliyede ürün, yetkili ad-soyad, imza, kaşe var",
+            "A24 (kırık/hasarlı): kargo görevlisiyle veya fark eden personelce tutanak, iki personel imzası",
+            "A25 (ürün inceleme): Dynamics bilgileri eksiksiz, talep atandı, sonuçtan sonra 5 gün içinde kapatıldı, mükerrer çıkış yok",
+            "A44 (pazarlama): pazarlamadan talep maili var",
+            "Genel sayım tutanağı ıslak imzalı (sayım başkanı, BM, MM, sayman) ve klase edilmiş",
+            "Kırık imha, 2. kalite, set-boz tutanakları bilgisayarda yazılmış, sadece imzalar elle"
+          ],
+          puanlama: "Üç bağımsız depo sürecinde 3'ten fazla bulgu → tam puan (5)."
+        },
+        {
+          no: 26,
+          puan: 3,
+          metin: "Sevk onaysız irsaliye var mı, ürünler okutularak kabul edildi mi?",
+          maddeler: [
+            "Gelen ürünlerin kabulü ve irsaliye onayı aynı gün yapıldı",
+            "Ürünler tek tek okutularak kabul edildi (48 saat otomatik onay yok)",
+            "Bekleme deposunda İstanbul içi 3, dışı 7 günü aşan irsaliye için bilgi verildi"
+          ],
+          puanlama: "İrsaliye onayı: 2, bekleme deposu: 1 puan."
+        },
+        {
+          no: 27,
+          puan: 5,
+          metin: "Örnek ürünlerin fiziki sayımı tutuyor mu?",
+          maddeler: [
+            "Örneklem sayımı yapılıp tutanağa alındı (çok/az satan, hareketsiz, eksi stok, iptal, iade)",
+            "Tester ürünlerin çıkışı yapıldı, SKT'leri kontrol edildi"
+          ],
+          puanlama: "100 üründe 4-6 eksik → 2-3 puan, 8 ve üzeri → 4 puan. Tester ve SKT: 1 puan."
+        },
+        {
+          no: 28,
+          puan: 1,
+          metin: "Haftalık örneklem sayım yapıldı ve iletildi mi?",
+          maddeler: [
+            "Stok kontrolün belirlediği spot sayımlar yapıldı",
+            "Liste ilgili departmana/bölge müdürüne iletildi"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 29,
+          puan: 3,
+          metin: "Eksi stok farkı var mı?",
+          maddeler: [
+            "Eksi stok raporu (Nebim V3 Ürün Envanter Raporu) kontrol edildi",
+            "Eksi stok, toplam stokun binde birinin altında"
+          ],
+          puanlama: "Toplam stokun binde 1-2-3'ü eksi ise 1-2-3 puan."
+        }
+      ] },
+      { harf: "E", ad: "Personel", sorular: [
+        {
+          no: 30,
+          puan: 1,
+          metin: "Müşteri karşılama, ürün/sistem bilgisi ve in-store yönlendirme yeterli mi?",
+          maddeler: [
+            "Her müşteri karşılanıyor ve uğurlanıyor",
+            "Ürün ve sistem bilgisi yeterli",
+            "Stokta olmayan ürün için in-store yönlendirme yapılıyor",
+            "Denetçilerle iletişim ve üslup uygun"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 31,
+          puan: 1,
+          metin: "Personel iletişimi standartlara uygun mu?",
+          maddeler: [
+            "Müşteriyle ve ekip içinde iletişim kurumsal kimliğe uygun"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 32,
+          puan: 1,
+          metin: "Personel ve etik yönetmeliğine uyuluyor mu?",
+          maddeler: [
+            "Personel, disiplin ve etik yönetmeliğine uygun davranılıyor",
+            "Şirket bilgisayarı gibi araçlar iş dışı kullanılmıyor"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 33,
+          puan: 1,
+          metin: "Kıyafet, önlük, yaka kartı ve kişisel bakım uygun mu?",
+          maddeler: [
+            "Kıyafet kuralına uyuluyor",
+            "Önlük ve yaka kartı takılı",
+            "Kişisel bakıma özen gösteriliyor"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 34,
+          puan: 1,
+          metin: "Tüm personel yıllık KVKK eğitimini tamamladı mı?",
+          maddeler: [
+            "Tüm personelin geçerli KVKK eğitim kaydı var",
+            "Bilgi vermek istemeyen müşteriden zorla iletişim bilgisi istenmiyor"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 35,
+          puan: 2,
+          metin: "Çalışma çizelgesi kurallarına uyuluyor mu, geçici görevlendirme formu var mı?",
+          maddeler: [
+            "Haftalık çizelge, puantaj ve yıllık izinler düzgün",
+            "Part-time çalışanlar haftalık 30, aylık 120 saati aşmıyor",
+            "Haftalık çizelge Shiftup'ta bölge müdürüne onaylatıldı",
+            "Geçici görevlendirme formu (sayım, destek, toplantı, eğitim, açılış) her iki mağazada ve Shiftup'ta var",
+            "Denkleştirme izinleri için form düzenlenip Shiftup'a eklendi",
+            "Mağaza yöneticisinin kullanıcısı bilgisayarda açık/otomatik kayıtlı değil",
+            "Geçmişe dönük manuel düzenlemeler için ilgili yere bilgi verildi"
+          ],
+          puanlama: "Çalışma çizelgesi: 1, geçici görevlendirme: 1 puan."
+        },
+        {
+          no: 36,
+          puan: 2,
+          metin: "Mağazada olmayan personel adına satış yapılmış mı?",
+          maddeler: [
+            "İzin, rapor, toplantı günlerinde personel adına satış yapılmadı"
+          ],
+          puanlama: "2 puan."
+        },
+        {
+          no: 37,
+          puan: 1,
+          metin: "Ödemesi yapılmadan kullanılan mağaza ürünü var mı?",
+          maddeler: [
+            "Çöp kutusu, kupa vb. mağaza ürünleri bedelsiz kullanılmıyor",
+            "Satın alınan ürünlerin fiş/faturası saklanıyor"
+          ],
+          puanlama: "1 puan."
+        }
+      ] },
+      { harf: "F", ad: "Mağaza cihaz kullanımı", sorular: [
+        {
+          no: 38,
+          puan: 2,
+          metin: "Donanım ve elektronik aksam sağlıklı çalışıyor mu?",
+          maddeler: [
+            "Kamera sistemi kayıt yapıyor, arızada EBA kaydı açıldı",
+            "POS adedi doğru, fazla cihaz bildirildi",
+            "IT kabinet, UPS, bilgisayar, barkod, fatura yazıcı, PTC, müşteri sayım cihazı, müzik yayını çalışıyor",
+            "Arızalar ilgili birime bildirildi",
+            "İnternet doğru amaçla kullanılıyor (geçmiş kontrol edilir)",
+            "IT kabinet üzerine ürün/malzeme konmamış"
+          ],
+          puanlama: "İki ve üzeri bulguda tam puan (2)."
+        },
+        {
+          no: 39,
+          puan: 2,
+          metin: "Alarm kullanıcıları güncel mi, anahtar zimmet formu var mı?",
+          maddeler: [
+            "Alarm kullanıcıları güncel",
+            "2 ayı geçmiş onaylı her personele alarm yetkisi tanımlı",
+            "Alarm yetkisi olan her personelin anahtar zimmet formu var"
+          ],
+          puanlama: "1 bulgu → 1, 2'den fazla → tam puan (2)."
+        }
+      ] },
+      { harf: "G", ad: "İş güvenliği", sorular: [
+        {
+          no: 40,
+          puan: 1,
+          metin: "Acil çıkış ve ikaz levhaları/aydınlatmaları uygun mu?",
+          maddeler: [
+            "Acil çıkış levhaları ve aydınlatmaları var, yönlendirmeler doğru",
+            "Uyarı/ikaz levhaları (elektrik panosu vb.) mevcut"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 41,
+          puan: 2,
+          metin: "Yangın tüpleri uygun mu?",
+          maddeler: [
+            "Yıllık bakımı yapılmış, bakım bandrolü var, SKT uygun",
+            "Yerden 90 cm yükseklikte, levhası görünür",
+            "Haftalık yangın tüpü formu dolduruluyor"
+          ],
+          puanlama: "2 puan."
+        },
+        {
+          no: 42,
+          puan: 2,
+          metin: "İlk yardım çantası eksiksiz mi?",
+          maddeler: [
+            "Flaster 1 kutu, rulo sargı bezi 3, steril gazlı bez 2 paket",
+            "Elastik bandaj 1, üçgen bandaj 3, latex eldiven 1 kutu, çengelli iğne 6",
+            "Makas, batikon 1 kutu, oksijenli su 1 kutu, çöp poşeti 1 paket",
+            "Sıcak-soğuk kompres, kurşun kalem, not defteri, el feneri, düdük, cımbız, alüminyum yanık örtüsü",
+            "Malzemelerin son kullanma tarihleri geçmemiş"
+          ],
+          puanlama: "2 ve üzeri eksikte tam puan (2)."
+        },
+        {
+          no: 43,
+          puan: 3,
+          metin: "Elektrik panosu ve jeneratör uygun mu?",
+          maddeler: [
+            "Pano önünde yalıtkan paspas var, çevresinde yanıcı malzeme yok",
+            "Yanında karbondioksitli (halı karbon) yangın tüpü ve kullanma talimatı var",
+            "Jeneratör her ay kontrol edildi, aylık form dosyalandı"
+          ],
+          puanlama: "Elektrik panosu: 2, jeneratör: 1 puan."
+        },
+        {
+          no: 44,
+          puan: 1,
+          metin: "İSG eğitimleri alınmış mı?",
+          maddeler: [
+            "Her personelin İSG sertifikası var",
+            "Sertifikası gelmeyenler için danışman firmaya talep ve hatırlatma maili var",
+            "Mağaza bazlı İSG listesi akademi@madamecoco.com adresine gönderildi"
+          ],
+          puanlama: "1 puan."
+        },
+        {
+          no: 45,
+          puan: 2,
+          metin: "Risk analizi formu ve acil durum eylem planı var mı?",
+          maddeler: [
+            "İş güvenliği risk analizi formu var ve geçerli",
+            "Acil durum eylem planı var"
+          ],
+          puanlama: "Risk analizi: 1, acil eylem planı: 1 puan."
+        },
+        {
+          no: 46,
+          puan: 2,
+          metin: "Genel İSG kurallarına aykırı durum var mı?",
+          maddeler: [
+            "Mağaza ve depoda tehlikeli kablo, priz, çivi yok",
+            "Basamak, alçak tavan, korkuluk gibi riskli alanlar güvenli"
+          ],
+          puanlama: "2 puan."
+        }
+      ] }
+    ]
+  };
+  var TOPLAM_PUAN = DENETIM.gruplar.reduce((t, g) => t + g.sorular.reduce((s, q) => s + q.puan, 0), 0);
+  var TUM_MADDELER = DENETIM.gruplar.flatMap((g) => g.sorular.flatMap((s) => s.maddeler.map((m, i) => ({ id: "s" + s.no + "_" + i, soru: s.no, metin: m }))));
+  var maddeId = (soruNo, i) => "s" + soruNo + "_" + i;
+
+  // js/denetim.js
+  function denetimEkrani(magazaKey, secenekler = {}) {
+    const duzenlenebilir = secenekler.duzenlenebilir !== false;
+    const profil = profilGetir(magazaKey);
+    const kok = el(`<div class="denetim-ekran">
+    <div class="bolum-ust">
+      <h2>${esc(DENETIM.baslik)}</h2>
+      <span class="alt">${esc(profil ? profil.ad : "")} — ${esc(DENETIM.giris)}</span>
+    </div>
+    <div class="denetim-ozet"></div>
+    <details class="denetim-genel">
+      <summary>Genel kurallar</summary>
+      <ul>${DENETIM.genel.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>
+    </details>
+    <div class="denetim-liste"></div>
+  </div>`);
+    const liste = kok.querySelector(".denetim-liste");
+    const ozetKutu = kok.querySelector(".denetim-ozet");
+    const durum = () => denetimGetir(magazaKey);
+    const isaretli = (id) => !!durum().isaretli[id];
+    function hesapla() {
+      const d = durum();
+      let madde = 0, biten = 0, riskPuan = 0, eksikSoru = 0;
+      DENETIM.gruplar.forEach((g) => g.sorular.forEach((s) => {
+        const tik = s.maddeler.filter((_, i) => d.isaretli[maddeId(s.no, i)]).length;
+        madde += s.maddeler.length;
+        biten += tik;
+        if (tik < s.maddeler.length) {
+          riskPuan += s.puan;
+          eksikSoru++;
+        }
+      }));
+      return { madde, biten, riskPuan, eksikSoru, tarih: d.tarih };
+    }
+    function ozetCiz() {
+      const h = hesapla();
+      const yuzde = h.madde ? Math.round(h.biten / h.madde * 100) : 0;
+      ozetKutu.innerHTML = `
+      <div class="d-kutu"><span class="d-buyuk">${h.biten}/${h.madde}</span><span class="d-alt">işaretli madde</span></div>
+      <div class="d-kutu"><span class="d-buyuk">%${yuzde}</span><span class="d-alt">tamamlanma</span></div>
+      <div class="d-kutu ${h.riskPuan ? "riskli" : "tamam"}">
+        <span class="d-buyuk">${h.riskPuan}</span><span class="d-alt">risk altındaki puan / ${TOPLAM_PUAN}</span></div>
+      <div class="d-kutu"><span class="d-buyuk">${h.eksikSoru}</span><span class="d-alt">eksiği olan başlık</span></div>
+      <div class="d-kutu genis">
+        <span class="d-alt">${h.tarih ? "son değişiklik " + kisaTarih(new Date(h.tarih)) : "henüz işaretlenmedi"}</span>
+        ${duzenlenebilir ? '<button class="mini tehlike d-sifirla">Yeni denetim — hepsini temizle</button>' : ""}
+      </div>`;
+      const sifirla = ozetKutu.querySelector(".d-sifirla");
+      if (sifirla) sifirla.addEventListener("click", async () => {
+        if (!await onay(
+          "Yeni denetim",
+          "Bütün işaretler temizlenecek ve liste sıfırdan başlayacak.",
+          { onayAd: "Temizle", tehlike: true }
+        )) return;
+        denetimYaz(magazaKey, { isaretli: {}, tarih: (/* @__PURE__ */ new Date()).toISOString() });
+        ciz2();
+      });
+    }
+    function ciz2() {
+      liste.innerHTML = "";
+      const d = durum();
+      DENETIM.gruplar.forEach((g) => {
+        const grupPuan = g.sorular.reduce((t, s) => t + s.puan, 0);
+        const grupMadde = g.sorular.reduce((t, s) => t + s.maddeler.length, 0);
+        const grupTik = g.sorular.reduce((t, s) => t + s.maddeler.filter((_, i) => d.isaretli[maddeId(s.no, i)]).length, 0);
+        const blok = el(`<details class="d-grup" ${grupTik < grupMadde ? "open" : ""}>
+        <summary>
+          <span class="d-harf">${g.harf}</span>
+          <span class="d-grup-ad">${esc(g.ad)}</span>
+          <span class="d-grup-sayac ${grupTik === grupMadde ? "tamam" : ""}">${grupTik}/${grupMadde}</span>
+          <span class="d-grup-puan">${grupPuan} puan</span>
+        </summary>
+        <div class="d-sorular"></div>
+      </details>`);
+        const kap = blok.querySelector(".d-sorular");
+        g.sorular.forEach((s) => {
+          const tik = s.maddeler.filter((_, i) => d.isaretli[maddeId(s.no, i)]).length;
+          const tam = tik === s.maddeler.length;
+          const soru2 = el(`<section class="d-soru ${tam ? "tamam" : ""}">
+          <header class="d-soru-ust">
+            <span class="d-no">${s.no}</span>
+            <span class="d-soru-metin">${esc(s.metin)}</span>
+            <span class="d-soru-puan" title="Bu başlıktan kesilebilecek puan">${s.puan}p</span>
+            <span class="d-soru-sayac">${tik}/${s.maddeler.length}</span>
+          </header>
+          <div class="d-maddeler"></div>
+          ${s.puanlama ? `<p class="d-puanlama"><b>Puanlama:</b> ${esc(s.puanlama)}</p>` : ""}
+        </section>`);
+          const mKap = soru2.querySelector(".d-maddeler");
+          s.maddeler.forEach((m, i) => {
+            const id = maddeId(s.no, i);
+            const satir = el(`<div class="d-madde ${isaretli(id) ? "bitti" : ""}">
+            <span class="d-kutucuk">${isaretli(id) ? "✓" : ""}</span>
+            <span class="d-madde-metin">${esc(m)}</span>
+          </div>`);
+            if (duzenlenebilir) {
+              satir.addEventListener("click", () => {
+                denetimDegistir(magazaKey, id);
+                ciz2();
+              });
+            } else {
+              satir.classList.add("kilitli");
+            }
+            mKap.appendChild(satir);
+          });
+          kap.appendChild(soru2);
+        });
+        liste.appendChild(blok);
+      });
+      ozetCiz();
+    }
+    ciz2();
+    return kok;
   }
 
   // js/talep.js
@@ -4556,7 +5328,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 33;
+  var SURUM = 34;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
@@ -4828,11 +5600,17 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     const magazaGibi = aktif.rol === ROLLER.MAGAZA || aktif.rol === ROLLER.KURUCU && kurucuMagaza;
     const menu = [];
     if (aktif.rol === ROLLER.MAGAZA) {
-      menu.push(["ana", "Ana Sayfa"], ["talep", "Ürün Talepleri"]);
+      menu.push(["ana", "Ana Sayfa"], ["talep", "Ürün Talepleri"], ["denetim", "Denetim"]);
     } else if (aktif.rol === ROLLER.BOLGE) {
-      menu.push(["bolge", "Özet"], ["talep-rapor", "Ürün Talepleri"]);
+      menu.push(["bolge", "Özet"], ["talep-rapor", "Ürün Talepleri"], ["denetim", "Denetim"]);
     } else {
-      menu.push(["kurucu", "Ayarlar"], ["bolge", "Bölge Görünümü"], ["ana", "Mağaza Ekranı"], ["talep-rapor", "Ürün Talepleri"]);
+      menu.push(
+        ["kurucu", "Ayarlar"],
+        ["bolge", "Bölge Görünümü"],
+        ["ana", "Mağaza Ekranı"],
+        ["talep-rapor", "Ürün Talepleri"],
+        ["denetim", "Denetim"]
+      );
     }
     const kok = el(`<header class="ust-cubuk">
     <button class="ust-logo" title="Ana sayfaya dön"><img alt="Mağaza Performans Takip"></button>
@@ -5029,6 +5807,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     if (sayfa === "talep-rapor") return talepRaporSayfasi();
     const magaza = aktifMagaza();
     if (!magaza) return el('<div class="bos-sayfa"><h2>Mağaza seçilmedi</h2><p>Üstteki listeden bir mağaza seçin.</p></div>');
+    if (sayfa === "denetim") return denetimEkrani(magaza, { duzenlenebilir: aktif.rol !== ROLLER.BOLGE });
     const duzenlenebilir = aktif.rol !== ROLLER.BOLGE;
     return magazaEkrani(magaza, { duzenlenebilir, yenile: uygulamaCiz });
   }

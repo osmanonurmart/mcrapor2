@@ -113,7 +113,8 @@ export function yedegiCozumle(metin){
       paket: {
         gunler: ham.gunler || {}, hedefler: ham.hedefler || {},
         urunHafta: ham.urunHafta || {}, rutinDurum: ham.rutinDurum || {},
-        personel: ham.personel || [], kartlar: ham.kartlar || [], rutin: ham.rutin || []
+        personel: ham.personel || [], kartlar: ham.kartlar || [], rutin: ham.rutin || [],
+        denetim: ham.denetim || null
       }
     };
   }
