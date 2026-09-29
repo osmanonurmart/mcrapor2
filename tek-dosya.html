@@ -599,6 +599,21 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 }
 .onay-girdi:focus{ outline:none; border-color:var(--vurgu); box-shadow:0 0 0 3px var(--acik-vurgu); }
 .pencere-alt .mini{ padding:7px 14px; font-size:.8rem; }
+/* Kendi şifresini değiştirme penceresi.
+   .giris-girdi koyu giriş ekranı için tasarlandı; pencere içinde aydınlık
+   temaya çevriliyor. */
+.sifrem-kutu{ min-width:min(380px, 78vw); display:flex; flex-direction:column; }
+.sifrem-kutu .giris-etiket{ margin-top:10px; color:var(--soluk); }
+.sifrem-kutu .giris-girdi{
+  width:100%; background:var(--kagit); color:var(--yazi);
+  border-color:var(--cizgi); font-size:.86rem; transform:none;
+}
+.sifrem-kutu .giris-girdi:hover{ border-color:var(--vurgu); }
+.sifrem-kutu .giris-girdi:focus{
+  background:var(--kagit); border-color:var(--vurgu);
+  box-shadow:0 0 0 3px var(--acik-vurgu); transform:none;
+}
+.sifrem-durum{ min-height:16px; margin-top:10px; font-size:.76rem; color:var(--dusus); line-height:1.45; white-space:pre-line; }
 .yapistir-alan{ width:100%; height:150px; padding:9px; border:1px solid var(--cizgi); border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 .bulgu-kutu{ margin-top:12px; background:var(--zemin-3); border:1px solid var(--cizgi); border-radius:9px; padding:11px; }
 .bulgu-ust{ font-size:.72rem; color:var(--soluk); margin-bottom:8px; }
@@ -1195,6 +1210,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
       "auth/network-request-failed": "İnternet bağlantısı kurulamadı.",
       "auth/email-already-in-use": "Bu kullanıcı adı zaten kullanılıyor.",
       "auth/weak-password": "Şifre en az 6 karakter olmalı.",
+      "mc2/kendiSifremYanlis": "Mevcut şifreniz doğru değil. Hatırlamıyorsanız Firebase Console →\nAuthentication → Users bölümünden sıfırlayabilirsiniz.",
       "mc2/eskiSifreYanlis": 'Mevcut şifre doğru değil. Şifre unutulduysa "Kullanıcıyı ayır" deyip\nyeni kullanıcı adı ve şifreyle yeniden açın.',
       "mc2/eslesmedi": "Bu kullanıcı adı zaten kayıtlı ama verilen şifreyle girilemedi.\nMağazaya bağlamak için o kullanıcının güncel şifresini yazın.",
       "auth/operation-not-allowed": "Firebase'de e-posta/şifre girişi kapalı görünüyor (kullanıcı adları\niçeride e-postaya çevriliyor).\nConsole → Authentication → Sign-in method → Email/Password → Enable."
@@ -1224,6 +1240,19 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     } catch (e) {
     }
     return uid;
+  }
+  async function kendiSifremiDegistir(eskiSifre, yeniSifre) {
+    const kullanici = auth && auth.currentUser;
+    if (!kullanici) throw new Error("Önce giriş yapmalısınız.");
+    const kimlik = firebase.auth.EmailAuthProvider.credential(kullanici.email, eskiSifre);
+    try {
+      await kullanici.reauthenticateWithCredential(kimlik);
+    } catch (e) {
+      const h = new Error("Mevcut şifre doğru değil.");
+      h.code = "mc2/kendiSifremYanlis";
+      throw h;
+    }
+    await kullanici.updatePassword(yeniSifre);
   }
   async function sifreDegistir(eposta, eskiSifre, yeniSifre) {
     if (!ikincil) ikincil = firebase.apps.find((a) => a.name === "mc2Olusturucu") || firebase.initializeApp(firebaseConfig, "mc2Olusturucu");
@@ -5446,7 +5475,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 35;
+  var SURUM = 36;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
@@ -5842,6 +5871,68 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     window.addEventListener("resize", tekrar);
     window.addEventListener("scroll", tekrar);
   }
+  function sifremiDegistirPenceresi() {
+    const govde = el(`<div class="sifrem-kutu">
+    <p class="aciklama">Giriş yaptığınız hesabın şifresi değişecek:
+      <b>${esc(bulutKullanicisi && bulutKullanicisi.eposta || "")}</b></p>
+    <label class="giris-etiket">Mevcut şifre</label>
+    <input type="password" class="giris-girdi s-eski" autocomplete="current-password">
+    <label class="giris-etiket">Yeni şifre</label>
+    <input type="password" class="giris-girdi s-yeni" autocomplete="new-password">
+    <label class="giris-etiket">Yeni şifre (tekrar)</label>
+    <input type="password" class="giris-girdi s-yeni2" autocomplete="new-password">
+    <div class="sifrem-durum"></div>
+  </div>`);
+    const eski = govde.querySelector(".s-eski");
+    const yeni = govde.querySelector(".s-yeni");
+    const yeni2 = govde.querySelector(".s-yeni2");
+    const durum = govde.querySelector(".sifrem-durum");
+    const kok = pencere("Şifremi değiştir", govde, [
+      { ad: "Vazgeç", tik: kapat },
+      { ad: "Değiştir", sinif: "birincil", tik: () => uygula() }
+    ]);
+    const dugme = kok.querySelectorAll(".pencere-alt .mini")[1];
+    async function uygula() {
+      durum.className = "sifrem-durum";
+      if (!eski.value) {
+        bosUyar(eski);
+        durum.textContent = "Mevcut şifreyi yazın.";
+        return;
+      }
+      if (yeni.value.length < 8) {
+        bosUyar(yeni);
+        durum.textContent = "Yeni şifre en az 8 karakter olmalı.";
+        return;
+      }
+      if (yeni.value !== yeni2.value) {
+        bosUyar(yeni2);
+        durum.textContent = "Yeni şifreler aynı değil.";
+        return;
+      }
+      dugme.disabled = true;
+      dugme.textContent = "Değiştiriliyor…";
+      try {
+        await kendiSifremiDegistir(eski.value, yeni.value);
+        kapat();
+        bildir(
+          "iyi",
+          "✓ Şifre değiştirildi",
+          "Bundan sonra yeni şifreyle gireceksiniz. Diğer cihazlardaki oturumlar açık kalır."
+        );
+      } catch (e) {
+        durum.textContent = girisHatasi(e);
+        dugme.disabled = false;
+        dugme.textContent = "Değiştir";
+      }
+    }
+    [eski, yeni, yeni2].forEach((i) => i.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        uygula();
+      }
+    }));
+    setTimeout(() => eski.focus(), 40);
+  }
   function profilMenusu(e) {
     e.stopPropagation();
     document.querySelectorAll(".acilir-menu").forEach((m) => m.remove());
@@ -5849,6 +5940,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
     ${aktif.rol === ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ""}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ""}
     ${bulutKullanicisi ? "" : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
+    ${bulutKullanicisi ? '<button data-act="sifrem">🔑 Şifremi değiştir</button>' : ""}
     <div class="menu-ayrac"></div>
     <div class="menu-baslik">🎨 Tema</div>
     <div class="tema-liste">
@@ -5885,6 +5977,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           ciz(girisEkrani(null));
         }
       }
+      if (b.dataset.act === "sifrem") sifremiDegistirPenceresi();
       if (b.dataset.act === "sifirla") {
         onay(
           "Verileri sıfırla",

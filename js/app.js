@@ -9,7 +9,7 @@ import { bolgePaneli } from './bolge.js';
 import { kurucuPaneli } from './kurucu.js';
 import { talepEkrani, urunTalepListesi, talepRaporu } from './talep.js';
 import { pencere, kapat, onay } from './pencere.js';
-import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, epostaYap, kullaniciAdiYap, KULLANICILAR, KULLANICI_ALANI } from './bulut.js';
+import { baglan, bulutVarMi, authAl, dbAl, girisHatasi, epostaYap, kullaniciAdiYap, kendiSifremiDegistir, KULLANICILAR, KULLANICI_ALANI } from './bulut.js';
 import { yerlesimSifirla, TASINABILIR } from './yerlesim.js';
 import { TEMALAR, temaGetir, temaYaz, temaUygula } from './tema.js';
 import { SURUM, sunucuSurumu, guncelle } from './surum.js';
@@ -384,6 +384,53 @@ function olcuModu(){
   window.addEventListener('scroll', tekrar);
 }
 
+// Kendi şifresini değiştirme. Sıfırlama postası beklemeye gerek kalmasın diye
+// doğrudan uygulamadan yapılıyor; Firebase mevcut şifreyle yeniden doğrulatıyor.
+function sifremiDegistirPenceresi(){
+  const govde = U.el(`<div class="sifrem-kutu">
+    <p class="aciklama">Giriş yaptığınız hesabın şifresi değişecek:
+      <b>${U.esc((bulutKullanicisi && bulutKullanicisi.eposta) || '')}</b></p>
+    <label class="giris-etiket">Mevcut şifre</label>
+    <input type="password" class="giris-girdi s-eski" autocomplete="current-password">
+    <label class="giris-etiket">Yeni şifre</label>
+    <input type="password" class="giris-girdi s-yeni" autocomplete="new-password">
+    <label class="giris-etiket">Yeni şifre (tekrar)</label>
+    <input type="password" class="giris-girdi s-yeni2" autocomplete="new-password">
+    <div class="sifrem-durum"></div>
+  </div>`);
+  const eski  = govde.querySelector('.s-eski');
+  const yeni  = govde.querySelector('.s-yeni');
+  const yeni2 = govde.querySelector('.s-yeni2');
+  const durum = govde.querySelector('.sifrem-durum');
+
+  const kok = pencere('Şifremi değiştir', govde, [
+    {ad:'Vazgeç', tik: kapat},
+    {ad:'Değiştir', sinif:'birincil', tik: () => uygula()}
+  ]);
+  const dugme = kok.querySelectorAll('.pencere-alt .mini')[1];
+
+  async function uygula(){
+    durum.className = 'sifrem-durum';
+    if(!eski.value){ U.bosUyar(eski); durum.textContent = 'Mevcut şifreyi yazın.'; return; }
+    if(yeni.value.length < 8){ U.bosUyar(yeni); durum.textContent = 'Yeni şifre en az 8 karakter olmalı.'; return; }
+    if(yeni.value !== yeni2.value){ U.bosUyar(yeni2); durum.textContent = 'Yeni şifreler aynı değil.'; return; }
+    dugme.disabled = true; dugme.textContent = 'Değiştiriliyor…';
+    try{
+      await kendiSifremiDegistir(eski.value, yeni.value);
+      kapat();
+      U.bildir('iyi', '✓ Şifre değiştirildi',
+        'Bundan sonra yeni şifreyle gireceksiniz. Diğer cihazlardaki oturumlar açık kalır.');
+    }catch(e){
+      durum.textContent = girisHatasi(e);
+      dugme.disabled = false; dugme.textContent = 'Değiştir';
+    }
+  }
+  [eski, yeni, yeni2].forEach(i => i.addEventListener('keydown', ev => {
+    if(ev.key === 'Enter'){ ev.preventDefault(); uygula(); }
+  }));
+  setTimeout(() => eski.focus(), 40);
+}
+
 function profilMenusu(e){
   e.stopPropagation();
   document.querySelectorAll('.acilir-menu').forEach(m => m.remove());
@@ -391,6 +438,7 @@ function profilMenusu(e){
     ${aktif.rol === V.ROLLER.MAGAZA ? '<button data-act="personel">👥 Personel</button>' : ''}
     ${TASINABILIR ? '<button data-act="yerlesim">🧩 Panel yerleşimini sıfırla</button>' : ''}
     ${bulutKullanicisi ? '' : '<button data-act="sifirla">♻ Örnek veriyi yenile</button>'}
+    ${bulutKullanicisi ? '<button data-act="sifrem">🔑 Şifremi değiştir</button>' : ''}
     <div class="menu-ayrac"></div>
     <div class="menu-baslik">🎨 Tema</div>
     <div class="tema-liste">
@@ -419,6 +467,7 @@ function profilMenusu(e){
       if(bulutVarMi() && authAl() && authAl().currentUser){ V.bulutuKapat(); authAl().signOut(); }
       else { V.oturumSil(); aktif = null; kurucuMagaza = null; ciz(girisEkrani(null)); }
     }
+    if(b.dataset.act === 'sifrem') sifremiDegistirPenceresi();
     if(b.dataset.act === 'sifirla'){
       onay('Verileri sıfırla',
         'Bütün yerel veri silinip örnek veri yeniden üretilecek.',

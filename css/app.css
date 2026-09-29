@@ -588,6 +588,21 @@ td.hesaplanan{ color:var(--soluk); font-size:.8rem; }
 }
 .onay-girdi:focus{ outline:none; border-color:var(--vurgu); box-shadow:0 0 0 3px var(--acik-vurgu); }
 .pencere-alt .mini{ padding:7px 14px; font-size:.8rem; }
+/* Kendi şifresini değiştirme penceresi.
+   .giris-girdi koyu giriş ekranı için tasarlandı; pencere içinde aydınlık
+   temaya çevriliyor. */
+.sifrem-kutu{ min-width:min(380px, 78vw); display:flex; flex-direction:column; }
+.sifrem-kutu .giris-etiket{ margin-top:10px; color:var(--soluk); }
+.sifrem-kutu .giris-girdi{
+  width:100%; background:var(--kagit); color:var(--yazi);
+  border-color:var(--cizgi); font-size:.86rem; transform:none;
+}
+.sifrem-kutu .giris-girdi:hover{ border-color:var(--vurgu); }
+.sifrem-kutu .giris-girdi:focus{
+  background:var(--kagit); border-color:var(--vurgu);
+  box-shadow:0 0 0 3px var(--acik-vurgu); transform:none;
+}
+.sifrem-durum{ min-height:16px; margin-top:10px; font-size:.76rem; color:var(--dusus); line-height:1.45; white-space:pre-line; }
 .yapistir-alan{ width:100%; height:150px; padding:9px; border:1px solid var(--cizgi); border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:.74rem; }
 .bulgu-kutu{ margin-top:12px; background:var(--zemin-3); border:1px solid var(--cizgi); border-radius:9px; padding:11px; }
 .bulgu-ust{ font-size:.72rem; color:var(--soluk); margin-bottom:8px; }

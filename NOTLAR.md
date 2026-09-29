@@ -567,3 +567,24 @@ olarak buluta gidiyor, bölge müdürü okuyor ama yazamıyor. Yedek
 dosyalarına da giriyor.
 
 Eski v1 araç kutuları taşınınca "Araçlar" kartının yerine gelecek.
+
+## 2026-09-29 — kendi şifreni değiştirme
+
+Profil menüsüne "🔑 Şifremi değiştir" eklendi. Giriş yapmış kullanıcı
+mevcut şifresini yazıp yenisini belirliyor; Firebase yakın zamanda giriş
+yapılmış olmasını istediği için önce `reauthenticateWithCredential`,
+sonra `updatePassword` çağrılıyor.
+
+Neden gerekti: kurucu kendi şifresini yalnızca Firebase Console'dan
+gönderilen sıfırlama postasıyla değiştirebiliyordu ve posta gelmiyordu.
+Firebase sıfırlama isteğine gerçek/sahte adres ayırt etmeden 200
+dönüyor (REST ile doğrulandı), yani "gitti mi" bilgisi hiç yok. Bu yol
+postayı tamamen aradan çıkarıyor.
+
+Not: proje ayarlarında **e-posta numaralandırma koruması** açık —
+`accounts:createAuthUri` artık `registered`/`allProviders` döndürmüyor.
+Dışarıdan bir adresin kayıtlı olup olmadığı anlaşılamıyor; iyi bir ayar,
+ama teşhis sırasında bunu hesaba katmak gerekiyor.
+
+Test tarafı: stub'a `EmailAuthProvider.credential` ve
+`reauthenticateWithCredential` eklendi.

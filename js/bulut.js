@@ -65,6 +65,9 @@ export function girisHatasi(err){
     'auth/network-request-failed': 'İnternet bağlantısı kurulamadı.',
     'auth/email-already-in-use': 'Bu kullanıcı adı zaten kullanılıyor.',
     'auth/weak-password': 'Şifre en az 6 karakter olmalı.',
+    'mc2/kendiSifremYanlis':
+      'Mevcut şifreniz doğru değil. Hatırlamıyorsanız Firebase Console →\n' +
+      'Authentication → Users bölümünden sıfırlayabilirsiniz.',
     'mc2/eskiSifreYanlis':
       'Mevcut şifre doğru değil. Şifre unutulduysa "Kullanıcıyı ayır" deyip\n' +
       'yeni kullanıcı adı ve şifreyle yeniden açın.',
@@ -104,6 +107,23 @@ export async function kullaniciOlustur(eposta, sifre){
   const uid = cred.user.uid;
   try{ await ia.signOut(); }catch(e){ /* zaten kapanmış olabilir */ }
   return uid;
+}
+
+// Giriş yapmış kullanıcının KENDİ şifresini değiştirir. E-posta ya da
+// sıfırlama bağlantısı gerekmez; Firebase yakın zamanda giriş yapılmış olmasını
+// istediği için önce mevcut şifreyle yeniden doğrulanıyor.
+export async function kendiSifremiDegistir(eskiSifre, yeniSifre){
+  const kullanici = auth && auth.currentUser;
+  if(!kullanici) throw new Error('Önce giriş yapmalısınız.');
+  const kimlik = firebase.auth.EmailAuthProvider.credential(kullanici.email, eskiSifre);
+  try{
+    await kullanici.reauthenticateWithCredential(kimlik);
+  }catch(e){
+    const h = new Error('Mevcut şifre doğru değil.');
+    h.code = 'mc2/kendiSifremYanlis';
+    throw h;
+  }
+  await kullanici.updatePassword(yeniSifre);
 }
 
 // Şifre değiştirme. Tarayıcıdan başka birinin şifresi ancak mevcut şifresi
