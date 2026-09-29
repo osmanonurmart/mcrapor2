@@ -157,12 +157,13 @@ export function kurucuPaneli(yenile){
         ${bulutta
           ? (p.kullaniciMaili
               ? `<span class="k-mail" title="Kullanıcı adı">${U.esc(kAdi)}</span>
-                 <span class="k-sifre-goster" title="Kayıtlı şifre — tıklayınca panoya kopyalanır"
-                       data-sifre="${U.esc(sifreler[p.key] ?? '')}">${
-                   sifreler[p.key] === undefined ? '<i class="k-yok">kayıtlı değil</i>'
-                   : sifreGorunur ? U.esc(sifreler[p.key]) : '••••••••'}</span>
-                 <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
-                 <button class="mini birincil k-degistir">Değiştir</button>
+                 <input class="k-sifre" type="${sifreGorunur ? 'text' : 'password'}"
+                        value="${U.esc(sifreler[p.key] ?? '')}"
+                        placeholder="${sifreler[p.key] === undefined ? 'kayıtlı değil' : ''}"
+                        autocapitalize="off" spellcheck="false"
+                        title="Şifreyi buraya yazıp Enter'a basın ya da ✓ düğmesine tıklayın">
+                 <button class="mini k-kopyala" title="Panoya kopyala">📋</button>
+                 <button class="mini birincil k-kaydet" title="Yeni şifreyi uygula" disabled>✓</button>
                  <button class="mini k-coz">Kullanıcıyı ayır</button>`
               : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
                         autocapitalize="off" spellcheck="false">
@@ -174,11 +175,11 @@ export function kurucuPaneli(yenile){
       satir.querySelector('.k-ad').addEventListener('change', function(){
         V.profilGuncelle(p.key, {ad: this.value.trim() || p.ad}); kulCiz(); yenile && yenile();
       });
-      const sifreHucre = satir.querySelector('.k-sifre-goster');
-      if(sifreHucre) sifreHucre.addEventListener('click', () => {
-        const s = sifreHucre.dataset.sifre;
-        if(!s) return;
-        navigator.clipboard.writeText(s)
+      const sifreAlan = satir.querySelector('.k-sifre');
+      const kopyalaBtn = satir.querySelector('.k-kopyala');
+      if(kopyalaBtn) kopyalaBtn.addEventListener('click', () => {
+        if(!sifreAlan.value) return;
+        navigator.clipboard.writeText(sifreAlan.value)
           .then(() => U.bildir('iyi', '✓ Kopyalandı', p.ad + ' şifresi panoya kopyalandı.'))
           .catch(() => {});
       });
@@ -219,33 +220,49 @@ export function kurucuPaneli(yenile){
         }
       });
 
-      // Tarayıcıdan başkasının şifresi ancak mevcut şifresi bilinerek değişir.
-      // Mevcut şifre kayıtlıysa elle yazmaya gerek yok; yoksa sorulur.
-      const degistirBtn = satir.querySelector('.k-degistir');
-      if(degistirBtn) degistirBtn.addEventListener('click', async () => {
-        const yeniAlan = satir.querySelector('.k-yeni-sifre2');
-        if(yeniAlan.value.length < 6){ U.bosUyar(yeniAlan); kulNot.textContent = 'Yeni şifre en az 6 karakter olmalı.'; return; }
-        let eski = sifreler[p.key];
-        if(eski === undefined || eski === ''){
-          eski = await soru(p.ad + ' — mevcut şifre',
-            'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın ' +
-            'şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ' +
-            've bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp ' +
-            'yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
-            {yerTutucu:'şu anki şifre', onayAd:'Devam'});
-          if(!eski) return;
+      // Şifre alanı doğrudan düzenleniyor: yeni şifreyi yazıp Enter'a basmak
+      // ya da ✓'e tıklamak yetiyor. Tarayıcıdan başkasının şifresi ancak
+      // mevcut şifresi bilinerek değişir; kayıtlı kopya varsa sorulmuyor.
+      const kaydetBtn = satir.querySelector('.k-kaydet');
+      if(sifreAlan && kaydetBtn){
+        const baslangic = sifreler[p.key] ?? '';
+        const tazele = () => {
+          const degisti = sifreAlan.value !== baslangic && sifreAlan.value.length > 0;
+          kaydetBtn.disabled = !degisti;
+          sifreAlan.classList.toggle('degisti', degisti);
+        };
+        sifreAlan.addEventListener('input', tazele);
+        sifreAlan.addEventListener('keydown', e => {
+          if(e.key === 'Enter'){ e.preventDefault(); if(!kaydetBtn.disabled) uygula(); }
+          if(e.key === 'Escape'){ sifreAlan.value = baslangic; tazele(); }
+        });
+        kaydetBtn.addEventListener('click', uygula);
+
+        async function uygula(){
+          const yeni = sifreAlan.value;
+          if(yeni.length < 6){ U.bosUyar(sifreAlan); kulNot.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
+          let eski = sifreler[p.key];
+          if(eski === undefined || eski === ''){
+            eski = await soru(p.ad + ' — mevcut şifre',
+              'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın ' +
+              'şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ' +
+              've bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp ' +
+              'yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+              {yerTutucu:'şu anki şifre', onayAd:'Devam'});
+            if(!eski) return;
+          }
+          kaydetBtn.disabled = true; kaydetBtn.textContent = '…';
+          try{
+            await sifreDegistir(p.kullaniciMaili, eski, yeni);
+            sifreYaz(p.key, yeni);
+            kulNot.textContent = p.ad + ' şifresi değiştirildi. Yeni şifre: ' + yeni;
+            kulCiz();
+          }catch(e){
+            kulNot.textContent = girisHatasi(e);
+            kaydetBtn.disabled = false; kaydetBtn.textContent = '✓';
+          }
         }
-        degistirBtn.disabled = true; degistirBtn.textContent = '...';
-        try{
-          await sifreDegistir(p.kullaniciMaili, eski, yeniAlan.value);
-          sifreYaz(p.key, yeniAlan.value);
-          kulNot.textContent = p.ad + ' şifresi değiştirildi. Yeni şifre: ' + yeniAlan.value;
-          kulCiz();
-        }catch(e){
-          kulNot.textContent = girisHatasi(e);
-          degistirBtn.disabled = false; degistirBtn.textContent = 'Değiştir';
-        }
-      });
+      }
 
       // Şifre tamamen unutulduysa: kullanıcıyı mağazadan ayır, konsoldan hesabı
       // sil, sonra yeni kullanıcı adı ve şifreyle yeniden aç.

@@ -588,3 +588,19 @@ ama teşhis sırasında bunu hesaba katmak gerekiyor.
 
 Test tarafı: stub'a `EmailAuthProvider.credential` ve
 `reauthenticateWithCredential` eklendi.
+
+## 2026-09-29 — şifreler doğrudan düzenlenebilir
+
+Kurucu panelinde şifre artık ayrı bir "yeni şifre" kutusu + "Değiştir"
+düğmesi değil: satırdaki şifre alanının üzerine yazıp Enter'a basmak
+(ya da ✓'e tıklamak) yetiyor. Escape yazılanı geri alır, ✓ yalnızca
+değer değiştiğinde aktifleşir, yanındaki 📋 şifreyi panoya kopyalar.
+Şifreler baştan açık geliyor; göz düğmesi yalnızca omuz üstünden
+bakılan durumlar için gizliyor.
+
+Değişmeyen sınır: tarayıcıdan başkasının şifresi ancak **mevcut şifresi
+bilinerek** değiştirilebilir. Panelden açılan her hesabın şifresi
+`mc2_sifreler`de kayıtlı olduğu için soru çıkmıyor; yalnızca bu özellik
+eklenmeden önce açılmış hesaplarda bir kez soruluyor, o cevap da
+kaydedilip bir daha sorulmuyor. Mevcut şifre olmadan değiştirmek Admin
+SDK (Cloud Functions, Blaze planı) ister.

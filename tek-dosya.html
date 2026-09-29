@@ -930,13 +930,17 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
 }
 
 /* Kurucu panelinde kayıtlı şifre gösterimi */
-.k-sifre-goster{
-  flex:0 1 120px; min-width:0; font-size:.74rem; font-family:ui-monospace,Menlo,Consolas,monospace;
+/* Şifre doğrudan bu alanda düzenleniyor: yaz, Enter'a bas, biter. */
+.k-sifre{
+  flex:0 1 150px; min-width:0; font-size:.76rem; font-family:ui-monospace,Menlo,Consolas,monospace;
   background:var(--zemin-2); border:1px solid var(--cizgi-ince); border-radius:6px; padding:3px 7px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;
+  color:var(--yazi);
 }
-.k-sifre-goster:hover{ border-color:var(--vurgu); }
-.k-sifre-goster .k-yok{ font-family:inherit; font-style:normal; color:var(--soluk); font-size:.7rem; }
+.k-sifre:hover{ border-color:var(--cizgi); }
+.k-sifre:focus{ outline:none; background:var(--kagit); border-color:var(--vurgu); }
+.k-sifre.degisti{ border-color:var(--vurgu); background:var(--acik-vurgu); }
+.k-sifre::placeholder{ font-family:inherit; color:var(--soluk); font-style:italic; }
+.k-kopyala,.k-kaydet{ flex:0 0 auto; padding:3px 7px; }
 /* Kutu başlığı + sağdaki düğme (Kullanıcılar kutusunda şifre göz düğmesi). */
 .kutu-ust{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
 .kutu-ust h3{ margin-bottom:0; }
@@ -5078,10 +5082,13 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
         <input class="k-ad" type="text" value="${esc(p.ad)}" title="Mağaza adı">
         <span class="k-rol">${p.rol}</span>
         ${bulutta ? p.kullaniciMaili ? `<span class="k-mail" title="Kullanıcı adı">${esc(kAdi)}</span>
-                 <span class="k-sifre-goster" title="Kayıtlı şifre — tıklayınca panoya kopyalanır"
-                       data-sifre="${esc(sifreler[p.key] ?? "")}">${sifreler[p.key] === void 0 ? '<i class="k-yok">kayıtlı değil</i>' : sifreGorunur ? esc(sifreler[p.key]) : "••••••••"}</span>
-                 <input class="k-yeni-sifre2" type="text" placeholder="yeni şifre (6+)">
-                 <button class="mini birincil k-degistir">Değiştir</button>
+                 <input class="k-sifre" type="${sifreGorunur ? "text" : "password"}"
+                        value="${esc(sifreler[p.key] ?? "")}"
+                        placeholder="${sifreler[p.key] === void 0 ? "kayıtlı değil" : ""}"
+                        autocapitalize="off" spellcheck="false"
+                        title="Şifreyi buraya yazıp Enter'a basın ya da ✓ düğmesine tıklayın">
+                 <button class="mini k-kopyala" title="Panoya kopyala">📋</button>
+                 <button class="mini birincil k-kaydet" title="Yeni şifreyi uygula" disabled>✓</button>
                  <button class="mini k-coz">Kullanıcıyı ayır</button>` : `<input class="k-yeni-mail" type="text" placeholder="kullanıcı adı"
                         autocapitalize="off" spellcheck="false">
                  <input class="k-yeni-sifre" type="text" placeholder="şifre (6+)">
@@ -5093,11 +5100,11 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
           kulCiz();
           yenile && yenile();
         });
-        const sifreHucre = satir.querySelector(".k-sifre-goster");
-        if (sifreHucre) sifreHucre.addEventListener("click", () => {
-          const s = sifreHucre.dataset.sifre;
-          if (!s) return;
-          navigator.clipboard.writeText(s).then(() => bildir("iyi", "✓ Kopyalandı", p.ad + " şifresi panoya kopyalandı.")).catch(() => {
+        const sifreAlan = satir.querySelector(".k-sifre");
+        const kopyalaBtn = satir.querySelector(".k-kopyala");
+        if (kopyalaBtn) kopyalaBtn.addEventListener("click", () => {
+          if (!sifreAlan.value) return;
+          navigator.clipboard.writeText(sifreAlan.value).then(() => bildir("iyi", "✓ Kopyalandı", p.ad + " şifresi panoya kopyalandı.")).catch(() => {
           });
         });
         const yerelSifre = satir.querySelector(".k-sifre-yerel");
@@ -5149,36 +5156,56 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
             acBtn.textContent = "Kullanıcı aç";
           }
         });
-        const degistirBtn = satir.querySelector(".k-degistir");
-        if (degistirBtn) degistirBtn.addEventListener("click", async () => {
-          const yeniAlan = satir.querySelector(".k-yeni-sifre2");
-          if (yeniAlan.value.length < 6) {
-            bosUyar(yeniAlan);
-            kulNot.textContent = "Yeni şifre en az 6 karakter olmalı.";
-            return;
+        const kaydetBtn = satir.querySelector(".k-kaydet");
+        if (sifreAlan && kaydetBtn) {
+          const baslangic = sifreler[p.key] ?? "";
+          const tazele = () => {
+            const degisti = sifreAlan.value !== baslangic && sifreAlan.value.length > 0;
+            kaydetBtn.disabled = !degisti;
+            sifreAlan.classList.toggle("degisti", degisti);
+          };
+          sifreAlan.addEventListener("input", tazele);
+          sifreAlan.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (!kaydetBtn.disabled) uygula();
+            }
+            if (e.key === "Escape") {
+              sifreAlan.value = baslangic;
+              tazele();
+            }
+          });
+          kaydetBtn.addEventListener("click", uygula);
+          async function uygula() {
+            const yeni = sifreAlan.value;
+            if (yeni.length < 6) {
+              bosUyar(sifreAlan);
+              kulNot.textContent = "Şifre en az 6 karakter olmalı.";
+              return;
+            }
+            let eski = sifreler[p.key];
+            if (eski === void 0 || eski === "") {
+              eski = await soru(
+                p.ad + " — mevcut şifre",
+                'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ve bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
+                { yerTutucu: "şu anki şifre", onayAd: "Devam" }
+              );
+              if (!eski) return;
+            }
+            kaydetBtn.disabled = true;
+            kaydetBtn.textContent = "…";
+            try {
+              await sifreDegistir(p.kullaniciMaili, eski, yeni);
+              sifreYaz(p.key, yeni);
+              kulNot.textContent = p.ad + " şifresi değiştirildi. Yeni şifre: " + yeni;
+              kulCiz();
+            } catch (e) {
+              kulNot.textContent = girisHatasi(e);
+              kaydetBtn.disabled = false;
+              kaydetBtn.textContent = "✓";
+            }
           }
-          let eski = sifreler[p.key];
-          if (eski === void 0 || eski === "") {
-            eski = await soru(
-              p.ad + " — mevcut şifre",
-              'Bu hesabın şifresi kayıtlı değil. Tarayıcıdan şifre değiştirmek için hesabın şu anki şifresi gerekiyor.\n\nBir kez yazarsanız bundan sonra burada kayıtlı kalır ve bir daha sorulmaz. Şifreyi bilmiyorsanız "Kullanıcıyı ayır" ile hesabı çözüp yeni kullanıcı adı ve şifreyle yeniden açabilirsiniz.',
-              { yerTutucu: "şu anki şifre", onayAd: "Devam" }
-            );
-            if (!eski) return;
-          }
-          degistirBtn.disabled = true;
-          degistirBtn.textContent = "...";
-          try {
-            await sifreDegistir(p.kullaniciMaili, eski, yeniAlan.value);
-            sifreYaz(p.key, yeniAlan.value);
-            kulNot.textContent = p.ad + " şifresi değiştirildi. Yeni şifre: " + yeniAlan.value;
-            kulCiz();
-          } catch (e) {
-            kulNot.textContent = girisHatasi(e);
-            degistirBtn.disabled = false;
-            degistirBtn.textContent = "Değiştir";
-          }
-        });
+        }
         const cozBtn = satir.querySelector(".k-coz");
         if (cozBtn) cozBtn.addEventListener("click", async () => {
           const adYedek = kullaniciAdiYap(p.kullaniciMaili);
@@ -5475,7 +5502,7 @@ input,textarea,select{ background:var(--kagit); color:var(--yazi); }
   }
 
   // js/surum.js
-  var SURUM = 36;
+  var SURUM = 37;
   async function sunucuSurumu() {
     try {
       const y = await fetch("./surum.json?t=" + Date.now(), { cache: "no-store" });
