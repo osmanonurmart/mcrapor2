@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<!-- Telefonda çift dokunma/parmak yakınlaştırması kapalı: tablo hücrelerine
+     basarken istemsizce yakınlaşıyordu. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1d1d1f">
+<title>TEST — Mağaza Performans Takip</title>
+<link rel="icon" href="./icon.svg">
+<link rel="stylesheet" href="./css/app.css">
+<script src="./test-kalkan.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+/* Test sürümüne özel. Ana uygulamanın css'i birebir kopya kalsın diye
+   bu kurallar burada duruyor. */
+body{ padding-top:26px; }
+.test-serit{
+  position:fixed; top:0; left:0; right:0; z-index:9999; height:26px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:repeating-linear-gradient(45deg,#8a2f2e,#8a2f2e 10px,#7a2827 10px,#7a2827 20px);
+  color:#fff; font:600 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif; letter-spacing:.02em;
+}
+.test-serit a{ color:#ffd9d8; }
+.test-yazma-uyari{
+  position:fixed; bottom:14px; left:50%; transform:translateX(-50%); z-index:9999;
+  background:#2b2b30; color:#fff; border-radius:20px; padding:7px 15px;
+  font:600 12px/1.3 system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-shadow:0 6px 24px rgba(0,0,0,.3); opacity:0; transition:opacity .25s;
+  pointer-events:none; max-width:92vw; text-align:center;
+}
+</style>
+</head>
+<body>
+  <div class="test-serit">🔒 TEST SÜRÜMÜ — veri okunur, hiçbir şey yazılmaz
+    <a href="../">ana uygulamaya dön</a></div>
+  <div id="kok"><div class="acilis">Yükleniyor…</div></div>
+  <footer class="alt-bilgi">© 2026 Lodos Digital - Tüm hakları saklıdır.</footer>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
